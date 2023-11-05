@@ -1,0 +1,10 @@
+# Mac OS
+.DS_Store
+
+# Build
+web/node_modules/*
+bin
+obj
+cs/data/*
+cs/nomekopsrv/*.db
+cs/nomekopsrv/wwwroot/*
