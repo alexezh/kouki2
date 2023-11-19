@@ -30,7 +30,7 @@ public class ProjectCollection
 
   private void CreateDemo()
   {
-    if (ProjectDbStatics.Exists(DemoProjectId))
+    if (PhotoDbStatics.Exists(DemoProjectId))
     {
       _projects.Add(DemoProjectId, Project.Load(DemoProjectId));
       return;
@@ -39,7 +39,7 @@ public class ProjectCollection
     UserDbStatics.CreateUserDb();
 
     // first create DB
-    ProjectDbStatics.CreateProjectDb(DemoProjectId);
+    PhotoDbStatics.CreateProjectDb(DemoProjectId);
     _projects.Add(DemoProjectId, Project.Load(DemoProjectId));
   }
 
@@ -66,7 +66,7 @@ public class ProjectCollection
   internal Project CreateProject(WireCreateProjectRequest request)
   {
     var id = Guid.NewGuid().ToString("D");
-    ProjectDbStatics.CreateProjectDb(id);
+    PhotoDbStatics.CreateProjectDb(id);
 
     var prj = Project.Load(id);
     _projects.TryAdd(id, prj);

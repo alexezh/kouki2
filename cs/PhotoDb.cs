@@ -1,3 +1,4 @@
+using System.Data.SqlTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -34,32 +35,27 @@ public static class PasswordHash
   }
 }
 
-public class ProjectDbStatics
+public class PhotoDbStatics
 {
-  private static string GetDbPath(string id)
+  public static SqliteConnection CreateConnection(string path)
   {
-    return $"data/bark_{id}.db";
+    return new SqliteConnection($"Data Source={path}");
   }
 
-  public static SqliteConnection CreateConnection(string id)
+  public static bool Exists(string path)
   {
-    return new SqliteConnection($"Data Source={GetDbPath(id)}");
+    return File.Exists(path);
   }
 
-  public static bool Exists(string id)
+  public static void CreatePhotoDb(string path)
   {
-    return File.Exists(GetDbPath(id));
-  }
-
-  public static void CreateProjectDb(string id)
-  {
-    using (var connection = CreateConnection(id))
+    using (var connection = CreateConnection(path))
     {
       connection.Open();
 
       {
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Entities (id TEXT, kind, INTEGER, content TEXT)";
+        command.CommandText = "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT)";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
@@ -68,17 +64,34 @@ public class ProjectDbStatics
 
       {
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `Ids` ON `Entities` (`id` ASC);";
+        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
         }
       }
 
-      // list of messages
       {
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Messages (id TEXT, threadId TEXT, time INTEGER, content TEXT)";
+        command.CommandText = "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE TABLE IF NOT EXISTS Photos (folder INTEGER, name TEXT, fav BOOLEAN, stars NUMBER, color TEXT)";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoFolder` ON `Photos` (`folder` ASC);";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
@@ -105,179 +118,69 @@ public class ProjectDbStatics
   }
 }
 
-public class UserDbStatics
+
+public class PhotoEntry
 {
-  private static string GetDbPath()
+  public int FolderId;
+  public string Name;
+  public bool Favorite;
+  public int Stars;
+  public int Color;
+}
+
+public class PhotoDb
+{
+  private SqliteConnection _connection;
+  private string _path;
+
+  public PhotoDb(string path)
   {
-    return $"data/users.db";
+    _path = path;
+    _connection = PhotoDbStatics.CreateConnection(path);
+    _connection.Open();
   }
 
-  public static SqliteConnection CreateConnection()
+  public int AddSourceFolder(string path)
   {
-    return new SqliteConnection($"Data Source={GetDbPath()}");
-  }
-
-  public static bool Exists(string id)
-  {
-    return File.Exists(GetDbPath());
-  }
-
-  public static void CreateUserDb()
-  {
-    using (var connection = CreateConnection())
-    {
-      connection.Open();
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Users (id TEXT, seed TEXT, pwd TEXT);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `UsersU` ON `Users` (`id` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Sessions (id TEXT, userId TEXT);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `SessionsU` ON `Sessions` (`id` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-    }
-  }
-
-  public static void AddUser(string id, string pwd)
-  {
-    var seed = RandomNumberGenerator.GetBytes(32);
-    var seed64 = Convert.ToBase64String(seed);
-    var hash = PasswordHash.Compute(seed, pwd);
-
-    using (var connection = CreateConnection())
-    {
-      connection.Open();
-
-      var command = connection.CreateCommand();
-      command.CommandText = "INSERT INTO Users(id, seed, pwd) VALUES($id, $seed, $pwd)";
-      command.Parameters.AddWithValue("$id", id);
-      command.Parameters.AddWithValue("$seed", seed64);
-      command.Parameters.AddWithValue("$pwd", hash);
-
-      var inserted = command.ExecuteNonQuery();
-      if (inserted != 1)
-      {
-        throw new ArgumentException("Cannot insert");
-      }
-    }
-  }
-
-  private static bool VerifyUser(SqliteConnection connection, string name, string pwd)
-  {
-    var command = connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Users WHERE id == $id";
-    command.Parameters.AddWithValue("$id", name);
+    var command = _connection.CreateCommand();
+    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
+    command.Parameters.AddWithValue("$path", path);
 
     using (var reader = command.ExecuteReader())
     {
       while (reader.Read())
       {
-        var seed64 = reader["seed"] as string;
-        var hash64 = reader["pwd"] as string;
-
-        if (!PasswordHash.Verify(pwd, seed64, hash64))
-        {
-          return false;
-        }
-
-        return true;
+        return (int)reader["id"];
       }
     }
 
-    return false;
+    return 0;
   }
 
-  public static string LoginUser(string name, string pwd)
-  {
-    using (var connection = CreateConnection())
-    {
-      connection.Open();
-
-      if (!VerifyUser(connection, name, pwd))
-      {
-        return null;
-      }
-
-      // allocate session 
-      var session = RandomNumberGenerator.GetBytes(32);
-      var session64 = Convert.ToBase64String(session);
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "INSERT INTO Sessions(id, userId) VALUES($id, $userId)";
-        command.Parameters.AddWithValue("$id", session64);
-        command.Parameters.AddWithValue("$userId", name);
-      }
-
-      return session64;
-    }
-  }
-}
-
-public class EntityDb
-{
-  private SqliteConnection _connection;
-  private string _id;
-
-  public EntityDb(string id)
-  {
-    _id = id;
-    _connection = ProjectDbStatics.CreateConnection(id);
-    _connection.Open();
-  }
-
-  public void InsertEntity<T>(int kind, string id, T content) where T : class
-  {
-    var contentBlob = ProjectDbStatics.SerializeEntity(content);
-
-    var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Entities(kind, id, content) VALUES($kind, $id, $content)";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    command.Parameters.AddWithValue("$content", contentBlob);
-
-    var inserted = command.ExecuteNonQuery();
-    if (inserted != 1)
-    {
-      throw new ArgumentException("Cannot insert");
-    }
-  }
-
-  public void InsertEntityRaw(int kind, string id, string content)
+  public int GetFolderId(string path)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Entities(kind, id, content) VALUES($kind, $id, $content)";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    command.Parameters.AddWithValue("$content", content);
+    command.CommandText = "SELECT * FROM SourceFolders WHERE path == $path";
+    command.Parameters.AddWithValue("$path", path);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (int)reader["id"];
+      }
+    }
+
+    return 0;
+  }
+
+  public void AddPhoto(int folderId, string fileName)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "INSERT INTO Photos(folder, name) VALUES($folder, $name)";
+    //    command.Parameters.AddWithValue("$kind", kind);
+    command.Parameters.AddWithValue("$folder", folderId);
+    command.Parameters.AddWithValue("$name", fileName);
+    //    command.Parameters.AddWithValue("$content", contentBlob);
 
     var inserted = command.ExecuteNonQuery();
     if (inserted != 1)
@@ -304,7 +207,7 @@ public class EntityDb
 
   public bool TryUpdateEntity<T>(int kind, string id, T content) where T : class
   {
-    var contentBlob = ProjectDbStatics.SerializeEntity(content);
+    var contentBlob = PhotoDbStatics.SerializeEntity(content);
 
     var command = _connection.CreateCommand();
     command.CommandText = "UPDATE Entities SET content = $content WHERE kind == $kind AND id == $id";
@@ -338,12 +241,12 @@ public class EntityDb
     return true;
   }
 
-  internal List<string> LoadEntities(int kind)
+  internal List<string> GetItems(int kind)
   {
     var ent = new List<string>();
 
     var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Entities WHERE kind == $kind";
+    command.CommandText = "SELECT * FROM Photos WHERE folder == $kind";
     command.Parameters.AddWithValue("$kind", kind);
     using (var reader = command.ExecuteReader())
     {
@@ -396,7 +299,7 @@ public class EntityDb
       while (reader.Read())
       {
         var data = reader["content"] as string;
-        return ProjectDbStatics.DeserializeEntity<T>(data);
+        return PhotoDbStatics.DeserializeEntity<T>(data);
       }
     }
 

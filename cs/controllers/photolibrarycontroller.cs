@@ -4,7 +4,38 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace barksrv.Controllers;
 
-public class LoginController : Controller
+
+/// <summary>
+/// manages list of source folders
+/// creates list of output folders which contain links or different versions
+/// </summary>
+public class PhotoLibraryController
+{
+  public void AddSourceFolder(string dir, string name)
+  {
+    
+  }
+
+  public List<string> GetSourceFolders()
+  {
+    return null;
+  }
+
+  /// <summary>
+  /// ensures that source folder is in sync with DB
+  /// </summary>
+  public void SyncSourceFolder()
+  {
+
+  }
+
+  public void Directory(string dir)
+  {
+
+  }
+}
+
+public class ListFiles : Controller
 {
   [HttpPost]
   public async Task<WireLoginResponse> Login()
