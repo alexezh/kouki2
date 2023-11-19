@@ -8,7 +8,7 @@ var app = builder.Build();
 // initialize storage
 //ProjectCollection.Instance.Initialize();
 var pfs = new PhotoFs("./photo.sqlite");
-pfs.AddSourceFolder(new FolderName("~/Pictures/stream/2007"));
+pfs.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2007"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

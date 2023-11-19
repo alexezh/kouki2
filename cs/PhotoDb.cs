@@ -97,6 +97,15 @@ public class PhotoDbStatics
           // TODO: check error
         }
       }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` (`folder` ASC, 'name' ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
     }
   }
 
@@ -157,7 +166,7 @@ public class PhotoDb
     return 0;
   }
 
-  public Int64 GetFolderId(string path)
+  public Int64? GetFolderId(string path)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "SELECT * FROM SourceFolders WHERE path == $path";
@@ -170,7 +179,7 @@ public class PhotoDb
       }
     }
 
-    return 0;
+    return null;
   }
 
   public void AddPhoto(Int64 folderId, string fileName)
@@ -187,6 +196,24 @@ public class PhotoDb
     {
       throw new ArgumentException("Cannot insert");
     }
+  }
+
+  public bool HasPhoto(Int64 folderId, string fileName)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and name == $name";
+    command.Parameters.AddWithValue("$folder", folderId);
+    command.Parameters.AddWithValue("$name", fileName);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   public void UpdateEntity<T>(int kind, string id, T content) where T : class

@@ -42,22 +42,32 @@ public class PhotoFs
     _db = new PhotoDb(path);
   }
 
-  public void AddSourceFolder(FolderName name)
+  public void AddSourceFolder(FolderName folder)
   {
-    var folderId = _db.AddSourceFolder(name.Path);
+    var folderId = _db.GetFolderId(folder.Path);
+    if (folderId == null)
+    {
+      folderId = _db.AddSourceFolder(folder.Path);
+    }
 
-    ScanFiles(name);
+    ScanFiles(folder, folderId.Value);
   }
 
-  private void ScanFiles(FolderName name)
+  private int ScanFiles(FolderName folder, Int64 folderId)
   {
-    var id = _db.GetFolderId(name.Path);
-
-    var e = Directory.EnumerateFiles(name.Path);
+    int added = 0;
+    var e = Directory.EnumerateFiles(folder.Path);
     foreach (var file in e)
     {
-      _db.AddPhoto(id, file);
+      var fileName = Path.GetFileName(file);
+      if (!_db.HasPhoto(folderId, fileName))
+      {
+        _db.AddPhoto(folderId, fileName);
+        added++;
+      }
     }
+
+    return added;
   }
 
   public static void CreateLink(SourceFileName nm, OutputFileName on)
