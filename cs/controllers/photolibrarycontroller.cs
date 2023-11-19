@@ -21,6 +21,18 @@ public class PhotoLibraryController
     return null;
   }
 
+  public IEnumerable<PhotoEntry> GetPhotos(Int64 id)
+  {
+    return PhotoFs.Instance.GetPhotos(id);
+  }
+
+  // get string as resource
+  public byte[] GetPhotoBytes(string key)
+  {
+    // for now we only accept * pattern
+    return PhotoFs.Instance.GetPhotoBytes(key);
+  }
+
   /// <summary>
   /// ensures that source folder is in sync with DB
   /// </summary>

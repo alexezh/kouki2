@@ -1,6 +1,3 @@
-
-using System.Text.RegularExpressions;
-
 public class SourceFileName
 {
   public string Path;
@@ -35,39 +32,41 @@ public class FolderName
 public class PhotoFs
 {
   private PhotoDb _db;
+  private static PhotoFs _instance;
+  public static PhotoFs Instance => _instance;
 
-  public PhotoFs(string path)
+  private PhotoFs(string path)
   {
     PhotoDbStatics.CreatePhotoDb(path);
     _db = new PhotoDb(path);
   }
 
-  public void AddSourceFolder(FolderName folder)
+  public static void Open(string path)
   {
-    var folderId = _db.GetFolderId(folder.Path);
-    if (folderId == null)
-    {
-      folderId = _db.AddSourceFolder(folder.Path);
-    }
-
-    ScanFiles(folder, folderId.Value);
+    _instance = new PhotoFs(path);
   }
 
-  private int ScanFiles(FolderName folder, Int64 folderId)
+  public int AddSourceFolder(FolderName folder)
   {
-    int added = 0;
-    var e = Directory.EnumerateFiles(folder.Path);
-    foreach (var file in e)
+    int added = Importer.ScanFiles(_db, folder);
+    return added;
+  }
+
+  public byte[] GetPhotoBytes(string key)
+  {
+    var infos = _db.GetPhotosByHash(key);
+    if (infos.Count == 0)
     {
-      var fileName = Path.GetFileName(file);
-      if (!_db.HasPhoto(folderId, fileName))
-      {
-        _db.AddPhoto(folderId, fileName);
-        added++;
-      }
+      return null;
     }
 
-    return added;
+    var folder = _db.GetFolder(infos[0].FolderId);
+    var fileName = Path.Combine(folder.Path, infos[0].Name);
+    using (var stm = File.OpenRead(fileName))
+    {
+      var reader = new BinaryReader(stm);
+      return reader.ReadBytes((int)stm.Length);
+    }
   }
 
   public static void CreateLink(SourceFileName nm, OutputFileName on)
@@ -75,10 +74,9 @@ public class PhotoFs
 
   }
 
-  public static IEnumerable<SourceFileName> GetFiles()
+  public IEnumerable<PhotoEntry> GetPhotos(Int64 folderId)
   {
-    //    PhotoDbStatics.
-    return null;
+    return _db.GetPhotosByFolder(folderId);
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)
@@ -92,49 +90,3 @@ public class PhotoFs
   // move duplicates
 }
 
-public class FileGroup
-{
-  private Dictionary<string, List<SourceFileName>> Group = new Dictionary<string, List<SourceFileName>>();
-
-
-}
-
-public class DuplicateFinder
-{
-  /// <summary>
-  /// for now scan files with the same name but different extensions
-  /// </summary>
-  public static IEnumerable<IGrouping<string, string>> ScanDuplicates(FolderName folder)
-  {
-    var map = new Dictionary<string, List<SourceFileName>>();
-    var files = Directory.EnumerateFiles(folder.Path);
-    var groups = files.GroupBy(x => SourceFileName.GetFileNameNc(x));
-
-    foreach (IGrouping<string, string> group in groups)
-    {
-      if (group.Count() > 1)
-      {
-        yield return group;
-      }
-    }
-  }
-
-  public static (string, List<string>) SelectBestByExt(List<string> opt)
-  {
-    int bestIdx = 0;
-    for (int i = 1; i < opt.Count; i++)
-    {
-
-    }
-    return ("", opt);
-  }
-
-  public static void MoveDuplicagtes(FolderName folder)
-  {
-    // foreach (var group in ScanDuplicates(folder) {
-    //   var values = group.ToList();
-    //   var (keep, move) = SelectBestByExt(values);
-    //   PhotoFs.MoveFiles(folder.Combine("duplicates"), move);
-    // }
-  }
-}

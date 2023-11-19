@@ -4,137 +4,22 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
-public static class PasswordHash
-{
-  const int HashSize = 32;
-  public static string Compute(byte[] seed, string pwd)
-  {
-    var pwdData = Encoding.UTF8.GetBytes(pwd);
-
-    var hash = Rfc2898DeriveBytes.Pbkdf2(pwdData, seed, 20, HashAlgorithmName.SHA256, HashSize);
-    return Convert.ToBase64String(hash);
-  }
-
-  public static bool Verify(string pwd, string seed64, string hash64)
-  {
-    var seed = Convert.FromBase64String(seed64);
-    var pwdData = Encoding.UTF8.GetBytes(pwd);
-    var hash1 = Convert.FromBase64String(hash64);
-
-    var hash2 = Rfc2898DeriveBytes.Pbkdf2(pwdData, seed, 20, HashAlgorithmName.SHA256, HashSize);
-    if (hash1.Length != HashSize || hash1.Length != hash2.Length)
-    {
-      return false;
-    }
-
-    for (int i = 0; i < hash1.Length; i++)
-      if (hash1[i] != hash2[i])
-        return false;
-
-    return true;
-  }
-}
-
-public class PhotoDbStatics
-{
-  public static SqliteConnection CreateConnection(string path)
-  {
-    return new SqliteConnection($"Data Source={path}");
-  }
-
-  public static bool Exists(string path)
-  {
-    return File.Exists(path);
-  }
-
-  public static void CreatePhotoDb(string path)
-  {
-    using (var connection = CreateConnection(path))
-    {
-      connection.Open();
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Photos (folder INTEGER, name TEXT, fav BOOLEAN, stars NUMBER, color TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoFolder` ON `Photos` (`folder` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` (`folder` ASC, 'name' ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-    }
-  }
-
-
-  private static JsonSerializerOptions jsonOptions = new JsonSerializerOptions()
-  {
-    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault
-  };
-
-  public static string SerializeEntity<T>(T ent)
-  {
-    string s = JsonSerializer.Serialize(ent, jsonOptions);
-    return s;
-  }
-
-  internal static T DeserializeEntity<T>(string blob)
-  {
-    return JsonSerializer.Deserialize<T>(blob);
-  }
-}
-
-
 public class PhotoEntry
 {
-  public int FolderId;
-  public string Name;
-  public bool Favorite;
-  public int Stars;
-  public int Color;
+  public Int64 FolderId { get; set; }
+  public Int64 Id { get; set; }
+  public string Hash { get; set; }
+  public string Name { get; set; }
+  public bool Favorite { get; set; }
+  public int Stars { get; set; }
+  public int Color { get; set; }
+}
+
+
+public class FolderEntry
+{
+  public Int64 Id { get; set; }
+  public string Path { get; set; }
 }
 
 public class PhotoDb
@@ -182,14 +67,34 @@ public class PhotoDb
     return null;
   }
 
-  public void AddPhoto(Int64 folderId, string fileName)
+  public FolderEntry GetFolder(Int64 id)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, name) VALUES($folder, $name)";
-    //    command.Parameters.AddWithValue("$kind", kind);
+    command.CommandText = "SELECT * FROM SourceFolders WHERE id == $id";
+    command.Parameters.AddWithValue("$id", id);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return new FolderEntry()
+        {
+          Id = id,
+          Path = (string)reader["path"]
+        };
+      }
+    }
+
+    return null;
+  }
+
+  public void AddPhoto(Int64 folderId, string fileName, string hash, bool fav)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav) VALUES($folder, $name, $hash, $fav)";
     command.Parameters.AddWithValue("$folder", folderId);
     command.Parameters.AddWithValue("$name", fileName);
-    //    command.Parameters.AddWithValue("$content", contentBlob);
+    command.Parameters.AddWithValue("$hash", hash);
+    command.Parameters.AddWithValue("$fav", fav);
 
     var inserted = command.ExecuteNonQuery();
     if (inserted != 1)
@@ -214,6 +119,54 @@ public class PhotoDb
     }
 
     return false;
+  }
+
+  private PhotoEntry ReadEntry(SqliteDataReader reader)
+  {
+    var en = new PhotoEntry()
+    {
+      FolderId = (Int64)reader["folder"],
+      Id = (Int64)reader["id"],
+      Hash = (string)reader["hash"],
+      Name = (string)reader["name"]
+    };
+
+    return en;
+  }
+
+  private List<PhotoEntry> SelectPhotos(Action<SqliteCommand> func)
+  {
+    var command = _connection.CreateCommand();
+    func(command);
+
+    var entries = new List<PhotoEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        entries.Add(ReadEntry(reader));
+      }
+    }
+
+    return entries;
+  }
+
+  public List<PhotoEntry> GetPhotosByHash(string hash)
+  {
+    return SelectPhotos((command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos WHERE hash == $hash";
+      command.Parameters.AddWithValue("$hash", hash);
+    });
+  }
+
+  public List<PhotoEntry> GetPhotosByFolder(Int64 folderId)
+  {
+    return SelectPhotos((command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder";
+      command.Parameters.AddWithValue("$folder", folderId);
+    });
   }
 
   public void UpdateEntity<T>(int kind, string id, T content) where T : class

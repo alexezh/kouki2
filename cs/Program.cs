@@ -1,3 +1,8 @@
+// https://github.com/suzuki-0000/SKPhotoBrowser
+// phone - browse photos, 
+//         merge external fav
+//         move unfav to archive
+//         bring back fav 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
@@ -7,8 +12,8 @@ var app = builder.Build();
 
 // initialize storage
 //ProjectCollection.Instance.Initialize();
-var pfs = new PhotoFs("./photo.sqlite");
-pfs.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2007"));
+PhotoFs.Open("../photo.sqlite");
+//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -29,13 +34,8 @@ app.UseAuthorization();
 //    pattern: "{controller=ProjectList}/{action=ListProjects}");
 
 app.MapControllerRoute(
-    name: "listFiles",
-    pattern: "/api/{controller=ListFiles}",
-      new { controller = "ListFiles", action = "List" });
-
-app.MapControllerRoute(
-    name: "createProject",
-    pattern: "/api/{controller=ProjectList}/{action=CreateProject}");
+    name: "GetPhotos",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetPhotos}/{id?}");
 
 app.MapFallbackToFile("index.html"); ;
 app.MapHub<RctHub>("/updates");
