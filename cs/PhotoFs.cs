@@ -36,9 +36,15 @@ public class PhotoFs
 {
   private PhotoDb _db;
 
+  public PhotoFs(string path)
+  {
+    PhotoDbStatics.CreatePhotoDb(path);
+    _db = new PhotoDb(path);
+  }
+
   public void AddSourceFolder(FolderName name)
   {
-    int folderId = _db.AddSourceFolder(name.Path);
+    var folderId = _db.AddSourceFolder(name.Path);
 
     ScanFiles(name);
   }
@@ -61,7 +67,8 @@ public class PhotoFs
 
   public static IEnumerable<SourceFileName> GetFiles()
   {
-    PhotoDbStatics.
+    //    PhotoDbStatics.
+    return null;
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)

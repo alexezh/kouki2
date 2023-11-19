@@ -140,7 +140,7 @@ public class PhotoDb
     _connection.Open();
   }
 
-  public int AddSourceFolder(string path)
+  public Int64 AddSourceFolder(string path)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
@@ -150,14 +150,14 @@ public class PhotoDb
     {
       while (reader.Read())
       {
-        return (int)reader["id"];
+        return (Int64)reader["id"];
       }
     }
 
     return 0;
   }
 
-  public int GetFolderId(string path)
+  public Int64 GetFolderId(string path)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "SELECT * FROM SourceFolders WHERE path == $path";
@@ -166,14 +166,14 @@ public class PhotoDb
     {
       while (reader.Read())
       {
-        return (int)reader["id"];
+        return (Int64)reader["id"];
       }
     }
 
     return 0;
   }
 
-  public void AddPhoto(int folderId, string fileName)
+  public void AddPhoto(Int64 folderId, string fileName)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "INSERT INTO Photos(folder, name) VALUES($folder, $name)";
