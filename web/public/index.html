@@ -1,0 +1,166 @@
+<html>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        font-family: helvetica;
+        margin: auto;
+        overflow: hidden;
+        min-height: 100%;
+        width: 100%;
+        height: 100%;
+        background-color: #f6ac66;
+    }
+
+    .center-screen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 100vh;
+        font-size: x-large;
+        flex-direction: column;
+    }
+
+    .input-container {
+        display: flex;
+        width: 500px;
+        flex-direction: column;
+    }
+
+    .input-row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .input-row .label {
+        width: 30%;
+        text-align: right;
+        vertical-align: middle;
+    }
+
+    .input-row .value {
+        margin-left: 20px;
+        text-align: left;
+        padding-left: 30px;
+        width: 70%;
+        font-size: xx-large;
+        vertical-align: middle;
+    }
+
+    .title {
+        margin-left: 30px;
+        margin-bottom: 20px;
+        font-size: xx-large;
+        text-align: left;
+    }
+
+    .login {
+        width: 100%;
+        text-align: middle;
+        border: 0;
+        line-height: 2.5;
+        padding: 0 20px;
+        font-size: 1rem;
+        text-align: center;
+        color: #fff;
+        text-shadow: 1px 1px 1px #000;
+        border-radius: 10px;
+        background-color: rgb(239, 164, 102);
+        background-image: linear-gradient(to top left, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2) 30%, rgba(0, 0, 0, 0));
+        box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.6), inset -2px -2px 3px rgba(0, 0, 0, 0.6);
+    }
+</style>
+<script>
+    function saveAccount(url, session) {
+        let account = {
+            session: session,
+            url: url
+        }
+        window.localStorage.setItem('account', JSON.stringify(account));
+    }
+
+    function loadAccount() {
+        let accountStr = window.localStorage.getItem('account');
+        if (accountStr === undefined || accountStr === null) {
+            return undefined;
+        }
+
+        let account = JSON.parse(accountStr);
+        if (account.url === undefined || account.session === undefined) {
+            return undefined;
+        }
+
+        return account;
+    }
+
+    function onLoad() {
+        let account = loadAccount();
+        if (account !== undefined) {
+            redirectToAccount(account.url, account.session);
+        }
+    }
+
+    function redirectToAccount(url) {
+        location.href = url;
+    }
+
+    async function onLoginClick() {
+        console.log("login click");
+        let name = document.getElementById("userName");
+        let pwd = document.getElementById("pwd");
+
+        await login(name.value, pwd.value);
+    }
+
+    async function login(name, pwd) {
+        let req = {
+            name: name,
+            pwd: pwd
+        };
+
+        try {
+            let reqStr = JSON.stringify(req);
+            let response = await (await fetch(`/api/login`, { method: "POST", headers: { "accept": "application/json" }, body: reqStr })).json();
+
+            if (response.url !== undefined) {
+                saveAccount(response.url, response.session);
+                redirectToAccount(response.url);
+            } else {
+                return 'Login failed; try again';
+            }
+        }
+        catch (e) {
+            return 'Login failed; try again';
+        }
+    }
+</script>
+
+<body id="body" scrolling="no" onload="onLoad()">
+    <div height=" 100%" width="100%">
+        <div class="center-screen">
+            <div class="input-container">
+                <div class="title">Welcome to dig.js</div>
+                <div class="input-row">
+                    <label class="label">User name:</label>
+                    <input id="userName" class="value" type="text"></input>
+                </div>
+                <div class="input-row">
+                    <label class="label">Password:</label>
+                    <input id="pwd" class="value" type="password"></input>
+                </div>
+                <div class="input-row">
+                    <button class="login" onclick="onLoginClick()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
