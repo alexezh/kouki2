@@ -77,89 +77,16 @@
         box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.6), inset -2px -2px 3px rgba(0, 0, 0, 0.6);
     }
 </style>
+<script src="./index.js"></script>
 <script>
-    function saveAccount(url, session) {
-        let account = {
-            session: session,
-            url: url
-        }
-        window.localStorage.setItem('account', JSON.stringify(account));
-    }
-
-    function loadAccount() {
-        let accountStr = window.localStorage.getItem('account');
-        if (accountStr === undefined || accountStr === null) {
-            return undefined;
-        }
-
-        let account = JSON.parse(accountStr);
-        if (account.url === undefined || account.session === undefined) {
-            return undefined;
-        }
-
-        return account;
-    }
-
-    function onLoad() {
-        let account = loadAccount();
-        if (account !== undefined) {
-            redirectToAccount(account.url, account.session);
-        }
-    }
-
-    function redirectToAccount(url) {
-        location.href = url;
-    }
-
-    async function onLoginClick() {
-        console.log("login click");
-        let name = document.getElementById("userName");
-        let pwd = document.getElementById("pwd");
-
-        await login(name.value, pwd.value);
-    }
-
-    async function login(name, pwd) {
-        let req = {
-            name: name,
-            pwd: pwd
-        };
-
-        try {
-            let reqStr = JSON.stringify(req);
-            let response = await (await fetch(`/api/login`, { method: "POST", headers: { "accept": "application/json" }, body: reqStr })).json();
-
-            if (response.url !== undefined) {
-                saveAccount(response.url, response.session);
-                redirectToAccount(response.url);
-            } else {
-                return 'Login failed; try again';
-            }
-        }
-        catch (e) {
-            return 'Login failed; try again';
-        }
+    function onLoaded() {
+        const appContainer = document.getElementById('appContainer');
+        kouki2.initializeApp(appContainer);
     }
 </script>
 
 <body id="body" scrolling="no" onload="onLoad()">
-    <div height=" 100%" width="100%">
-        <div class="center-screen">
-            <div class="input-container">
-                <div class="title">Welcome to dig.js</div>
-                <div class="input-row">
-                    <label class="label">User name:</label>
-                    <input id="userName" class="value" type="text"></input>
-                </div>
-                <div class="input-row">
-                    <label class="label">Password:</label>
-                    <input id="pwd" class="value" type="password"></input>
-                </div>
-                <div class="input-row">
-                    <button class="login" onclick="onLoginClick()">Login</button>
-                </div>
-            </div>
-        </div>
+    <div height=" 100%" width="100%" id="appContainer">
     </div>
 </body>
 
