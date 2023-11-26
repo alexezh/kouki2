@@ -37,6 +37,10 @@ app.MapControllerRoute(
     name: "GetPhotos",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetPhotos}/{id?}");
 
+app.MapControllerRoute(
+    name: "GetImage",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
+
 app.MapFallbackToFile("index.html"); ;
 app.MapHub<RctHub>("/updates");
 

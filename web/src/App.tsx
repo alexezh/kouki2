@@ -16,13 +16,17 @@ function App() {
 
   useEffect(() => {
     setTimeout(async () => {
-      let p = await wireGetPhotos(1);
-      let pp: Photo = {
-        src: '/api/photolibrary/getimage/' + p[0].hash,
-        width: 800,
-        height: 600
+      let wphotos = await wireGetPhotos(1);
+      let pphotos: Photo[] = [];
+      for (let photo of wphotos) {
+        let pp: Photo = {
+          src: '/api/photolibrary/getimage/' + photo.hash,
+          width: 800,
+          height: 600
+        };
+        pphotos.push(pp);
       }
-      setPhotos([pp])
+      setPhotos(pphotos);
     });
     return () => {
       console.log('detach');

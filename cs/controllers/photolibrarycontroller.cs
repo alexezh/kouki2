@@ -27,10 +27,11 @@ public class PhotoLibraryController
   }
 
   // get string as resource
-  public byte[] GetPhotoBytes(string key)
+  [HttpGet]
+  public IActionResult GetImage(string id)
   {
     // for now we only accept * pattern
-    return PhotoFs.Instance.GetPhotoBytes(key);
+    return PhotoFs.Instance.GetImageFile(id);
   }
 
   /// <summary>

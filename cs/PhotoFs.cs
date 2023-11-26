@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 public class SourceFileName
 {
   public string Path;
@@ -52,7 +54,7 @@ public class PhotoFs
     return added;
   }
 
-  public byte[] GetPhotoBytes(string key)
+  public FileStreamResult GetImageFile(string key)
   {
     var infos = _db.GetPhotosByHash(key);
     if (infos.Count == 0)
@@ -62,11 +64,8 @@ public class PhotoFs
 
     var folder = _db.GetFolder(infos[0].FolderId);
     var fileName = Path.Combine(folder.Path, infos[0].Name);
-    using (var stm = File.OpenRead(fileName))
-    {
-      var reader = new BinaryReader(stm);
-      return reader.ReadBytes((int)stm.Length);
-    }
+    var file = File.OpenRead(fileName);
+    return new FileStreamResult(file, "image/jpeg");
   }
 
   public static void CreateLink(SourceFileName nm, OutputFileName on)
