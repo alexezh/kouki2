@@ -6,7 +6,7 @@
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+//builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -46,6 +46,6 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
 
 app.MapFallbackToFile("index.html"); ;
-app.MapHub<RctHub>("/updates");
+//app.MapHub<RctHub>("/updates");
 
 app.Run();

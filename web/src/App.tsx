@@ -17,7 +17,7 @@ const photos = [
 ];
 */
 
-enum ViewKind {
+enum CanvasViewKind {
   Folder,
   Album,
   Collection,
@@ -25,8 +25,8 @@ enum ViewKind {
 }
 
 class ViewDesc {
-  public kind: ViewKind;
-  public constructor(kind: ViewKind) {
+  public kind: CanvasViewKind;
+  public constructor(kind: CanvasViewKind) {
     this.kind = kind;
   }
 }
@@ -34,7 +34,7 @@ class ViewDesc {
 function App() {
   const [photos, setPhotos] = useState([] as Photo[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
-  const [view, setView] = useState(new ViewDesc(ViewKind.Folder));
+  const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
   useEffect(() => {
     setTimeout(async () => {
@@ -47,23 +47,23 @@ function App() {
   }, []);
 
   function onFolders() {
-    setView(new ViewDesc(ViewKind.Folder));
+    setView(new ViewDesc(CanvasViewKind.Folder));
   }
 
   function onDevice() {
-    setView(new ViewDesc(ViewKind.Device));
+    setView(new ViewDesc(CanvasViewKind.Device));
   }
 
   function onAlbums() {
-    setView(new ViewDesc(ViewKind.Album));
+    setView(new ViewDesc(CanvasViewKind.Album));
   }
 
   function onQuickCollection() {
-    setView(new ViewDesc(ViewKind.Collection));
+    setView(new ViewDesc(CanvasViewKind.Collection));
   }
 
   function renderCanvas() {
-    if (view.kind === ViewKind.Folder) {
+    if (view.kind === CanvasViewKind.Folder) {
       return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
     } else {
       return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);

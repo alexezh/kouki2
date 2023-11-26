@@ -9,5 +9,4 @@ web/node_modules/*
 bin
 obj
 cs/data/*
-cs/nomekopsrv/*.db
-cs/nomekopsrv/wwwroot/*
+cs/wwwroot/*
