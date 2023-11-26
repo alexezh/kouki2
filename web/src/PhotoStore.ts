@@ -10,6 +10,12 @@ export async function loadPhotos(): Promise<Photo[]> {
     let scale = wp.width / 256;
 
     srcSet.push({
+      src: '/api/photolibrary/getimage/' + wp.hash,
+      width: wp.width,
+      height: wp.height
+    });
+
+    srcSet.push({
       src: '/api/photolibrary/getthumbnail/' + wp.hash,
       width: wp.width / scale,
       height: wp.height / scale

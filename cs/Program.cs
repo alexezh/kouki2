@@ -12,8 +12,8 @@ var app = builder.Build();
 
 // initialize storage
 PhotoFs.Open("../");
-PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
-PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
+//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
+//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

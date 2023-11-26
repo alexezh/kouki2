@@ -7,6 +7,7 @@ import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
 import { loadPhotos } from './PhotoStore';
+import "yet-another-react-lightbox/styles.css";
 
 /*
 const photos = [
