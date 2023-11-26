@@ -17,25 +17,24 @@ const photos = [
 ];
 */
 
-function onFolders() {
-
+enum ViewKind {
+  Folder,
+  Album,
+  Collection,
+  Device
 }
 
-function onDevice() {
-
-}
-
-function onAlbums() {
-
-}
-
-function onQuickCollection() {
-
+class ViewDesc {
+  public kind: ViewKind;
+  public constructor(kind: ViewKind) {
+    this.kind = kind;
+  }
 }
 
 function App() {
   const [photos, setPhotos] = useState([] as Photo[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
+  const [view, setView] = useState(new ViewDesc(ViewKind.Folder));
 
   useEffect(() => {
     setTimeout(async () => {
@@ -46,6 +45,30 @@ function App() {
       console.log('detach');
     };
   }, []);
+
+  function onFolders() {
+    setView(new ViewDesc(ViewKind.Folder));
+  }
+
+  function onDevice() {
+    setView(new ViewDesc(ViewKind.Device));
+  }
+
+  function onAlbums() {
+    setView(new ViewDesc(ViewKind.Album));
+  }
+
+  function onQuickCollection() {
+    setView(new ViewDesc(ViewKind.Collection));
+  }
+
+  function renderCanvas() {
+    if (view.kind === ViewKind.Folder) {
+      return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+    } else {
+      return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+    }
+  }
 
   return (
     <div className="App">
@@ -60,9 +83,7 @@ function App() {
             </SubMenu>
           </Menu>
         </Sidebar>
-        <div className="Gallery">
-          <PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />
-        </div>
+        {renderCanvas()}
       </div>
       <Lightbox
         slides={photos}
