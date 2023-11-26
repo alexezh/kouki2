@@ -8,6 +8,7 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
 import { loadPhotos } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
+import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 
 /*
 const photos = [
@@ -15,6 +16,22 @@ const photos = [
   { src: "/api/photolibrary/getimage/image2.jpg", width: 1600, height: 900 },
 ];
 */
+
+function onFolders() {
+
+}
+
+function onDevice() {
+
+}
+
+function onAlbums() {
+
+}
+
+function onQuickCollection() {
+
+}
 
 function App() {
   const [photos, setPhotos] = useState([] as Photo[]);
@@ -32,7 +49,21 @@ function App() {
 
   return (
     <div className="App">
-      <PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />;
+      <div className="AppCanvas">
+        <Sidebar className='Sidebar'>
+          <Menu>
+            <MenuItem onClick={onFolders}>Folders</MenuItem>
+            <MenuItem onClick={onQuickCollection}>Quick Collection</MenuItem>
+            <MenuItem onClick={onAlbums}>Albums</MenuItem>
+            <SubMenu label="Devices">
+              <MenuItem onClick={onDevice}>Ezh14</MenuItem>
+            </SubMenu>
+          </Menu>
+        </Sidebar>
+        <div className="Gallery">
+          <PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />
+        </div>
+      </div>
       <Lightbox
         slides={photos}
         open={selectedPhoto >= 0}
@@ -41,7 +72,7 @@ function App() {
         // enable optional lightbox plugins
         plugins={[Fullscreen, Slideshow, Thumbnails, Zoom]}
       />
-    </div>
+    </div >
   );
 }
 
