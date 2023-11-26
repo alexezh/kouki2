@@ -3,8 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { setFetchAdapter, setSessionId } from './lib/fetchadapter';
+import { FetchAdapterWeb } from './lib/fetchadapterweb';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+setFetchAdapter(new FetchAdapterWeb());
+setSessionId('42')
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
 root.render(
   <React.StrictMode>
     <App />

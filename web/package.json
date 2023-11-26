@@ -2,13 +2,20 @@
   "name": "kouki2",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:5054",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.65",
+    "@types/react": "^18.2.38",
+    "@types/react-dom": "^18.2.17",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-photo-album": "^2.3.0",
     "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

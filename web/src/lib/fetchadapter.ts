@@ -1,4 +1,3 @@
-import Queue from "queue";
 
 type QueueItem = () => Promise<void>;
 export class DispatchQueue {
@@ -65,6 +64,11 @@ export type WireFolder = {
 
 export async function wireGetFolders(): Promise<WireFolder[]> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/getfolders`));
+  return response;
+}
+
+export async function wireGetPhotos(id: number): Promise<WirePhoto[]> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getphotos/${id}`)).json();
   return response;
 }
 
