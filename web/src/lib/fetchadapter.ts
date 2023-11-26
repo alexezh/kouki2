@@ -50,16 +50,18 @@ export async function fetchResource(url: string): Promise<ArrayBuffer> {
   return await (await (await fetchAdapter!.get(url)).blob()).arrayBuffer();
 }
 
-export type WirePhoto = {
-  Id: number;
-  Key: string;
-  Name: string;
-  Fav: boolean;
+export type WirePhotoEntry = {
+  id: number;
+  hash: string;
+  name: string;
+  favorite: boolean;
+  stars: number;
+  color: number;
 }
 
 export type WireFolder = {
-  Id: number;
-  Path: string;
+  id: number;
+  path: string;
 }
 
 export async function wireGetFolders(): Promise<WireFolder[]> {
@@ -67,7 +69,7 @@ export async function wireGetFolders(): Promise<WireFolder[]> {
   return response;
 }
 
-export async function wireGetPhotos(id: number): Promise<WirePhoto[]> {
+export async function wireGetPhotos(id: number): Promise<WirePhotoEntry[]> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/getphotos/${id}`)).json();
   return response;
 }
