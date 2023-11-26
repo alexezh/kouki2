@@ -13,6 +13,10 @@ public class PhotoEntry
   public bool Favorite { get; set; }
   public int Stars { get; set; }
   public int Color { get; set; }
+  public int Width { get; set; }
+  public int Height { get; set; }
+  // MagickFormat value
+  public int Format { get; set; }
 }
 
 
@@ -87,14 +91,17 @@ public class PhotoDb
     return null;
   }
 
-  public void AddPhoto(Int64 folderId, string fileName, string hash, bool fav)
+  public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav) VALUES($folder, $name, $hash, $fav)";
-    command.Parameters.AddWithValue("$folder", folderId);
-    command.Parameters.AddWithValue("$name", fileName);
-    command.Parameters.AddWithValue("$hash", hash);
-    command.Parameters.AddWithValue("$fav", fav);
+    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav, width, height, format) VALUES($folder, $name, $hash, $fav, $width, $height, $format)";
+    command.Parameters.AddWithValue("$folder", entry.FolderId);
+    command.Parameters.AddWithValue("$name", entry.Name);
+    command.Parameters.AddWithValue("$hash", entry.Hash);
+    command.Parameters.AddWithValue("$fav", entry.Favorite);
+    command.Parameters.AddWithValue("$width", entry.Width);
+    command.Parameters.AddWithValue("$height", entry.Height);
+    command.Parameters.AddWithValue("$format", entry.Format);
 
     var inserted = command.ExecuteNonQuery();
     if (inserted != 1)

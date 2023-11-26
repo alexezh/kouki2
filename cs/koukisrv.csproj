@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="LettuceEncrypt" Version="1.2.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="13.4.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.0" />
   </ItemGroup>
 

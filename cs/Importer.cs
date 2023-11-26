@@ -1,4 +1,5 @@
 
+using ImageMagick;
 using Org.BouncyCastle.Utilities.Encoders;
 
 public class Importer
@@ -39,10 +40,22 @@ public class Importer
 
       using (var stm = File.OpenRead(file))
       {
+        var info = new MagickImageInfo(stm);
+
+        stm.Position = 0;
         var hash = ComputeHash(stm);
+        var entry = new PhotoEntry()
+        {
+          FolderId = folderId.Value,
+          Name = fileName,
+          Hash = hash,
+          Width = info.Width,
+          Height = info.Height,
+          Format = (int)info.Format
+        }
         if (!db.HasPhoto(folderId.Value, fileName))
         {
-          db.AddPhoto(folderId.Value, fileName, hash, false);
+          db.AddPhoto(entry);
           added++;
         }
       }
