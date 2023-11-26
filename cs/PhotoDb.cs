@@ -19,6 +19,13 @@ public class PhotoEntry
   public int Format { get; set; }
 }
 
+public class ThumbnailEntry
+{
+  public string Hash { get; set; }
+  public int Width { get; set; }
+  public int Height { get; set; }
+  public byte[] Data { get; set; }
+}
 
 public class FolderEntry
 {
@@ -135,7 +142,10 @@ public class PhotoDb
       FolderId = (Int64)reader["folder"],
       Id = (Int64)reader["id"],
       Hash = (string)reader["hash"],
-      Name = (string)reader["name"]
+      Name = (string)reader["name"],
+      Width = unchecked((int)(Int64)reader["width"]),
+      Height = unchecked((int)(Int64)reader["height"]),
+      Format = unchecked((int)(Int64)reader["format"])
     };
 
     return en;
@@ -175,139 +185,66 @@ public class PhotoDb
       command.Parameters.AddWithValue("$folder", folderId);
     });
   }
+}
 
-  public void UpdateEntity<T>(int kind, string id, T content) where T : class
+public class ThumbnailDb
+{
+  private SqliteConnection _connection;
+  private string _path;
+
+  public ThumbnailDb(string path)
   {
-    if (!TryUpdateEntity(kind, id, content))
+    _path = path;
+    _connection = PhotoDbStatics.CreateConnection(path);
+    _connection.Open();
+  }
+
+
+  public void AddThumbnail(string hash, int width, int height, byte[] data)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "INSERT INTO Thumbnails(hash, width, height, data) VALUES($hash, $width, $height, $data)";
+    command.Parameters.AddWithValue("$hash", hash);
+    command.Parameters.AddWithValue("$width", width);
+    command.Parameters.AddWithValue("$height", height);
+    command.Parameters.AddWithValue("$data", data);
+
+    var inserted = command.ExecuteNonQuery();
+    if (inserted != 1)
     {
       throw new ArgumentException("Cannot insert");
     }
   }
 
-  public void UpdateEntityRaw(int kind, string id, string content)
+
+  private ThumbnailEntry ReadEntry(SqliteDataReader reader)
   {
-    if (!TryUpdateEntityRaw(kind, id, content))
+    var en = new ThumbnailEntry()
     {
-      throw new ArgumentException("Cannot insert");
-    }
+      Hash = (string)reader["hash"],
+      Width = unchecked((int)(Int64)reader["width"]),
+      Height = unchecked((int)(Int64)reader["height"]),
+      Data = (byte[])reader["data"],
+    };
+
+    return en;
   }
 
-  public bool TryUpdateEntity<T>(int kind, string id, T content) where T : class
-  {
-    var contentBlob = PhotoDbStatics.SerializeEntity(content);
-
-    var command = _connection.CreateCommand();
-    command.CommandText = "UPDATE Entities SET content = $content WHERE kind == $kind AND id == $id";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    command.Parameters.AddWithValue("$content", contentBlob);
-
-    var updated = command.ExecuteNonQuery();
-    if (updated != 1)
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-  public bool TryUpdateEntityRaw(int kind, string id, string content)
+  public List<ThumbnailEntry> GetThumbnail(string hash)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "UPDATE Entities SET content = $content WHERE kind == $kind AND id == $id";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    command.Parameters.AddWithValue("$content", content);
+    command.CommandText = "SELECT * FROM Thumbnails WHERE hash == $hash";
+    command.Parameters.AddWithValue("$hash", hash);
 
-    var updated = command.ExecuteNonQuery();
-    if (updated != 1)
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-  internal List<string> GetItems(int kind)
-  {
-    var ent = new List<string>();
-
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Photos WHERE folder == $kind";
-    command.Parameters.AddWithValue("$kind", kind);
+    var entries = new List<ThumbnailEntry>();
     using (var reader = command.ExecuteReader())
     {
       while (reader.Read())
       {
-        ent.Add(reader["content"] as string);
+        entries.Add(ReadEntry(reader));
       }
     }
 
-    return ent;
-  }
-
-  internal List<Tuple<string, string>> LoadEntities2(int kind, string prefix = null)
-  {
-    var ent = new List<Tuple<string, string>>();
-
-    var command = _connection.CreateCommand();
-    if (prefix == null)
-    {
-      command.CommandText = "SELECT * FROM Entities WHERE kind == $kind";
-      command.Parameters.AddWithValue("$kind", kind);
-    }
-    else
-    {
-      command.CommandText = "SELECT * FROM Entities WHERE kind == $kind AND id LIKE $id";
-      command.Parameters.AddWithValue("$kind", kind);
-      command.Parameters.AddWithValue("$id", prefix + "%");
-    }
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        var value = reader["content"] as string;
-        var id = reader["id"] as string;
-        ent.Add(new Tuple<string, string>(id, value));
-      }
-    }
-
-    return ent;
-  }
-
-  internal T LoadEntity<T>(int kind, string id) where T : class
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Entities WHERE kind == $kind AND id == $id";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        var data = reader["content"] as string;
-        return PhotoDbStatics.DeserializeEntity<T>(data);
-      }
-    }
-
-    return null;
-  }
-
-  internal string LoadEntity(int kind, string id)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Entities WHERE kind == $kind AND id == $id";
-    command.Parameters.AddWithValue("$kind", kind);
-    command.Parameters.AddWithValue("$id", id);
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        var data = reader["content"] as string;
-        return data;
-      }
-    }
-
-    return null;
+    return entries;
   }
 }

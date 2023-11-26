@@ -48,7 +48,7 @@ public class PhotoDbStatics
 
       {
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Photos (id integer primary key, hash TEXT, folder INTEGER, name TEXT, fav BOOLEAN, stars NUMBER, color TEXT)";
+        command.CommandText = "CREATE TABLE IF NOT EXISTS Photos (id integer primary key, hash TEXT, folder INTEGER, name TEXT, fav BOOLEAN, stars NUMBER, color TEXT, width NUMBER, height NUMBER, format NUMBER)";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
@@ -83,6 +83,32 @@ public class PhotoDbStatics
       }
     }
   }
+  public static void CreateThumbnailDb(string path)
+  {
+    using (var connection = CreateConnection(path))
+    {
+      connection.Open();
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE TABLE IF NOT EXISTS Thumbnails (hash TEXT, width NUMBER, height NUMBER, data BLOB)";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `ByHash` ON `Thumbnails` (`hash` ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+    }
+  }
+
 
 
   private static JsonSerializerOptions jsonOptions = new JsonSerializerOptions()

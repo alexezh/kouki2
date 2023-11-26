@@ -2,6 +2,7 @@
 .DS_Store
 
 photo.sqlite
+thumbnail.sqlite
 
 # Build
 web/node_modules/*

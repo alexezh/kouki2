@@ -1,4 +1,5 @@
 
+using System.Linq.Expressions;
 using ImageMagick;
 using Org.BouncyCastle.Utilities.Encoders;
 
@@ -10,16 +11,16 @@ public class Importer
   {
     stm.Position = 0;
     var hash = sha1.ComputeHash(stm);
-    return Convert.ToBase64String(hash);
+    return Convert.ToHexString(hash);
   }
 
-  public static int ScanFiles(PhotoDb db, FolderName folder)
+  public static int ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder)
   {
     int added = 0;
 
     foreach (var dir in Directory.EnumerateDirectories(folder.Path))
     {
-      added += ScanFiles(db, new FolderName(dir));
+      added += ScanFiles(db, thumbnailDb, new FolderName(dir));
     }
 
     Int64? folderId = null;
@@ -40,19 +41,37 @@ public class Importer
 
       using (var stm = File.OpenRead(file))
       {
-        var info = new MagickImageInfo(stm);
-
+        // get hash of actual content
         stm.Position = 0;
         var hash = ComputeHash(stm);
+
         var entry = new PhotoEntry()
         {
           FolderId = folderId.Value,
           Name = fileName,
           Hash = hash,
-          Width = info.Width,
-          Height = info.Height,
-          Format = (int)info.Format
+        };
+
+        try
+        {
+          stm.Position = 0;
+          var info = new MagickImageInfo(stm);
+
+          // generate thumbnail
+          stm.Position = 0;
+          GenerateThumbnail(thumbnailDb, hash, stm);
+
+          entry.Width = info.Width;
+          entry.Height = info.Height;
+          entry.Format = (int)info.Format;
+
         }
+        catch (Exception _)
+        {
+          // nothing to do
+          Console.WriteLine("Cannot process " + fileName);
+        }
+
         if (!db.HasPhoto(folderId.Value, fileName))
         {
           db.AddPhoto(entry);
@@ -62,5 +81,20 @@ public class Importer
     }
 
     return added;
+  }
+
+  private static void GenerateThumbnail(ThumbnailDb db, string hash, Stream sourceStm)
+  {
+    using var image = new MagickImage(sourceStm);
+    image.Resize(256, 0);
+
+    image.Format = MagickFormat.Jpeg;
+
+    using (var stm = new MemoryStream())
+    {
+      image.Write(stm);
+      var imageBytes = stm.ToArray();
+      db.AddThumbnail(hash, image.Width, image.Height, imageBytes);
+    }
   }
 }

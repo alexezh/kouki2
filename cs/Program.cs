@@ -11,9 +11,9 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 // initialize storage
-//ProjectCollection.Instance.Initialize();
-PhotoFs.Open("../photo.sqlite");
-//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream"));
+PhotoFs.Open("../");
+PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
+PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -40,6 +40,10 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "GetImage",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
+
+app.MapControllerRoute(
+    name: "GetImage",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
 
 app.MapFallbackToFile("index.html"); ;
 app.MapHub<RctHub>("/updates");

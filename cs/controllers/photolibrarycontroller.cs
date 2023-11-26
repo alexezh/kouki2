@@ -34,6 +34,13 @@ public class PhotoLibraryController
     return PhotoFs.Instance.GetImageFile(id);
   }
 
+  [HttpGet]
+  public IActionResult GetThumbnail(string id)
+  {
+    // for now we only accept * pattern
+    return PhotoFs.Instance.GetThumbnailFile(id);
+  }
+
   /// <summary>
   /// ensures that source folder is in sync with DB
   /// </summary>

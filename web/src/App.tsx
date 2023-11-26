@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import logo from './logo.svg';
+import { useEffect, useState } from 'react';
 import './App.css';
 import PhotoAlbum, { Photo } from 'react-photo-album';
-import { wireGetPhotos } from './lib/fetchadapter';
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Lightbox from "yet-another-react-lightbox";
+import { loadPhotos } from './PhotoStore';
 
 /*
 const photos = [
@@ -13,20 +17,12 @@ const photos = [
 
 function App() {
   const [photos, setPhotos] = useState([] as Photo[]);
+  const [selectedPhoto, setSelectedPhoto] = useState(-1);
 
   useEffect(() => {
     setTimeout(async () => {
-      let wphotos = await wireGetPhotos(1);
-      let pphotos: Photo[] = [];
-      for (let photo of wphotos) {
-        let pp: Photo = {
-          src: '/api/photolibrary/getimage/' + photo.hash,
-          width: 800,
-          height: 600
-        };
-        pphotos.push(pp);
-      }
-      setPhotos(pphotos);
+      let photos = await loadPhotos();
+      setPhotos(photos);
     });
     return () => {
       console.log('detach');
@@ -35,7 +31,15 @@ function App() {
 
   return (
     <div className="App">
-      return <PhotoAlbum layout="rows" photos={photos} />;
+      <PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />;
+      <Lightbox
+        slides={photos}
+        open={selectedPhoto >= 0}
+        index={selectedPhoto}
+        close={() => setSelectedPhoto(-1)}
+        // enable optional lightbox plugins
+        plugins={[Fullscreen, Slideshow, Thumbnails, Zoom]}
+      />
     </div>
   );
 }

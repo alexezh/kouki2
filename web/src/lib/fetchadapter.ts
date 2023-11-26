@@ -57,6 +57,9 @@ export type WirePhotoEntry = {
   favorite: boolean;
   stars: number;
   color: number;
+  width: number;
+  height: number;
+  format: number;
 }
 
 export type WireFolder = {

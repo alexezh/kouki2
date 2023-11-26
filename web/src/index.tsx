@@ -1,3 +1,5 @@
+// https://github.com/dlemstra/Magick.NET/blob/main/docs/ResizeImage.md
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
