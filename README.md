@@ -5,8 +5,8 @@ I've been using Lightroom for photo management since Lightroom v1. As I moved to
 My typical scenario is
 - Take 100-500 photos a day
 - Go through photos on the phone or laptop, rank with favs, colors or stars
-- Publish subset of selected phones on FB, GooglePhoto, etc
-- Remove not-so-interesting photos from the phone into archive
+- Publish a subset of selected phones on FB, Google Photo, etc
+- Remove not-so-interesting photos from the phone into an archive
 - Few times a year, print small subset or make a book
 
 Key things I am looking for are:
@@ -15,6 +15,8 @@ Key things I am looking for are:
 - one click archive of duplicate photos from the phone to hard drive while removing them from the phone
 - flexible photo management on a computer (and a phone)
 - no service cost
+
+On working with existing apps and services. In most cases apps and services can take a folder of photos as input. One of the great features of LR was an ability to export photos into a folder and keep folder in sync.
 
 Installation:
 - TBD
