@@ -16,9 +16,9 @@ public class PhotoLibraryController
 
   }
 
-  public List<string> GetSourceFolders()
+  public IEnumerable<FolderEntry> GetSourceFolders()
   {
-    return null;
+    return PhotoFs.Instance.GetSourceFolders();
   }
 
   public IEnumerable<PhotoEntry> GetPhotos(Int64 id)

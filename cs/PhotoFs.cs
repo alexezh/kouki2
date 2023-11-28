@@ -87,6 +87,11 @@ public class PhotoFs
 
   }
 
+  public IEnumerable<FolderEntry> GetSourceFolders()
+  {
+    return _photoDb.GetSourceFolders();
+  }
+
   public IEnumerable<PhotoEntry> GetPhotos(Int64 folderId)
   {
     return _photoDb.GetPhotosByFolder(folderId);

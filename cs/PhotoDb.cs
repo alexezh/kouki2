@@ -98,6 +98,27 @@ public class PhotoDb
     return null;
   }
 
+  public List<FolderEntry> GetSourceFolders()
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "SELECT * FROM SourceFolders";
+
+    var folders = new List<FolderEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        folders.Add(new FolderEntry()
+        {
+          Id = (Int64)reader["id"],
+          Path = (string)reader["path"]
+        });
+      }
+    }
+
+    return folders;
+  }
+
   public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();

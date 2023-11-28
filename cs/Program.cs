@@ -38,6 +38,10 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=GetPhotos}/{id?}");
 
 app.MapControllerRoute(
+    name: "GetSourceFolders",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetSourceFolders}");
+
+app.MapControllerRoute(
     name: "GetImage",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
 

@@ -1,4 +1,10 @@
 // https://github.com/dlemstra/Magick.NET/blob/main/docs/ResizeImage.md
+// https://www.svgrepo.com/vectors/folder/multicolor/2
+// https://yet-another-react-lightbox.com/documentation
+// https://react-photo-album.com/documentation#Photo
+// https://github.com/functionland/fx-fotos
+// https://neptunian.github.io/react-photo-gallery/
+
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';

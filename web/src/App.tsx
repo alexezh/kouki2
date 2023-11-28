@@ -6,9 +6,10 @@ import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
-import { loadPhotos } from './PhotoStore';
+import { loadFolders, loadPhotos } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
+import { WireFolder } from './lib/fetchadapter';
 
 /*
 const photos = [
@@ -33,21 +34,29 @@ class ViewDesc {
 
 function App() {
   const [photos, setPhotos] = useState([] as Photo[]);
+  const [folders, setFolders] = useState([] as WireFolder[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
   useEffect(() => {
     setTimeout(async () => {
-      let photos = await loadPhotos();
-      setPhotos(photos);
+      let folders = await loadFolders();
+      setFolders(folders);
+
+      if (folders.length > 0) {
+        let photos = await loadPhotos(folders[1].id);
+        setPhotos(photos);
+      }
     });
     return () => {
       console.log('detach');
     };
   }, []);
 
-  function onFolders() {
-    setView(new ViewDesc(CanvasViewKind.Folder));
+  async function onFolder(folder: WireFolder) {
+    let photos = await loadPhotos(folder.id);
+    setPhotos(photos);
+    //setView(new ViewDesc(CanvasViewKind.Folder));
   }
 
   function onDevice() {
@@ -70,12 +79,22 @@ function App() {
     }
   }
 
+  function renderFolders() {
+    let items = [];
+    for (let x of folders) {
+      items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(x)}>{x.path}</MenuItem>);
+    }
+    return items;
+  }
+
   return (
     <div className="App">
       <div className="AppCanvas">
         <Sidebar className='Sidebar'>
           <Menu>
-            <MenuItem onClick={onFolders}>Folders</MenuItem>
+            <SubMenu label="Folders">
+              {renderFolders()}
+            </SubMenu>
             <MenuItem onClick={onQuickCollection}>Quick Collection</MenuItem>
             <MenuItem onClick={onAlbums}>Albums</MenuItem>
             <SubMenu label="Devices">

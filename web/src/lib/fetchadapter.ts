@@ -68,7 +68,7 @@ export type WireFolder = {
 }
 
 export async function wireGetFolders(): Promise<WireFolder[]> {
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/getfolders`));
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getsourcefolders`)).json();
   return response;
 }
 
