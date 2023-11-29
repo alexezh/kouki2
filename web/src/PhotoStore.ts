@@ -5,55 +5,29 @@ export async function loadFolders(): Promise<WireFolder[]> {
   return folders;
 }
 
-export type PhotoEntry = {
+export type AlbumPhoto = {
+  wire: WirePhotoEntry;
   width: number;
   height: number;
   scale: number;
   src: string;
-  thumbnail: string;
 }
 
-export async function loadPhotos(folderId: number): Promise<Photo[]> {
-  let wphotos = await wireGetPhotos(folderId);
-  let photos: Photo[] = [];
-  let i = 0;
-  for (let wp of wphotos) {
-    i++;
-    if (i > 100) {
-      break;
-    }
-    let srcSet: Image[] = [];
-
-    let scale = wp.width / 256;
-
-    srcSet.push({
-      src: '/api/photolibrary/getimage/' + wp.hash,
-      width: wp.width,
-      height: wp.height
-    });
-
-    srcSet.push({
-      src: '/api/photolibrary/getthumbnail/' + wp.hash,
-      width: wp.width / scale,
-      height: wp.height / scale
-    });
-
-    let pp: Photo = {
-      src: '/api/photolibrary/getimage/' + wp.hash,
-      width: wp.width,
-      height: wp.height,
-      srcSet: srcSet
-    };
-
-    photos.push(pp);
-  }
-
-  return photos;
-}
-
-type PhotoRow = {
-  photos: PhotoEntry[];
+export type AlbumRow = {
+  photos: AlbumPhoto[];
   height: number;
+}
+
+function getPhotoUrl(wire: WirePhotoEntry) {
+  return '/api/photolibrary/getimage/' + wire.hash;
+}
+
+function getThumbnailUrl(wire: WirePhotoEntry) {
+  return '/api/photolibrary/getthumbnail/' + wire.hash;
+}
+
+export async function loadPhotos(folderId: number): Promise<WirePhotoEntry[]> {
+  return await wireGetPhotos(folderId);
 }
 
 /**
@@ -64,20 +38,22 @@ type PhotoRow = {
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, targetWidth: number, padding: number): PhotoRow[] {
+export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, targetWidth: number, padding: number): AlbumRow[] {
   let firstIdx = 0;
-  let prevRow: PhotoEntry[] = [];
-  let row: PhotoEntry[] = [];
+  let prevRow: AlbumPhoto[] = [];
+  let row: AlbumPhoto[] = [];
   let height = Number.MAX_SAFE_INTEGER;
   let prevHeight = 0;
-  let rows: PhotoRow[] = [];
+  let rows: AlbumRow[] = [];
   for (let photo of photos) {
     prevRow = row;
     prevHeight = height;
     row.push({
+      wire: photo,
       width: photo.width,
       height: photo.height,
-      scale: 1
+      scale: 1,
+      src: getThumbnailUrl(photo)
     });
 
     height = computeRowHeight(row, targetWidth, padding);
@@ -94,7 +70,7 @@ export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, target
   return rows;
 }
 
-function computeRowHeight(row: PhotoEntry[], targetWidth: number, padding: number): number {
+function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: number): number {
   // take the first photo and scale everything to it
   let height = row[0].height;
   let actualWidth = row[0].width;

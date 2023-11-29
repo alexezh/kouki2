@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import PhotoAlbum, { Photo } from 'react-photo-album';
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
@@ -9,7 +8,9 @@ import Lightbox from "yet-another-react-lightbox";
 import { loadFolders, loadPhotos } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
-import { WireFolder } from './lib/fetchadapter';
+import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
+import AutoSizer, { HeightAndWidthProps, HorizontalSize, Size, VerticalSize } from "react-virtualized-auto-sizer";
+import { PhotoAlbum } from './PhotoAlbum';
 
 /*
 const photos = [
@@ -33,7 +34,7 @@ class ViewDesc {
 }
 
 function App() {
-  const [photos, setPhotos] = useState([] as Photo[]);
+  const [photos, setPhotos] = useState([] as WirePhotoEntry[]);
   const [folders, setFolders] = useState([] as WireFolder[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
@@ -48,9 +49,9 @@ function App() {
         setPhotos(photos);
       }
     });
-    return () => {
-      console.log('detach');
-    };
+    // return () => {
+    //   console.log('detach');
+    // };
   }, []);
 
   async function onFolder(folder: WireFolder) {
@@ -71,12 +72,20 @@ function App() {
     setView(new ViewDesc(CanvasViewKind.Collection));
   }
 
-  function renderCanvas() {
-    if (view.kind === CanvasViewKind.Folder) {
-      return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
-    } else {
-      return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
-    }
+  function renderCanvas(photos: WirePhotoEntry[]) {
+    // if (view.kind === CanvasViewKind.Folder) {
+    //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+    // } else {
+    //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+    // }
+
+    // UI
+    return (
+      <AutoSizer>
+        {({ width, height }: { width: number, height: number }) => {
+          return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
+        }}
+      </AutoSizer>);
   }
 
   function renderFolders() {
@@ -102,18 +111,19 @@ function App() {
             </SubMenu>
           </Menu>
         </Sidebar>
-        {renderCanvas()}
+        {renderCanvas(photos)}
       </div>
-      <Lightbox
-        slides={photos}
-        open={selectedPhoto >= 0}
-        index={selectedPhoto}
-        close={() => setSelectedPhoto(-1)}
-        // enable optional lightbox plugins
-        plugins={[Fullscreen, Slideshow, Thumbnails, Zoom]}
-      />
     </div >
   );
 }
 
 export default App;
+
+// {/* <Lightbox
+// slides={photos}
+// open={selectedPhoto >= 0}
+// index={selectedPhoto}
+// close={() => setSelectedPhoto(-1)}
+// // enable optional lightbox plugins
+// plugins={[Fullscreen, Slideshow, Thumbnails, Zoom]}
+// /> */}
