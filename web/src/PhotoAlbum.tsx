@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
+import { Property } from "csstype";
 import { WirePhotoEntry } from "./lib/fetchadapter";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
@@ -30,6 +31,7 @@ function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
+
   return (
     <img
       key={props.key}
@@ -60,8 +62,11 @@ export function RowLayout({ row }: { row: AlbumRow }) {
       return (<PhotoLayout index={index} photo={photo} onClick={onClick} margin={0} key={'photo_' + index}></PhotoLayout>)
     });
   }
+
+  let rowStyle: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', flexDirection: 'row' } as CSSProperties;
+
   return (
-    <div>
+    <div style={rowStyle}>
       {renderRow(row)}
     </div>
   )
