@@ -36,16 +36,6 @@
   height: 100%;
 }
 
-.Sidebar {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.Gallery {
-  grid-column: 2;
-  grid-row: 1;
-}
-
 .FolderItem {
   direction: rtl
 }

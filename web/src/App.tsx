@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { CSSProperties, useEffect, useLayoutEffect, useState } from 'react';
 import './App.css';
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
@@ -33,7 +33,21 @@ class ViewDesc {
   }
 }
 
+function useWindowSize() {
+  const [size, setSize] = useState([0, 0]);
+  useLayoutEffect(() => {
+    function updateSize() {
+      setSize([window.innerWidth, window.innerHeight]);
+    }
+    window.addEventListener('resize', updateSize);
+    updateSize();
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+  return size;
+}
+
 function App() {
+  const size = useWindowSize();
   const [photos, setPhotos] = useState([] as WirePhotoEntry[]);
   const [folders, setFolders] = useState([] as WireFolder[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
@@ -96,15 +110,37 @@ function App() {
     return items;
   }
 
+  let appStyle = {
+    'width': size[0], 'height': size[1]
+  } as CSSProperties;
+
+  let canvasStyle = {
+    'textAlign': 'left',
+    'display': 'grid',
+    'gridTemplateColumns': '200px auto',
+    'width': '100%',
+    'height': '100%'
+  } as CSSProperties;
+
+  let sidebarStyle = {
+    'width': '200px',
+    'gridColumn': 1,
+    'gridRow': 1,
+  }
+
   return (
-    <div className="App">
-      <div className="AppCanvas">
-        <Sidebar className='Sidebar'>
+    <div className="App" style={appStyle} >
+      <div style={canvasStyle}>
+        <Sidebar style={sidebarStyle}>
           <Menu>
             <SubMenu label="Folders">
               {renderFolders()}
             </SubMenu>
-            <MenuItem onClick={onQuickCollection}>Quick Collection</MenuItem>
+            <SubMenu label="Collections">
+              <MenuItem onClick={onQuickCollection}>Quick</MenuItem>
+              <MenuItem onClick={onQuickCollection}>Duplicate</MenuItem>
+              <MenuItem onClick={onQuickCollection}>Favorite</MenuItem>
+            </SubMenu>
             <MenuItem onClick={onAlbums}>Albums</MenuItem>
             <SubMenu label="Devices">
               <MenuItem onClick={onDevice}>Ezh14</MenuItem>

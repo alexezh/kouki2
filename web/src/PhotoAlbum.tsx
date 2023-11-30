@@ -34,10 +34,9 @@ function PhotoLayout(props: PhotoPropTypes) {
 
   return (
     <img
-      key={props.key}
       style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
       width={props.photo.width * props.photo.scale}
-      height={props.photo.width * props.photo.scale}
+      height={props.photo.height * props.photo.scale}
       src={props.photo.src}
       onClick={handleClick}
     />
@@ -52,7 +51,7 @@ function PhotoLayout(props: PhotoPropTypes) {
 //   title: string,
 // };
 
-export function RowLayout({ row }: { row: AlbumRow }) {
+export function RowLayout({ style, row }: { style: CSSProperties, row: AlbumRow }) {
   function onClick() {
 
   }
@@ -63,7 +62,7 @@ export function RowLayout({ row }: { row: AlbumRow }) {
     });
   }
 
-  let rowStyle: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', flexDirection: 'row' } as CSSProperties;
+  let rowStyle: React.CSSProperties = { ...style, display: 'flex', flexWrap: 'wrap', flexDirection: 'row' } as CSSProperties;
 
   return (
     <div style={rowStyle}>
@@ -76,16 +75,21 @@ export function PhotoAlbum({ photos, width, height }: { photos: WirePhotoEntry[]
   const [rows, setRows] = useState([] as AlbumRow[]);
 
   useEffect(() => {
-    setRows(makeRows(photos, 40, width, 5));
+    setRows(makeRows(photos, 200, width, 5));
   }, [photos]);
 
   function getItemSize(idx: number) {
     return rows[idx].height;
   }
 
+  // const renderRow = memo((props: ListChildComponentProps) => {
+  //   return (
+  //     <RowLayout row={rows[props.index]}></RowLayout>
+  //   )
+  // }, areEqual)
   function renderRow(props: ListChildComponentProps) {
     return (
-      <RowLayout row={rows[props.index]}></RowLayout>
+      <RowLayout style={props.style} row={rows[props.index]}></RowLayout>
     )
   }
 
