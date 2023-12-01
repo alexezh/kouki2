@@ -30,6 +30,10 @@ export async function loadPhotos(folderId: number): Promise<WirePhotoEntry[]> {
   return await wireGetPhotos(folderId);
 }
 
+export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
+  return await wireGetPhotos(folderId);
+}
+
 /**
  * split photo array into rows
  * we want to take N pictures so total width == width and height is

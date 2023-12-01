@@ -47,8 +47,23 @@ public class PhotoDbStatics
       }
 
       {
+        string[] fields = new string[] {
+          "id integer primary key",
+          "hash TEXT",
+          "originalHash TEXT", // hash of original picture
+          "originalDt TEXT",
+          "importedDt TEXT",
+          "stackHash", // hash of any photo in the stack
+          "folder INTEGER",
+          "name TEXT",
+          "fav BOOLEAN",
+          "stars NUMBER",
+          "color TEXT",
+          "width NUMBER",
+          "height NUMBER",
+          "format NUMBER" };
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Photos (id integer primary key, hash TEXT, folder INTEGER, name TEXT, fav BOOLEAN, stars NUMBER, color TEXT, width NUMBER, height NUMBER, format NUMBER)";
+        command.CommandText = $"CREATE TABLE IF NOT EXISTS Photos ({String.Join(',', fields)})";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
@@ -81,8 +96,45 @@ public class PhotoDbStatics
           // TODO: check error
         }
       }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoOriginal` ON `Photos` (`originalHash` ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackHash` ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE TABLE IF NOT EXISTS Collections (id INTEGER, photo TEXT)";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `CollectionId` ON `Collections` (`id` ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
     }
   }
+
   public static void CreateThumbnailDb(string path)
   {
     using (var connection = CreateConnection(path))

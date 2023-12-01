@@ -46,6 +46,27 @@ function useWindowSize() {
   return size;
 }
 
+type SetPhotoHandler = React.Dispatch<React.SetStateAction<WirePhotoEntry[]>>;
+
+async function onFolder(folder: WireFolder, setPhotos: SetPhotoHandler) {
+  let photos = await loadPhotos(folder.id);
+  setPhotos(photos);
+  //setView(new ViewDesc(CanvasViewKind.Folder));
+}
+
+function onDevice(setView) {
+  setView(new ViewDesc(CanvasViewKind.Device));
+}
+
+function onAlbums(setPhoto: SetPhotoHandler) {
+  setView(new ViewDesc(CanvasViewKind.Album));
+}
+
+async function onQuickCollection(setPhotos: SetPhotoHandler) {
+  let photos = await loadCollection(folder.id);
+  setPhotos(photos);
+}
+
 function App() {
   const size = useWindowSize();
   const [photos, setPhotos] = useState([] as WirePhotoEntry[]);
@@ -59,7 +80,7 @@ function App() {
       setFolders(folders);
 
       if (folders.length > 0) {
-        let photos = await loadPhotos(folders[1].id);
+        let photos = await loadPhotos(folders[0].id);
         setPhotos(photos);
       }
     });
@@ -68,23 +89,6 @@ function App() {
     // };
   }, []);
 
-  async function onFolder(folder: WireFolder) {
-    let photos = await loadPhotos(folder.id);
-    setPhotos(photos);
-    //setView(new ViewDesc(CanvasViewKind.Folder));
-  }
-
-  function onDevice() {
-    setView(new ViewDesc(CanvasViewKind.Device));
-  }
-
-  function onAlbums() {
-    setView(new ViewDesc(CanvasViewKind.Album));
-  }
-
-  function onQuickCollection() {
-    setView(new ViewDesc(CanvasViewKind.Collection));
-  }
 
   function renderCanvas(photos: WirePhotoEntry[]) {
     // if (view.kind === CanvasViewKind.Folder) {
@@ -137,9 +141,10 @@ function App() {
               {renderFolders()}
             </SubMenu>
             <SubMenu label="Collections">
-              <MenuItem onClick={onQuickCollection}>Quick</MenuItem>
-              <MenuItem onClick={onQuickCollection}>Duplicate</MenuItem>
-              <MenuItem onClick={onQuickCollection}>Favorite</MenuItem>
+              <MenuItem onClick={() => onQuickCollection(setPhotos)}>Quick</MenuItem>
+              <MenuItem onClick={onDuplicate}>Duplicate</MenuItem>
+              <MenuItem onClick={onFavorite}>Favorite</MenuItem>
+              <MenuItem onClick={onAllPhotos}>All</MenuItem>
             </SubMenu>
             <MenuItem onClick={onAlbums}>Albums</MenuItem>
             <SubMenu label="Devices">

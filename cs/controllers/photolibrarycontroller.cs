@@ -21,9 +21,14 @@ public class PhotoLibraryController
     return PhotoFs.Instance.GetSourceFolders();
   }
 
-  public IEnumerable<PhotoEntry> GetPhotos(Int64 id)
+  public IEnumerable<PhotoEntry> GetFolder(Int64 id)
   {
-    return PhotoFs.Instance.GetPhotos(id);
+    return PhotoFs.Instance.GetFolder(id);
+  }
+
+  public IEnumerable<PhotoEntry> GetCollection(string name)
+  {
+    return PhotoFs.Instance.GetCollection(name);
   }
 
   // get string as resource
@@ -45,11 +50,6 @@ public class PhotoLibraryController
   /// ensures that source folder is in sync with DB
   /// </summary>
   public void SyncSourceFolder()
-  {
-
-  }
-
-  public void Directory(string dir)
   {
 
   }

@@ -2,6 +2,7 @@ using System.Data.SqlTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.Sqlite;
 
 public class PhotoEntry
@@ -17,6 +18,9 @@ public class PhotoEntry
   public int Height { get; set; }
   // MagickFormat value
   public int Format { get; set; }
+  public string OriginalDateTime { get; set; }
+  public string OriginalHash { get; set; }
+  public string StackHash { get; set; }
 }
 
 public class ThumbnailEntry
@@ -33,33 +37,13 @@ public class FolderEntry
   public string Path { get; set; }
 }
 
-public class PhotoDb
+public class FolderQueries
 {
   private SqliteConnection _connection;
-  private string _path;
 
-  public PhotoDb(string path)
+  public FolderQueries(SqliteConnection connection)
   {
-    _path = path;
-    _connection = PhotoDbStatics.CreateConnection(path);
-    _connection.Open();
-  }
-
-  public Int64 AddSourceFolder(string path)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
-    command.Parameters.AddWithValue("$path", path);
-
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return (Int64)reader["id"];
-      }
-    }
-
-    return 0;
+    _connection = connection;
   }
 
   public Int64? GetFolderId(string path)
@@ -119,10 +103,59 @@ public class PhotoDb
     return folders;
   }
 
+  public Int64 AddSourceFolder(string path)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
+    command.Parameters.AddWithValue("$path", path);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader["id"];
+      }
+    }
+
+    return 0;
+  }
+}
+
+public class CollectionTable
+{
+  private SqliteConnection _connection;
+  public CollectionTable(SqliteConnection connection)
+  {
+    _connection = connection;
+  }
+  public List<PhotoEntry> GetCollection(Int64 collectionId)
+  {
+    return PhotoDb.SelectPhotos(_connection, (command) =>
+    {
+      command.CommandText = "SELECT * FROM Collection INNER JOIN Photos ON Collection.hash == Photos.hash  WHERE id == $id";
+      command.Parameters.AddWithValue("$id", collectionId);
+    });
+  }
+}
+
+public class PhotoDb
+{
+  private SqliteConnection _connection;
+  public readonly FolderQueries folders;
+  private string _path;
+
+  public PhotoDb(string path)
+  {
+    _path = path;
+    _connection = PhotoDbStatics.CreateConnection(path);
+    _connection.Open();
+    folders = new FolderQueries(_connection);
+  }
+
   public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav, width, height, format) VALUES($folder, $name, $hash, $fav, $width, $height, $format)";
+    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav, width, height, format, originalDt) VALUES($folder, $name, $hash, $fav, $width, $height, $format, $originalDt)";
     command.Parameters.AddWithValue("$folder", entry.FolderId);
     command.Parameters.AddWithValue("$name", entry.Name);
     command.Parameters.AddWithValue("$hash", entry.Hash);
@@ -130,6 +163,14 @@ public class PhotoDb
     command.Parameters.AddWithValue("$width", entry.Width);
     command.Parameters.AddWithValue("$height", entry.Height);
     command.Parameters.AddWithValue("$format", entry.Format);
+    if (entry.OriginalDateTime != null)
+    {
+      command.Parameters.AddWithValue("$originalDt", entry.OriginalDateTime);
+    }
+    else
+    {
+      command.Parameters.AddWithValue("$originalDt", DBNull.Value);
+    }
 
     var inserted = command.ExecuteNonQuery();
     if (inserted != 1)
@@ -156,7 +197,7 @@ public class PhotoDb
     return false;
   }
 
-  private PhotoEntry ReadEntry(SqliteDataReader reader)
+  private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
     var en = new PhotoEntry()
     {
@@ -166,15 +207,44 @@ public class PhotoDb
       Name = (string)reader["name"],
       Width = unchecked((int)(Int64)reader["width"]),
       Height = unchecked((int)(Int64)reader["height"]),
-      Format = unchecked((int)(Int64)reader["format"])
+      Format = unchecked((int)(Int64)reader["format"]),
+      OriginalDateTime = (string)reader["originalDt"],
+      OriginalHash = (string)reader["originalHash"],
+      StackHash = (string)reader["stackHash"],
     };
 
     return en;
   }
 
-  private List<PhotoEntry> SelectPhotos(Action<SqliteCommand> func)
+  public List<PhotoEntry> GetPhotosByHash(string hash)
   {
-    var command = _connection.CreateCommand();
+    return SelectPhotos(_connection, (command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos WHERE hash == $hash";
+      command.Parameters.AddWithValue("$hash", hash);
+    });
+  }
+
+  public List<PhotoEntry> GetPhotosByFolder(Int64 folderId)
+  {
+    return SelectPhotos(_connection, (command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder";
+      command.Parameters.AddWithValue("$folder", folderId);
+    });
+  }
+
+  public List<PhotoEntry> GetAllPhotos()
+  {
+    return SelectPhotos(_connection, (command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos";
+    });
+  }
+
+  public static List<PhotoEntry> SelectPhotos(SqliteConnection connection, Action<SqliteCommand> func)
+  {
+    var command = connection.CreateCommand();
     func(command);
 
     var entries = new List<PhotoEntry>();
@@ -187,24 +257,6 @@ public class PhotoDb
     }
 
     return entries;
-  }
-
-  public List<PhotoEntry> GetPhotosByHash(string hash)
-  {
-    return SelectPhotos((command) =>
-    {
-      command.CommandText = "SELECT * FROM Photos WHERE hash == $hash";
-      command.Parameters.AddWithValue("$hash", hash);
-    });
-  }
-
-  public List<PhotoEntry> GetPhotosByFolder(Int64 folderId)
-  {
-    return SelectPhotos((command) =>
-    {
-      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder";
-      command.Parameters.AddWithValue("$folder", folderId);
-    });
   }
 }
 

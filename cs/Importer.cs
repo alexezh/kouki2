@@ -30,10 +30,10 @@ public class Importer
     {
       if (folderId == null)
       {
-        db.GetFolderId(folder.Path);
+        db.folders.GetFolderId(folder.Path);
         if (folderId == null)
         {
-          folderId = db.AddSourceFolder(folder.Path);
+          folderId = db.folders.AddSourceFolder(folder.Path);
         }
       }
 
@@ -59,12 +59,19 @@ public class Importer
 
           // generate thumbnail
           stm.Position = 0;
-          GenerateThumbnail(thumbnailDb, hash, stm);
+
+          using (var image = new MagickImage(stm))
+          {
+            ReadExif(image, entry);
+            GenerateThumbnail(image, thumbnailDb, hash);
+          }
 
           entry.Width = info.Width;
           entry.Height = info.Height;
           entry.Format = (int)info.Format;
 
+
+          //ExifProfile
         }
         catch (Exception _)
         {
@@ -83,9 +90,24 @@ public class Importer
     return added;
   }
 
-  private static void GenerateThumbnail(ThumbnailDb db, string hash, Stream sourceStm)
+  private static void ReadExif(MagickImage image, PhotoEntry entry)
   {
-    using var image = new MagickImage(sourceStm);
+    var profile = image.GetExifProfile();
+
+    // Check if image contains an exif profile
+    if (profile is null)
+    {
+      Console.WriteLine("ReadExif: missing");
+    }
+    else
+    {
+      var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
+      entry.OriginalDateTime = original.Value;
+    }
+  }
+
+  private static void GenerateThumbnail(MagickImage image, ThumbnailDb db, string hash)
+  {
     image.Resize(256, 0);
 
     image.Format = MagickFormat.Jpeg;

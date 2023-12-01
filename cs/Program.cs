@@ -34,8 +34,12 @@ app.UseAuthorization();
 //    pattern: "{controller=ProjectList}/{action=ListProjects}");
 
 app.MapControllerRoute(
-    name: "GetPhotos",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetPhotos}/{id?}");
+    name: "GetFolder",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder)/{id?}");
+
+app.MapControllerRoute(
+    name: "GetCollection",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollection)/{id}");
 
 app.MapControllerRoute(
     name: "GetSourceFolders",

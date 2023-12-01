@@ -72,11 +72,15 @@ export async function wireGetFolders(): Promise<WireFolder[]> {
   return response;
 }
 
-export async function wireGetPhotos(id: number): Promise<WirePhotoEntry[]> {
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/getphotos/${id}`)).json();
+export async function wireGetFolder(id: number): Promise<WirePhotoEntry[]> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getfolder/${id}`)).json();
   return response;
 }
 
+export async function wireGetCollection(name: string): Promise<WirePhotoEntry[]> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getcollection/${name}`)).json();
+  return response;
+}
 
 // export async function wireSetUserString(key: string, value: string): Promise<void> {
 //   let request: WireString[] = [{ key: key, data: value }]

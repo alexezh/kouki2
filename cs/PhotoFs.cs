@@ -31,6 +31,13 @@ public class FolderName
   }
 }
 
+public enum CollectionId : Int32
+{
+  Quick = 1,
+  Import = 2,
+  Duplicated = 3
+}
+
 public class PhotoFs
 {
   private PhotoDb _photoDb;
@@ -65,7 +72,7 @@ public class PhotoFs
       return null;
     }
 
-    var folder = _photoDb.GetFolder(infos[0].FolderId);
+    var folder = _photoDb.folders.GetFolder(infos[0].FolderId);
     var fileName = Path.Combine(folder.Path, infos[0].Name);
     var file = File.OpenRead(fileName);
     return new FileStreamResult(file, "image/jpeg");
@@ -89,12 +96,25 @@ public class PhotoFs
 
   public IEnumerable<FolderEntry> GetSourceFolders()
   {
-    return _photoDb.GetSourceFolders();
+    return _photoDb.folders.GetSourceFolders();
   }
 
-  public IEnumerable<PhotoEntry> GetPhotos(Int64 folderId)
+  public IEnumerable<PhotoEntry> GetFolder(Int64 folderId)
   {
     return _photoDb.GetPhotosByFolder(folderId);
+  }
+
+  public IEnumerable<PhotoEntry> GetCollection(string name)
+  {
+    if (name == "all")
+    {
+      return _photoDb.GetAllPhotos();
+    }
+    else // if (name == "import")
+    {
+      return null;
+    }
+    //return _photoDb.GetCollection(name);
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)
