@@ -3,6 +3,7 @@ import { Property } from "csstype";
 import { WirePhotoEntry } from "./lib/fetchadapter";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
+import { dblClick } from "@testing-library/user-event/dist/click";
 
 type PhotoPropTypes = {
   key: string;
@@ -18,12 +19,6 @@ type PhotoPropTypes = {
 const imgWithClick = { cursor: 'pointer' };
 
 function PhotoLayout(props: PhotoPropTypes) {
-  const imgStyle = { margin: props.margin, display: 'block' };
-  // if (direction === 'column') {
-  //   imgStyle.position = 'absolute';
-  //   imgStyle.left = left;
-  //   imgStyle.top = top;
-  // }
 
   const handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
     if (props.onClick) {
@@ -31,15 +26,44 @@ function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
+  let divStyle: CSSProperties = {
+    width: props.photo.width * props.photo.scale,
+    height: props.photo.height * props.photo.scale,
+    display: 'block',
+    position: 'relative'
+  }
+
+  const imgStyle: CSSProperties = {
+    margin: props.margin,
+    display: 'block',
+    position: 'absolute',
+    zIndex: 0
+  };
+
+  let checkStyle: CSSProperties = {
+    position: 'absolute',
+    left: 5,
+    top: 5,
+    zIndex: 1
+  }
 
   return (
-    <img
-      style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
-      width={props.photo.width * props.photo.scale}
-      height={props.photo.height * props.photo.scale}
-      src={props.photo.src}
-      onClick={handleClick}
-    />
+    <div style={divStyle} >
+      <img
+        style={checkStyle}
+        width={20}
+        height={20}
+        src='./assets/checkbox-check.svg'
+        onClick={handleClick}
+      />
+      <img
+        style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
+        width={props.photo.width * props.photo.scale}
+        height={props.photo.height * props.photo.scale}
+        src={props.photo.src}
+        onClick={handleClick}
+      />
+    </div >
   );
 };
 
