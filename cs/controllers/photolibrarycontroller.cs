@@ -13,22 +13,25 @@ public class PhotoLibraryController
 {
   public void AddSourceFolder(string dir, string name)
   {
-
+    PhotoFs.Instance.AddSourceFolder(new FolderName(dir));
   }
 
+  [HttpGet]
   public IEnumerable<FolderEntry> GetSourceFolders()
   {
     return PhotoFs.Instance.GetSourceFolders();
   }
 
+  [HttpGet]
   public IEnumerable<PhotoEntry> GetFolder(Int64 id)
   {
     return PhotoFs.Instance.GetFolder(id);
   }
 
-  public IEnumerable<PhotoEntry> GetCollection(string name)
+  [HttpGet]
+  public IEnumerable<PhotoEntry> GetCollection(string id)
   {
-    return PhotoFs.Instance.GetCollection(name);
+    return PhotoFs.Instance.GetCollection(id);
   }
 
   // get string as resource

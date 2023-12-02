@@ -5,7 +5,7 @@ import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
-import { loadFolders, loadPhotos } from './PhotoStore';
+import { loadCollection, loadFolders, loadPhotos } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
@@ -48,22 +48,22 @@ function useWindowSize() {
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<WirePhotoEntry[]>>;
 
-async function onFolder(folder: WireFolder, setPhotos: SetPhotoHandler) {
+async function onFolder(setPhotos: SetPhotoHandler, folder: WireFolder) {
   let photos = await loadPhotos(folder.id);
   setPhotos(photos);
   //setView(new ViewDesc(CanvasViewKind.Folder));
 }
 
-function onDevice(setView) {
-  setView(new ViewDesc(CanvasViewKind.Device));
+function onDevice() {
+  //setView(new ViewDesc(CanvasViewKind.Device));
 }
 
-function onAlbums(setPhoto: SetPhotoHandler) {
-  setView(new ViewDesc(CanvasViewKind.Album));
+function onAlbum(setPhoto: SetPhotoHandler) {
+  //setView(new ViewDesc(CanvasViewKind.Album));
 }
 
-async function onQuickCollection(setPhotos: SetPhotoHandler) {
-  let photos = await loadCollection(folder.id);
+async function onCollection(setPhotos: SetPhotoHandler, name: string) {
+  let photos = await loadCollection(name);
   setPhotos(photos);
 }
 
@@ -109,7 +109,7 @@ function App() {
   function renderFolders() {
     let items = [];
     for (let x of folders) {
-      items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(x)}>{x.path}</MenuItem>);
+      items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(setPhotos, x)}>{x.path}</MenuItem>);
     }
     return items;
   }
@@ -141,12 +141,12 @@ function App() {
               {renderFolders()}
             </SubMenu>
             <SubMenu label="Collections">
-              <MenuItem onClick={() => onQuickCollection(setPhotos)}>Quick</MenuItem>
-              <MenuItem onClick={onDuplicate}>Duplicate</MenuItem>
-              <MenuItem onClick={onFavorite}>Favorite</MenuItem>
-              <MenuItem onClick={onAllPhotos}>All</MenuItem>
+              <MenuItem onClick={() => onCollection(setPhotos, "quick")}>Quick</MenuItem>
+              <MenuItem onClick={() => onCollection(setPhotos, "dups")}>Duplicate</MenuItem>
+              <MenuItem onClick={() => onCollection(setPhotos, "fav")}>Favorite</MenuItem>
+              <MenuItem onClick={() => onCollection(setPhotos, "all")}>All</MenuItem>
             </SubMenu>
-            <MenuItem onClick={onAlbums}>Albums</MenuItem>
+            <MenuItem onClick={() => onAlbum(setPhotos)}>Albums</MenuItem>
             <SubMenu label="Devices">
               <MenuItem onClick={onDevice}>Ezh14</MenuItem>
             </SubMenu>

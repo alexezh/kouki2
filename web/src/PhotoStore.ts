@@ -1,4 +1,4 @@
-import { WireFolder, WirePhotoEntry, wireGetFolders, wireGetPhotos } from "./lib/fetchadapter";
+import { WireFolder, WirePhotoEntry, wireGetCollection, wireGetFolder, wireGetFolders } from "./lib/fetchadapter";
 
 export async function loadFolders(): Promise<WireFolder[]> {
   let folders = await wireGetFolders();
@@ -27,11 +27,11 @@ function getThumbnailUrl(wire: WirePhotoEntry) {
 }
 
 export async function loadPhotos(folderId: number): Promise<WirePhotoEntry[]> {
-  return await wireGetPhotos(folderId);
+  return await wireGetFolder(folderId);
 }
 
 export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
-  return await wireGetPhotos(folderId);
+  return await wireGetCollection(id);
 }
 
 /**
@@ -60,6 +60,10 @@ export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, target
       src: getThumbnailUrl(photo)
     });
 
+    if (row.length > 10) {
+      debugger;
+    }
+
     height = computeRowHeight(row, targetWidth, padding);
     if (Math.abs(optimalHeight - prevHeight) < Math.abs(optimalHeight - height)) {
       rows.push({
@@ -80,6 +84,9 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   let actualWidth = row[0].width;
   for (let i = 1; i < row.length; i++) {
     let p = row[i];
+    if (p.height === 0) {
+      continue;
+    }
     p.scale = height / p.height;
     actualWidth += p.width * p.scale;
   }

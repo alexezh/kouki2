@@ -197,6 +197,18 @@ public class PhotoDb
     return false;
   }
 
+  private static string DbValToString(object val)
+  {
+    if (val == DBNull.Value)
+    {
+      return null;
+    }
+    else
+    {
+      return (string)val;
+    }
+  }
+
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
     var en = new PhotoEntry()
@@ -208,9 +220,9 @@ public class PhotoDb
       Width = unchecked((int)(Int64)reader["width"]),
       Height = unchecked((int)(Int64)reader["height"]),
       Format = unchecked((int)(Int64)reader["format"]),
-      OriginalDateTime = (string)reader["originalDt"],
-      OriginalHash = (string)reader["originalHash"],
-      StackHash = (string)reader["stackHash"],
+      OriginalDateTime = DbValToString(reader["originalDt"]),
+      OriginalHash = DbValToString(reader["originalHash"]),
+      StackHash = DbValToString(reader["stackHash"]),
     };
 
     return en;

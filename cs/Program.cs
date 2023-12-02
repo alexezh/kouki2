@@ -33,13 +33,17 @@ app.UseAuthorization();
 //    name: "default",
 //    pattern: "{controller=ProjectList}/{action=ListProjects}");
 
+// app.MapControllerRoute(
+//     name: "GetFolder",
+//     pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder)/{id?}");
+
 app.MapControllerRoute(
     name: "GetFolder",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder)/{id?}");
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder}/{id}");
 
 app.MapControllerRoute(
     name: "GetCollection",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollection)/{id}");
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollection}/{id}");
 
 app.MapControllerRoute(
     name: "GetSourceFolders",
@@ -50,7 +54,7 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
 
 app.MapControllerRoute(
-    name: "GetImage",
+    name: "GetThumbnail",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
 
 app.MapFallbackToFile("index.html"); ;
