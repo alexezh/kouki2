@@ -1,3 +1,4 @@
+import _ from "underscore";
 import { WireFolder, WirePhotoEntry, wireGetCollection, wireGetFolder, wireGetFolders } from "./lib/fetchadapter";
 
 export async function loadFolders(): Promise<WireFolder[]> {
@@ -5,12 +6,40 @@ export async function loadFolders(): Promise<WireFolder[]> {
   return folders;
 }
 
-export type AlbumPhoto = {
-  wire: WirePhotoEntry;
-  width: number;
-  height: number;
-  scale: number;
-  src: string;
+export class AlbumPhoto {
+  private _selected: boolean = false;
+  private onSelected: { id: number, func: (p: AlbumPhoto) => void }[] = [];
+  public wire: WirePhotoEntry;
+  public width: number = 0;
+  public height: number = 0;
+  public scale: number = 1;
+  public src: string;
+  public get selected(): boolean {
+    return this._selected;
+  }
+  public set selected(val: boolean) {
+    this._selected = val;
+    for (let x of this.onSelected) {
+      x.func(this);
+    }
+  }
+
+  public addOnSelected(func: (p: AlbumPhoto) => void) {
+    let id = (this.onSelected.length > 0) ? this.onSelected[this.onSelected.length - 1].id + 1 : 1;
+    this.onSelected.push({ id: id, func: func });
+    return id;
+  }
+
+  public removeOnSelected(id: number) {
+    this.onSelected = this.onSelected.filter(x => x.id !== id);
+  }
+
+  public constructor(wire: WirePhotoEntry, src: string) {
+    this.wire = wire;
+    this.width = wire.width;
+    this.height = wire.height;
+    this.src = src;
+  }
 }
 
 export type AlbumRow = {
@@ -26,8 +55,13 @@ function getThumbnailUrl(wire: WirePhotoEntry) {
   return '/api/photolibrary/getthumbnail/' + wire.hash;
 }
 
-export async function loadPhotos(folderId: number): Promise<WirePhotoEntry[]> {
-  return await wireGetFolder(folderId);
+export async function loadPhotos(folderId: number): Promise<AlbumPhoto[]> {
+  let wirePhotos = await wireGetFolder(folderId);
+  let photos: AlbumPhoto[] = [];
+  for (let photo of wirePhotos) {
+    photos.push(new AlbumPhoto(photo, getThumbnailUrl(photo)));
+  }
+  return photos;
 }
 
 export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
@@ -42,7 +76,7 @@ export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, targetWidth: number, padding: number): AlbumRow[] {
+export function makeRows(photos: AlbumPhoto[], optimalHeight: number, targetWidth: number, padding: number): AlbumRow[] {
   let firstIdx = 0;
   let prevRow: AlbumPhoto[] = [];
   let row: AlbumPhoto[] = [];
@@ -52,17 +86,7 @@ export function makeRows(photos: WirePhotoEntry[], optimalHeight: number, target
   for (let photo of photos) {
     prevRow = row;
     prevHeight = height;
-    row.push({
-      wire: photo,
-      width: photo.width,
-      height: photo.height,
-      scale: 1,
-      src: getThumbnailUrl(photo)
-    });
-
-    if (row.length > 10) {
-      debugger;
-    }
+    row.push(photo);
 
     height = computeRowHeight(row, targetWidth, padding);
     if (Math.abs(optimalHeight - prevHeight) < Math.abs(optimalHeight - height)) {

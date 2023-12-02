@@ -5,7 +5,7 @@ import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
-import { loadCollection, loadFolders, loadPhotos } from './PhotoStore';
+import { AlbumPhoto, loadCollection, loadFolders, loadPhotos } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
@@ -69,7 +69,7 @@ async function onCollection(setPhotos: SetPhotoHandler, name: string) {
 
 function App() {
   const size = useWindowSize();
-  const [photos, setPhotos] = useState([] as WirePhotoEntry[]);
+  const [photos, setPhotos] = useState([] as AlbumPhoto[]);
   const [folders, setFolders] = useState([] as WireFolder[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
