@@ -56,7 +56,7 @@ function App() {
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
-  const drawerWidth = 240;
+  const drawerWidth = 200;
 
   interface Props {
     /**
@@ -105,9 +105,10 @@ function App() {
         <div className="AppCanvas">
           <Drawer
             variant="permanent"
+            className='Sidebar'
             sx={{
               display: { xs: 'none', sm: 'block' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "var(--sidebar-width)" },
             }}
             open
           >

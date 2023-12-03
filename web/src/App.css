@@ -14,7 +14,8 @@
 }
 
 :root {
-  --header-height: 30px;
+  --header-height: 40px;
+  --sidebar-width: 200px;
 }
 
 .App-header {
@@ -35,14 +36,13 @@
 .AppCanvas {
   text-align: left;
   display: grid;
-  grid-template-columns: 200px auto;
+  grid-template-columns: var(--sidebar-width) auto;
   grid-template-rows: var(--header-height) auto var(--header-height);
   width: 100%;
   height: 100%;
 }
 
 .Sidebar {
-  width: '200px';
   grid-column: 1;
   grid-row: 1 / 3;
 }
