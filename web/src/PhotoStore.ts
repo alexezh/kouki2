@@ -1,10 +1,11 @@
-import _ from "underscore";
 import { WireFolder, WirePhotoEntry, wireGetCollection, wireGetFolder, wireGetFolders } from "./lib/fetchadapter";
 
 export async function loadFolders(): Promise<WireFolder[]> {
   let folders = await wireGetFolders();
   return folders;
 }
+
+let photoMap = new Map<string, AlbumPhoto>();
 
 export class AlbumPhoto {
   private _selected: boolean = false;
@@ -55,17 +56,29 @@ function getThumbnailUrl(wire: WirePhotoEntry) {
   return '/api/photolibrary/getthumbnail/' + wire.hash;
 }
 
-export async function loadPhotos(folderId: number): Promise<AlbumPhoto[]> {
-  let wirePhotos = await wireGetFolder(folderId);
-  let photos: AlbumPhoto[] = [];
-  for (let photo of wirePhotos) {
-    photos.push(new AlbumPhoto(photo, getThumbnailUrl(photo)));
+function loadPhotos(wirePhotos: WirePhotoEntry[]): AlbumPhoto[] {
+  let af: AlbumPhoto[] = [];
+  for (let wirePhoto of wirePhotos) {
+    let photo = photoMap.get(wirePhoto.hash);
+    if (photo) {
+      af.push(photo);
+    } else {
+      photo = new AlbumPhoto(wirePhoto, getThumbnailUrl(wirePhoto));
+      af.push(photo);
+      photoMap.set(wirePhoto.hash, photo);
+    }
   }
-  return photos;
+  return af;
 }
 
-export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
-  return await wireGetCollection(id);
+export async function loadFolder(folderId: number): Promise<AlbumPhoto[]> {
+  let wirePhotos = await wireGetFolder(folderId);
+  return loadPhotos(wirePhotos);
+}
+
+export async function loadCollection(id: string): Promise<AlbumPhoto[]> {
+  let wirePhotos = await wireGetCollection(id);
+  return loadPhotos(wirePhotos);
 }
 
 /**
@@ -77,7 +90,6 @@ export async function loadCollection(id: string): Promise<WirePhotoEntry[]> {
  * The algorithm is actually simple. We first take first pho
  */
 export function makeRows(photos: AlbumPhoto[], optimalHeight: number, targetWidth: number, padding: number): AlbumRow[] {
-  let firstIdx = 0;
   let prevRow: AlbumPhoto[] = [];
   let row: AlbumPhoto[] = [];
   let height = Number.MAX_SAFE_INTEGER;

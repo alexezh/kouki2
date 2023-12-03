@@ -112,7 +112,7 @@ public class PhotoFs
     }
     else // if (name == "import")
     {
-      return null;
+      return new PhotoEntry[0];
     }
     //return _photoDb.GetCollection(name);
   }

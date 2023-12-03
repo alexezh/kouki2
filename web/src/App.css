@@ -13,6 +13,10 @@
   }
 }
 
+:root {
+  --header-height: 30px;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -31,9 +35,36 @@
 .AppCanvas {
   text-align: left;
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: 200px auto;
+  grid-template-rows: var(--header-height) auto var(--header-height);
   width: 100%;
   height: 100%;
+}
+
+.Sidebar {
+  width: '200px';
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+.Workspace {
+  width: '100%';
+  height: '100%';
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.StatusBar {
+  width: '200px';
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.CommandBar {
+  width: '100%';
+  height: var(--header-height);
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .FolderItem {

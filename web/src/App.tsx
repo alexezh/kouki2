@@ -5,19 +5,23 @@ import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
-import { AlbumPhoto, loadCollection, loadFolders, loadPhotos } from './PhotoStore';
+import { AlbumPhoto, loadCollection, loadFolders, loadFolder } from './PhotoStore';
 import "yet-another-react-lightbox/styles.css";
-import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
-import AutoSizer, { HeightAndWidthProps, HorizontalSize, Size, VerticalSize } from "react-virtualized-auto-sizer";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { PhotoAlbum } from './PhotoAlbum';
+import { CommandBar } from './CommandBar';
+import Drawer from '@mui/material/Drawer/Drawer';
 
-/*
-const photos = [
-  { src: "/api/photolibrary/getimage/11", width: 800, height: 600 },
-  { src: "/api/photolibrary/getimage/image2.jpg", width: 1600, height: 900 },
-];
-*/
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { NavigationBar } from './NatigationBar';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 enum CanvasViewKind {
   Folder,
@@ -46,51 +50,23 @@ function useWindowSize() {
   return size;
 }
 
-type SetPhotoHandler = React.Dispatch<React.SetStateAction<WirePhotoEntry[]>>;
-
-async function onFolder(setPhotos: SetPhotoHandler, folder: WireFolder) {
-  let photos = await loadPhotos(folder.id);
-  setPhotos(photos);
-  //setView(new ViewDesc(CanvasViewKind.Folder));
-}
-
-function onDevice() {
-  //setView(new ViewDesc(CanvasViewKind.Device));
-}
-
-function onAlbum(setPhoto: SetPhotoHandler) {
-  //setView(new ViewDesc(CanvasViewKind.Album));
-}
-
-async function onCollection(setPhotos: SetPhotoHandler, name: string) {
-  let photos = await loadCollection(name);
-  setPhotos(photos);
-}
-
 function App() {
   const size = useWindowSize();
   const [photos, setPhotos] = useState([] as AlbumPhoto[]);
-  const [folders, setFolders] = useState([] as WireFolder[]);
   const [selectedPhoto, setSelectedPhoto] = useState(-1);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
-  useEffect(() => {
-    setTimeout(async () => {
-      let folders = await loadFolders();
-      setFolders(folders);
+  const drawerWidth = 240;
 
-      if (folders.length > 0) {
-        let photos = await loadPhotos(folders[0].id);
-        setPhotos(photos);
-      }
-    });
-    // return () => {
-    //   console.log('detach');
-    // };
-  }, []);
+  interface Props {
+    /**
+     * Injected by the documentation to work in an iframe.
+     * Remove this when copying and pasting into your project.
+     */
+    window?: () => Window;
+  }
 
-
-  function renderCanvas(photos: WirePhotoEntry[]) {
+  function renderWorkspace(photos: AlbumPhoto[]) {
     // if (view.kind === CanvasViewKind.Folder) {
     //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
     // } else {
@@ -99,62 +75,50 @@ function App() {
 
     // UI
     return (
-      <AutoSizer>
-        {({ width, height }: { width: number, height: number }) => {
-          return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
-        }}
-      </AutoSizer>);
+      <div className="Workspace">
+        <AutoSizer>
+          {({ width, height }: { width: number, height: number }) => {
+            return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
+          }}
+        </AutoSizer>
+      </div>);
   }
 
-  function renderFolders() {
-    let items = [];
-    for (let x of folders) {
-      items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(setPhotos, x)}>{x.path}</MenuItem>);
-    }
-    return items;
-  }
+  // function renderFolders() {
+  //   let items = [];
+  //   for (let x of folders) {
+  //     items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(setPhotos, x)}>{x.path}</MenuItem>);
+  //   }
+  //   return items;
+  // }
 
   let appStyle = {
     'width': size[0], 'height': size[1]
   } as CSSProperties;
 
-  let canvasStyle = {
-    'textAlign': 'left',
-    'display': 'grid',
-    'gridTemplateColumns': '200px auto',
-    'width': '100%',
-    'height': '100%'
-  } as CSSProperties;
-
-  let sidebarStyle = {
-    'width': '200px',
-    'gridColumn': 1,
-    'gridRow': 1,
-  }
+  const container = window !== undefined ? () => document.body : undefined;
 
   return (
-    <div className="App" style={appStyle} >
-      <div style={canvasStyle}>
-        <Sidebar style={sidebarStyle}>
-          <Menu>
-            <SubMenu label="Folders">
-              {renderFolders()}
-            </SubMenu>
-            <SubMenu label="Collections">
-              <MenuItem onClick={() => onCollection(setPhotos, "quick")}>Quick</MenuItem>
-              <MenuItem onClick={() => onCollection(setPhotos, "dups")}>Duplicate</MenuItem>
-              <MenuItem onClick={() => onCollection(setPhotos, "fav")}>Favorite</MenuItem>
-              <MenuItem onClick={() => onCollection(setPhotos, "all")}>All</MenuItem>
-            </SubMenu>
-            <MenuItem onClick={() => onAlbum(setPhotos)}>Albums</MenuItem>
-            <SubMenu label="Devices">
-              <MenuItem onClick={onDevice}>Ezh14</MenuItem>
-            </SubMenu>
-          </Menu>
-        </Sidebar>
-        {renderCanvas(photos)}
-      </div>
-    </div >
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <div className="App" style={appStyle} >
+        <div className="AppCanvas">
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            }}
+            open
+          >
+            <NavigationBar setPhotos={setPhotos} />
+          </Drawer>
+
+          <CommandBar></CommandBar>
+          {renderWorkspace(photos)}
+        </div>
+      </div >
+    </ThemeProvider>
   );
 }
 
