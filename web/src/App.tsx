@@ -99,8 +99,8 @@ function App() {
             <NavigationBar setPhotos={setPhotos} />
           </Drawer>
 
-          <CommandBar className="CommandBar"></CommandBar>
           {renderWorkarea(photos)}
+          <CommandBar className="CommandBar" photos={photos}></CommandBar>
           <StatusBar className="StatusBar"></StatusBar>
         </div>
       </div >
