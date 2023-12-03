@@ -56,7 +56,7 @@ public class PhotoDbStatics
           "stackHash", // hash of any photo in the stack
           "folder INTEGER",
           "name TEXT",
-          "fav BOOLEAN",
+          "fav NUMBER",
           "stars NUMBER",
           "color TEXT",
           "width NUMBER",

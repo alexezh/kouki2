@@ -1,3 +1,6 @@
+// compute filler
+// https://codepen.io/sosuke/pen/Pjoqqp
+
 import { CSSProperties, useEffect, useLayoutEffect, useState } from 'react';
 import './App.css';
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
@@ -16,6 +19,7 @@ import Drawer from '@mui/material/Drawer/Drawer';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './NatigationBar';
+import { StatusBar } from './StatusBar';
 
 const darkTheme = createTheme({
   palette: {
@@ -53,20 +57,10 @@ function useWindowSize() {
 function App() {
   const size = useWindowSize();
   const [photos, setPhotos] = useState([] as AlbumPhoto[]);
-  const [selectedPhoto, setSelectedPhoto] = useState(-1);
+  const [selectedPhoto, setSelectedPhoto] = useState([] as AlbumPhoto[]);
   const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
-  const drawerWidth = 200;
-
-  interface Props {
-    /**
-     * Injected by the documentation to work in an iframe.
-     * Remove this when copying and pasting into your project.
-     */
-    window?: () => Window;
-  }
-
-  function renderWorkspace(photos: AlbumPhoto[]) {
+  function renderWorkarea(photos: AlbumPhoto[]) {
     // if (view.kind === CanvasViewKind.Folder) {
     //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
     // } else {
@@ -75,7 +69,7 @@ function App() {
 
     // UI
     return (
-      <div className="Workspace">
+      <div className="Workarea">
         <AutoSizer>
           {({ width, height }: { width: number, height: number }) => {
             return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
@@ -84,25 +78,15 @@ function App() {
       </div>);
   }
 
-  // function renderFolders() {
-  //   let items = [];
-  //   for (let x of folders) {
-  //     items.push(<MenuItem className='FolderItem' key={'folder_' + x.id} onClick={() => onFolder(setPhotos, x)}>{x.path}</MenuItem>);
-  //   }
-  //   return items;
-  // }
-
   let appStyle = {
     'width': size[0], 'height': size[1]
   } as CSSProperties;
-
-  const container = window !== undefined ? () => document.body : undefined;
 
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <div className="App" style={appStyle} >
-        <div className="AppCanvas">
+        <div className="AppFrame">
           <Drawer
             variant="permanent"
             className='Sidebar'
@@ -115,11 +99,12 @@ function App() {
             <NavigationBar setPhotos={setPhotos} />
           </Drawer>
 
-          <CommandBar></CommandBar>
-          {renderWorkspace(photos)}
+          <CommandBar className="CommandBar"></CommandBar>
+          {renderWorkarea(photos)}
+          <StatusBar className="StatusBar"></StatusBar>
         </div>
       </div >
-    </ThemeProvider>
+    </ThemeProvider >
   );
 }
 

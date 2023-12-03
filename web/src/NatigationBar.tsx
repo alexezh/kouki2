@@ -15,11 +15,6 @@ import { WireFolder } from "./lib/fetchadapter";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
-async function onFolder(setPhotos: SetPhotoHandler, folder: WireFolder) {
-  let photos = await loadFolder(folder.id);
-  setPhotos(photos);
-  //setView(new ViewDesc(CanvasViewKind.Folder));
-}
 
 function onDevice() {
   //setView(new ViewDesc(CanvasViewKind.Device));
@@ -40,7 +35,7 @@ export function collapsableList(text: string, open: boolean, setOpen: React.Disp
   }
 
   return [(
-    <ListItemButton onClick={handleClick}>
+    <ListItemButton onClick={handleClick} key={'cat_' + text}>
       <ListItemText primary={text} />
       {open ? <ExpandLess /> : <ExpandMore />}
     </ListItemButton>),
@@ -51,16 +46,21 @@ export function collapsableList(text: string, open: boolean, setOpen: React.Disp
   </Collapse>)]
 }
 
-function FolderItem(props: { folder: WireFolder }) {
+function FolderItem(props: { folder: WireFolder, setPhotos: SetPhotoHandler }) {
+  async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
+    let photos = await loadFolder(props.folder.id);
+    props.setPhotos(photos);
+  }
+
   return (
-    <ListItemButton sx={{ pl: 4 }}>
+    <ListItemButton sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
       <ListItemText className="FolderItem" primary={props.folder.path} />
-    </ListItemButton>);
+    </ListItemButton >);
 }
 
 function CollectionItem(props: { text: string }) {
   return (
-    <ListItemButton sx={{ pl: 4 }}>
+    <ListItemButton sx={{ pl: 4 }} key={'coll_' + props.text}>
       <ListItemText primary={props.text} />
     </ListItemButton>);
 }
@@ -88,8 +88,10 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
 
   return (
     <div>
-      {collapsableList("Collections", openCollections, setOpenCollections, ['Quick', 'All', 'Dups', 'Starred'].map((x) => { return (<CollectionItem text={x} />) }))}
+      {collapsableList("Collections", openCollections, setOpenCollections,
+        ['Quick', 'All', 'Dups', 'Starred'].map((x) => { return (<CollectionItem text={x} />) }))}
       <Divider />
-      {collapsableList("Folders", openFolders, setOpenFolders, folders.map((x) => { return (<FolderItem folder={x} />) }))}
+      {collapsableList("Folders", openFolders, setOpenFolders,
+        folders.map((x) => { return (<FolderItem folder={x} setPhotos={props.setPhotos} />) }))}
     </div>);
 }

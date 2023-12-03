@@ -17,6 +17,7 @@ public class Importer
   public static int ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder)
   {
     int added = 0;
+    int skipped = 0;
 
     foreach (var dir in Directory.EnumerateDirectories(folder.Path))
     {
@@ -30,7 +31,7 @@ public class Importer
     {
       if (folderId == null)
       {
-        db.folders.GetFolderId(folder.Path);
+        folderId = db.folders.GetFolderId(folder.Path);
         if (folderId == null)
         {
           folderId = db.folders.AddSourceFolder(folder.Path);
@@ -38,6 +39,12 @@ public class Importer
       }
 
       var fileName = Path.GetFileName(file);
+
+      if (db.HasPhoto(folderId.Value, fileName))
+      {
+        skipped++;
+        continue;
+      }
 
       using (var stm = File.OpenRead(file))
       {
@@ -79,11 +86,8 @@ public class Importer
           Console.WriteLine("Cannot process " + fileName);
         }
 
-        if (!db.HasPhoto(folderId.Value, fileName))
-        {
-          db.AddPhoto(entry);
-          added++;
-        }
+        db.AddPhoto(entry);
+        added++;
       }
     }
 

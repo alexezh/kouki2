@@ -11,9 +11,9 @@ public class PhotoEntry
   public Int64 Id { get; set; }
   public string Hash { get; set; }
   public string Name { get; set; }
-  public bool Favorite { get; set; }
+  public int Favorite { get; set; }
   public int Stars { get; set; }
-  public int Color { get; set; }
+  public string Color { get; set; }
   public int Width { get; set; }
   public int Height { get; set; }
   // MagickFormat value
@@ -21,6 +21,26 @@ public class PhotoEntry
   public string OriginalDateTime { get; set; }
   public string OriginalHash { get; set; }
   public string StackHash { get; set; }
+}
+
+public class UpdateString
+{
+  string val;
+}
+
+public class UpdatePhotoRequest
+{
+  public string Hash { get; set; }
+  public int? Favorite { get; set; }
+  public int? Stars { get; set; }
+  public UpdateString? Color { get; set; }
+  public UpdateString? OriginalHash { get; set; }
+  public UpdateString? StackHash { get; set; }
+}
+
+public class UpdatePhotoResponse
+{
+  public string Error { get; set; }
 }
 
 public class ThumbnailEntry
@@ -138,6 +158,45 @@ public class CollectionTable
   }
 }
 
+public static class ReaderExt
+{
+  public static string ReadString(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return null;
+    }
+    else
+    {
+      return (string)val;
+    }
+  }
+  public static Int32 ReadInt32(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return 0;
+    }
+    else
+    {
+      return unchecked((int)(Int64)val);
+    }
+  }
+  public static Int64 ReadInt64(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return 0;
+    }
+    else
+    {
+      return unchecked((Int64)val);
+    }
+  }
+}
 public class PhotoDb
 {
   private SqliteConnection _connection;
@@ -197,18 +256,6 @@ public class PhotoDb
     return false;
   }
 
-  private static string DbValToString(object val)
-  {
-    if (val == DBNull.Value)
-    {
-      return null;
-    }
-    else
-    {
-      return (string)val;
-    }
-  }
-
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
     var en = new PhotoEntry()
@@ -217,12 +264,15 @@ public class PhotoDb
       Id = (Int64)reader["id"],
       Hash = (string)reader["hash"],
       Name = (string)reader["name"],
+      Favorite = reader.ReadInt32("fav"),
+      Stars = reader.ReadInt32("stars"),
+      Color = reader.ReadString("color"),
       Width = unchecked((int)(Int64)reader["width"]),
       Height = unchecked((int)(Int64)reader["height"]),
       Format = unchecked((int)(Int64)reader["format"]),
-      OriginalDateTime = DbValToString(reader["originalDt"]),
-      OriginalHash = DbValToString(reader["originalHash"]),
-      StackHash = DbValToString(reader["stackHash"]),
+      OriginalDateTime = reader.ReadString("originalDt"),
+      OriginalHash = reader.ReadString("originalHash"),
+      StackHash = reader.ReadString("stackHash"),
     };
 
     return en;
@@ -269,6 +319,37 @@ public class PhotoDb
     }
 
     return entries;
+  }
+
+  public bool UpdatePhoto(UpdatePhotoRequest updateReqest)
+  {
+    var command = _connection.CreateCommand();
+    var setFields = "";
+    if (updateReqest.Favorite != null)
+    {
+      setFields += "fav = $fav";
+      command.Parameters.AddWithValue("$fav", updateReqest.Favorite);
+    }
+    if (updateReqest.Stars != null)
+    {
+      setFields += "stars = $stars";
+      command.Parameters.AddWithValue("$stars", updateReqest.Stars);
+    }
+    if (updateReqest.Color != null)
+    {
+      setFields += "color = $color";
+      command.Parameters.AddWithValue("$color", updateReqest.Color);
+    }
+    command.CommandText = $"UPDATE {{Photos}} SET {setFields} WHERE hash == $hash";
+    command.Parameters.AddWithValue("$id", updateReqest.Hash);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      return false;
+    }
+
+    return true;
   }
 }
 

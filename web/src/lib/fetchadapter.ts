@@ -54,9 +54,9 @@ export type WirePhotoEntry = {
   id: number;
   hash: string;
   name: string;
-  favorite: boolean;
+  favorite: number;
   stars: number;
-  color: number;
+  color: string;
   width: number;
   height: number;
   format: number;
@@ -66,6 +66,19 @@ export type WireFolder = {
   id: number;
   path: string;
 }
+
+export type UpdateString = {
+  val: string;
+}
+export type UpdatePhotoRequest =
+  {
+    hash: string;
+    favorite: number;
+    stars: number;
+    color: UpdateString;
+    originalHash: UpdateString;
+    stackHash: UpdateString;
+  }
 
 export async function wireGetFolders(): Promise<WireFolder[]> {
   let response = await (await fetchAdapter!.get(`/api/photolibrary/getsourcefolders`)).json();

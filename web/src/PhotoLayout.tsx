@@ -1,10 +1,10 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto } from "./PhotoStore";
+import { AlbumPhoto, selectionManager } from "./PhotoStore";
 
 export type PhotoPropTypes = {
   key: string;
-  index: number;
-  onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto, index: number) => void;
+  onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
+  onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
   margin: number;
   selected: boolean;
@@ -16,21 +16,24 @@ export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
 
   useEffect(() => {
-    let id = props.photo.addOnSelected((x) => setSelected(x.selected))
+    let id = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
+      setSelected(selected);
+    })
     return () => {
-      props.photo.removeOnSelected(id);
+      selectionManager.removeOnSelected(props.photo, id);
     }
   })
 
   const handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
     if (props.onClick) {
-      props.onClick(event, props.photo, props.index);
+      props.onClick(event, props.photo);
     }
   };
 
   const handleSelect = (event: React.MouseEvent<HTMLImageElement>) => {
-    // change selected on photo which will trigger selected event
-    props.photo.selected = !props.photo.selected;
+    if (props.onSelected) {
+      props.onSelected(event, props.photo);
+    }
   };
 
   let divStyle: CSSProperties = {

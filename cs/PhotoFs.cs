@@ -64,6 +64,16 @@ public class PhotoFs
     return added;
   }
 
+  public string UpdatePhoto(UpdatePhotoRequest[] reqs)
+  {
+    foreach (var req in reqs)
+    {
+      _photoDb.UpdatePhoto(req);
+    }
+
+    return "ok";
+  }
+
   public FileStreamResult GetImageFile(string key)
   {
     var infos = _photoDb.GetPhotosByHash(key);

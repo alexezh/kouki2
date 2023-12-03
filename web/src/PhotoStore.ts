@@ -7,32 +7,119 @@ export async function loadFolders(): Promise<WireFolder[]> {
 
 let photoMap = new Map<string, AlbumPhoto>();
 
+export class SelectionManager {
+  private _selected = new Map<string, AlbumPhoto>();
+  private nextId = 1;
+  private onSelected = new Map<string, {
+    id: number;
+    func: (p: AlbumPhoto, value: boolean) => void
+  }[]>();
+  private onAnySelected: {
+    id: number;
+    func: (p: AlbumPhoto, value: boolean) => void
+  }[] = [];
+
+  public lastIndex: number = -1;
+
+  public clear() {
+    for (let x of this._selected) {
+      this.invokeOnSelected(x[1], false);
+    }
+    this._selected.clear();
+  }
+
+  public isSelected(photo: AlbumPhoto): boolean {
+    return !!this._selected.get(photo.wire.hash);
+  }
+
+  public add(photos: AlbumPhoto[]) {
+    for (let p of photos) {
+      this._selected.set(p.wire.hash, p);
+      this.invokeOnSelected(p, true);
+    }
+  }
+
+  public remove(photos: AlbumPhoto[]) {
+    for (let p of photos) {
+      this._selected.delete(p.wire.hash);
+      this.invokeOnSelected(p, false);
+    }
+  }
+
+  public get items(): ReadonlyMap<string, AlbumPhoto> { return this._selected }
+
+  private invokeOnSelected(p: AlbumPhoto, value: boolean) {
+    let entry = this.onSelected.get(p.wire.hash);
+    if (!entry) {
+      return;
+    }
+
+    for (let x of entry) {
+      x.func(p, value);
+    }
+
+    for (let x of this.onAnySelected) {
+      x.func(p, value);
+    }
+  }
+
+  public addOnSelected(photo: AlbumPhoto, func: (p: AlbumPhoto, value: boolean) => void): number {
+    let entry = this.onSelected.get(photo.wire.hash);
+    if (!entry) {
+      entry = [];
+      this.onSelected.set(photo.wire.hash, entry);
+    }
+    let id = this.nextId++;
+    entry.push({ id: id, func: func });
+    return id;
+  }
+
+  public removeOnSelected(photo: AlbumPhoto, id: number) {
+    let entry = this.onSelected.get(photo.wire.hash);
+    if (!entry) {
+      return;
+    }
+
+    let idx = entry.findIndex((x) => x.id === id);
+    if (idx === -1) {
+      return;
+    }
+
+    entry.splice(idx, 1);
+  }
+
+  public addOnAnySelected(func: (p: AlbumPhoto, value: boolean) => void): number {
+    let id = this.nextId++;
+    this.onAnySelected.push({ id: id, func: func });
+    return id;
+  }
+
+  public removeOnAnySelected(id: number) {
+    let idx = this.onAnySelected.findIndex((x) => x.id === id);
+    if (idx === -1) {
+      return;
+    }
+
+    this.onAnySelected.splice(idx, 1);
+  }
+}
+
+export const selectionManager = new SelectionManager();
+
 export class AlbumPhoto {
-  private _selected: boolean = false;
-  private onSelected: { id: number, func: (p: AlbumPhoto) => void }[] = [];
+  private onChanged: { id: number, func: (p: AlbumPhoto) => void }[] = [];
   public wire: WirePhotoEntry;
   public width: number = 0;
   public height: number = 0;
   public scale: number = 1;
   public src: string;
-  public get selected(): boolean {
-    return this._selected;
-  }
-  public set selected(val: boolean) {
-    this._selected = val;
-    for (let x of this.onSelected) {
-      x.func(this);
-    }
-  }
 
-  public addOnSelected(func: (p: AlbumPhoto) => void) {
-    let id = (this.onSelected.length > 0) ? this.onSelected[this.onSelected.length - 1].id + 1 : 1;
-    this.onSelected.push({ id: id, func: func });
-    return id;
+  public get favorite(): number {
+    return this.wire.favorite;
   }
-
-  public removeOnSelected(id: number) {
-    this.onSelected = this.onSelected.filter(x => x.id !== id);
+  public set favorite(val: number) {
+    this.wire.favorite = val;
+    this.invokeOnChanged();
   }
 
   public constructor(wire: WirePhotoEntry, src: string) {
@@ -40,6 +127,22 @@ export class AlbumPhoto {
     this.width = wire.width;
     this.height = wire.height;
     this.src = src;
+  }
+
+  public addOnChanged(func: (p: AlbumPhoto) => void) {
+    let id = (this.onChanged.length > 0) ? this.onChanged[this.onChanged.length - 1].id + 1 : 1;
+    this.onChanged.push({ id: id, func: func });
+    return id;
+  }
+
+  public removeOnSelected(id: number) {
+    this.onChanged = this.onChanged.filter(x => x.id !== id);
+  }
+
+  private invokeOnChanged() {
+    for (let x of this.onChanged) {
+      x.func(this);
+    }
   }
 }
 

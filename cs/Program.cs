@@ -10,8 +10,14 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+var dbPath = "../";
+if (args.Length > 0)
+{
+    dbPath = args[0];
+}
+
 // initialize storage
-PhotoFs.Open("../");
+PhotoFs.Open(dbPath);
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
 
