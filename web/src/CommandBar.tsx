@@ -46,7 +46,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
     setAnchorElLibrary(event.currentTarget);
   };
 
-  function handleCloseLibraryMenu() {
+  const handleCloseLibraryMenu = () => {
     setAnchorElLibrary(null);
   }
 
