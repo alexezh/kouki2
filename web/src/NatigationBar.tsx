@@ -88,8 +88,8 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
 
   return (
     <div>
-      {collapsableList("Collections", openCollections, setOpenCollections,
-        ['Quick', 'All', 'Dups', 'Starred'].map((x) => { return (<CollectionItem text={x} />) }))}
+      {collapsableList("Catelog", openCollections, setOpenCollections,
+        ['Quick collection', 'All Photos', 'Starred', 'Dups'].map((x) => { return (<CollectionItem text={x} />) }))}
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
         folders.map((x) => { return (<FolderItem folder={x} setPhotos={props.setPhotos} />) }))}

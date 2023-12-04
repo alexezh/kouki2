@@ -10,24 +10,24 @@ import Box from '@mui/material/Box/Box';
 
 export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) {
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
+  const [anchorElLibrary, setAnchorElLibrary] = useState<null | HTMLElement>(null);
 
   const handleOpenEditMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElEdit(event.currentTarget);
   };
 
   function handleCloseEditMenu() {
-    selectionManager.remove(props.photos);
     setAnchorElEdit(null);
   }
 
   function handleSelectAll() {
     selectionManager.add(props.photos);
-    setAnchorElEdit(null);
+    handleCloseEditMenu();
   }
 
   function handleSelectNone() {
     selectionManager.remove(props.photos);
-    setAnchorElEdit(null);
+    handleCloseEditMenu();
   }
 
   function handleInvertSelect() {
@@ -39,7 +39,23 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
     }
     selectionManager.clear();
     selectionManager.add(select);
-    setAnchorElEdit(null);
+    handleCloseEditMenu();
+  }
+
+  const handleOpenLibraryMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElLibrary(event.currentTarget);
+  };
+
+  function handleCloseLibraryMenu() {
+    setAnchorElLibrary(null);
+  }
+
+  function handleAddFolder() {
+    handleCloseLibraryMenu();
+  }
+
+  function handleNewCollection() {
+    handleCloseLibraryMenu();
   }
 
   // <Button variant="text" onClick={handleSelectAll}>Add Quick</Button>
@@ -50,7 +66,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
         <Box sx={{ flexGrow: 0 }}>
           <Button onClick={handleOpenEditMenu} sx={{ p: 0 }}>Edit</Button>
           <Menu
-            id="menu-appbar"
+            id="menu-edit"
             anchorEl={anchorElEdit}
             anchorOrigin={{
               vertical: 'bottom',
@@ -70,6 +86,30 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
             <MenuItem key="edit_all" onClick={handleSelectAll}>Select All</MenuItem>
             <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
             <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
+          </Menu>
+        </Box>
+        <Box sx={{ flexGrow: 0 }}>
+          <Button onClick={handleOpenLibraryMenu} sx={{ p: 0 }}>Library</Button>
+          <Menu
+            id="menu-library"
+            anchorEl={anchorElLibrary}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+            open={Boolean(anchorElLibrary)}
+            onClose={handleCloseLibraryMenu}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+            }}
+          >
+            <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Add Folder</MenuItem>
+            <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
           </Menu>
         </Box>
       </Toolbar>
