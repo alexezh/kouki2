@@ -42,3 +42,23 @@ export default class SyncEventSource<T> {
     this.invokeWorker(...args);
   }
 }
+
+export class SimpleEventSource {
+  private handlers: { id: number, func: () => void }[] = [];
+
+  public add(func: () => void) {
+    let id = (this.handlers.length > 0) ? this.handlers[this.handlers.length - 1].id + 1 : 1;
+    this.handlers.push({ id: id, func: func });
+    return id;
+  }
+
+  public remove(id: number) {
+    this.handlers = this.handlers.filter(x => x.id !== id);
+  }
+
+  public invoke() {
+    for (let x of this.handlers) {
+      x.func();
+    }
+  }
+}

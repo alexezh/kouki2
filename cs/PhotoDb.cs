@@ -28,6 +28,15 @@ public class UpdateString
   string val;
 }
 
+public class AddFolderRequest
+{
+  public string folder { get; set; }
+}
+
+public class ResultResponse
+{
+  public string Result { get; set; }
+}
 public class UpdatePhotoRequest
 {
   public string Hash { get; set; }

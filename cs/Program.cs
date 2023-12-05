@@ -63,6 +63,14 @@ app.MapControllerRoute(
     name: "GetThumbnail",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
 
+app.MapControllerRoute(
+    name: "AddSourceFolder",
+    pattern: "/api/{controller=PhotoLibrary}/{action=AddSourceFolder}");
+
+app.MapControllerRoute(
+    name: "CheckSourceFolder",
+    pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
+
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");
 

@@ -10,7 +10,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, loadCollection, loadFolder, loadFolders } from "./PhotoStore";
+import { AlbumPhoto, addOnFoldersChanged, loadCollection, loadFolder, loadFolders, removeOnFoldersChanged } from "./PhotoStore";
 import { WireFolder } from "./lib/fetchadapter";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
@@ -72,6 +72,11 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
 
   const [folders, setFolders] = useState([] as WireFolder[]);
   useEffect(() => {
+    let id = addOnFoldersChanged(async () => {
+      let folders = await loadFolders();
+      setFolders(folders);
+    });
+
     setTimeout(async () => {
       let folders = await loadFolders();
       setFolders(folders);
@@ -81,9 +86,9 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
         props.setPhotos(photos);
       }
     });
-    // return () => {
-    //   console.log('detach');
-    // };
+    return () => {
+      removeOnFoldersChanged(id);
+    };
   }, []);
 
   return (

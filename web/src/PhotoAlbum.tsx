@@ -1,7 +1,8 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
-import { AlbumPhoto, AlbumRow, makeRows, selectionManager } from "./PhotoStore";
+import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
 import { PhotoRowLayout } from "./PhotoRowLayout";
+import { selectionManager } from "./SelectionManager";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],

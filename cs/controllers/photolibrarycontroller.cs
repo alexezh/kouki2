@@ -11,9 +11,32 @@ namespace kouki2.Controllers;
 /// </summary>
 public class PhotoLibraryController : Controller
 {
-  public void AddSourceFolder(string dir, string name)
+  [HttpPost]
+  public async Task<ResultResponse> AddSourceFolder()
   {
-    PhotoFs.Instance.AddSourceFolder(new FolderName(dir));
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<AddFolderRequest>(content);
+
+      PhotoFs.Instance.AddSourceFolder(new FolderName(request.folder));
+
+      return new ResultResponse() { Result = "Ok" };
+    }
+  }
+
+  [HttpPost]
+  public async Task<ResultResponse> CheckSourceFolder()
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<AddFolderRequest>(content);
+
+      bool exists = PhotoFs.Instance.CheckSourceFolder(new FolderName(request.folder));
+
+      return new ResultResponse() { Result = (exists) ? "Ok" : "NotFound" };
+    }
   }
 
   [HttpGet]

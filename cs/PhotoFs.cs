@@ -64,6 +64,11 @@ public class PhotoFs
     return added;
   }
 
+  public bool CheckSourceFolder(FolderName folder)
+  {
+    return Directory.Exists(folder.Path);
+  }
+
   public string UpdatePhoto(UpdatePhotoRequest[] reqs)
   {
     foreach (var req in reqs)

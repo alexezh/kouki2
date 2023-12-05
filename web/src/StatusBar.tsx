@@ -5,7 +5,8 @@ import Typography from '@mui/material/Typography/Typography';
 import Button from '@mui/material/Button/Button';
 import Icon from '@mui/material/Icon/Icon';
 import { useEffect, useState } from 'react';
-import { AlbumPhoto, selectionManager } from './PhotoStore';
+import { AlbumPhoto } from './PhotoStore';
+import { selectionManager } from './SelectionManager';
 
 const thumbsUp = (
   <Icon>

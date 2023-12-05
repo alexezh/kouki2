@@ -1,5 +1,6 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto, selectionManager } from "./PhotoStore";
+import { AlbumPhoto } from "./PhotoStore";
+import { selectionManager } from "./SelectionManager";
 
 export type PhotoPropTypes = {
   key: string;
