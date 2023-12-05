@@ -67,6 +67,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
           <Button onClick={handleOpenEditMenu} sx={{ p: 0 }}>Edit</Button>
           <Menu
             id="menu-edit"
+            sx={{ mt: '0px' }}
             anchorEl={anchorElEdit}
             anchorOrigin={{
               vertical: 'bottom',
@@ -79,9 +80,6 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
             }}
             open={Boolean(anchorElEdit)}
             onClose={handleCloseEditMenu}
-            sx={{
-              display: { xs: 'block', md: 'none' },
-            }}
           >
             <MenuItem key="edit_all" onClick={handleSelectAll}>Select All</MenuItem>
             <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
@@ -92,6 +90,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
           <Button onClick={handleOpenLibraryMenu} sx={{ p: 0 }}>Library</Button>
           <Menu
             id="menu-library"
+            sx={{ mt: '0px' }}
             anchorEl={anchorElLibrary}
             anchorOrigin={{
               vertical: 'bottom',
@@ -104,9 +103,6 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
             }}
             open={Boolean(anchorElLibrary)}
             onClose={handleCloseLibraryMenu}
-            sx={{
-              display: { xs: 'block', md: 'none' },
-            }}
           >
             <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Add Folder</MenuItem>
             <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>

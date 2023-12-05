@@ -20,6 +20,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './NatigationBar';
 import { StatusBar } from './StatusBar';
+import Typography from '@mui/material/Typography/Typography';
 
 const darkTheme = createTheme({
   palette: {
@@ -87,17 +88,38 @@ function App() {
       <CssBaseline />
       <div className="App" style={appStyle} >
         <div className="AppFrame">
-          <Drawer
-            variant="permanent"
-            className='Sidebar'
+          <Typography
+            variant="h6"
+            noWrap
+            component="a"
+            href="#app-bar-with-responsive-menu"
             sx={{
-              display: { xs: 'none', sm: 'block' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "var(--sidebar-width)" },
+              mr: 2,
+              display: { xs: 'none', md: 'flex' },
+              fontFamily: 'monospace',
+              fontWeight: 700,
+              letterSpacing: '.3rem',
+              color: 'inherit',
+              textDecoration: 'none',
+              gridColumn: 1,
+              gridRow: 1
             }}
-            open
           >
-            <NavigationBar setPhotos={setPhotos} />
-          </Drawer>
+            Kouki2
+          </Typography>
+          <div className='Sidebar'>
+            <Drawer
+              variant="permanent"
+
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "var(--sidebar-width)" },
+              }}
+              open
+            >
+              <NavigationBar setPhotos={setPhotos} />
+            </Drawer>
+          </div>
 
           {renderWorkarea(photos)}
           <CommandBar className="CommandBar" photos={photos}></CommandBar>
