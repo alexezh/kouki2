@@ -38,6 +38,10 @@ export class AlbumPhoto {
     this.invokeOnChanged();
   }
 
+  public get originalDate(): Date {
+    return new Date(this.wire.originaldatetime);
+  }
+
   public constructor(wire: WirePhotoEntry, src: string) {
     this.wire = wire;
     this.width = wire.width;
@@ -63,7 +67,8 @@ export class AlbumPhoto {
 }
 
 export type AlbumRow = {
-  photos: AlbumPhoto[];
+  photos?: AlbumPhoto[];
+  dt?: Date;
   height: number;
 }
 
@@ -108,13 +113,36 @@ export async function loadCollection(id: string): Promise<AlbumPhoto[]> {
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photos: AlbumPhoto[], optimalHeight: number, targetWidth: number, padding: number): AlbumRow[] {
+export function makeRows(photos: AlbumPhoto[],
+  options: {
+    optimalHeight: number,
+    targetWidth: number,
+    padding: number,
+    startNewRow?: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => { headerRow: AlbumRow } | null
+  }): AlbumRow[] {
   let prevRow: AlbumPhoto[] = [];
   let row: AlbumPhoto[] = [];
   let height = Number.MAX_SAFE_INTEGER;
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
-  for (let photo of photos) {
+  for (let idx = 0; idx < photos.length; idx++) {
+    let photo = photos[idx];
+    if (options.startNewRow) {
+      let startRow = options.startNewRow(photo, idx, photos);
+      if (startRow) {
+        if (startRow.headerRow) {
+          rows.push(startRow.headerRow);
+        }
+
+        rows.push({
+          height: height,
+          photos: row,
+        });
+        row = [];
+        height = Number.MAX_SAFE_INTEGER;
+      }
+    }
+
     if (photo.height === 0) {
       continue;
     }
@@ -122,8 +150,8 @@ export function makeRows(photos: AlbumPhoto[], optimalHeight: number, targetWidt
     prevHeight = height;
     row.push(photo);
 
-    height = computeRowHeight(row, targetWidth, padding);
-    if (Math.abs(optimalHeight - prevHeight) < Math.abs(optimalHeight - height)) {
+    height = computeRowHeight(row, options.targetWidth, options.padding);
+    if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
       rows.push({
         height: height,
         photos: prevRow,

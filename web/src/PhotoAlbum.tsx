@@ -14,7 +14,26 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const [rows, setRows] = useState([] as AlbumRow[]);
 
   useEffect(() => {
-    setRows(makeRows(props.photos, 200, props.width, 5));
+    setRows(makeRows(props.photos, {
+      optimalHeight: 200,
+      targetWidth: props.width,
+      padding: 5,
+      startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
+        if (idx !== 0) {
+          let d1 = photos[idx - 1].originalDate;
+          let d2 = photo.originalDate;
+          if (d1.getDay() === d2.getDay() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()) {
+            return null;
+          }
+        }
+        return {
+          headerRow: {
+            dt: photo.originalDate,
+            height: 20
+          }
+        }
+      }
+    }));
   }, [props.photos, props.width]);
 
   function getItemSize(idx: number) {

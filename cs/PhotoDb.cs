@@ -252,7 +252,7 @@ public class PhotoDb
   public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and name == $name";
+    command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and filename == $filename and fileext == $fileext";
     command.Parameters.AddWithValue("$folder", folderId);
     command.Parameters.AddWithValue("$filename", fileName);
     command.Parameters.AddWithValue("$fileext", fileExt);

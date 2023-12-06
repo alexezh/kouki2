@@ -11,7 +11,7 @@ type PhotoRowLayoutProps = {
 export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   function renderRow(row: AlbumRow) {
     let res = [];
-    return row.photos.map((photo: AlbumPhoto, index: number) => {
+    return row.photos!.map((photo: AlbumPhoto, index: number) => {
       return (<PhotoLayout photo={photo} onClick={props.onClick} onSelected={props.onSelected} selected={false} margin={0} key={'photo_' + index}></PhotoLayout>)
     });
   }
@@ -19,8 +19,16 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   let rowStyle: React.CSSProperties = { ...props.style, display: 'flex', flexWrap: 'wrap', flexDirection: 'row' } as CSSProperties;
 
   return (
-    <div style={rowStyle} >
+    <div style={props.style} className="PhotoRow" >
       {renderRow(props.row)}
+    </div>
+  );
+}
+
+export function DayRowLayout(props: PhotoRowLayoutProps) {
+  return (
+    <div style={props.style} className="HeaderRow">
+      {props.row.dt?.toLocaleDateString()}
     </div>
   );
 }
