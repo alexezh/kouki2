@@ -88,7 +88,7 @@ public class PhotoFs
     }
 
     var folder = _photoDb.folders.GetFolder(infos[0].FolderId);
-    var fileName = Path.Combine(folder.Path, infos[0].Name);
+    var fileName = Path.Combine(folder.Path, $"{infos[0].FileName}.{infos[0].FileExt}");
     var file = File.OpenRead(fileName);
     return new FileStreamResult(file, "image/jpeg");
   }
@@ -124,6 +124,10 @@ public class PhotoFs
     if (name == "all")
     {
       return _photoDb.GetAllPhotos();
+    }
+    else if (name == "dup")
+    {
+      return DuplicateFinder.GetDuplicates(_photoDb);
     }
     else // if (name == "import")
     {

@@ -115,6 +115,9 @@ export function makeRows(photos: AlbumPhoto[], optimalHeight: number, targetWidt
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
   for (let photo of photos) {
+    if (photo.height === 0) {
+      continue;
+    }
     prevRow = row;
     prevHeight = height;
     row.push(photo);

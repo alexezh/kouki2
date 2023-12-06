@@ -7,6 +7,11 @@ public class FileGroup
 
 public class DuplicateFinder
 {
+  public static List<PhotoEntry> GetDuplicates(PhotoDb photoDb)
+  {
+    return photoDb.GetAllPhotos();
+  }
+
   /// <summary>
   /// for now scan files with the same name but different extensions
   /// </summary>

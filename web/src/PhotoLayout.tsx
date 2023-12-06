@@ -45,7 +45,9 @@ export function PhotoLayout(props: PhotoPropTypes) {
   }
 
   const imgStyle: CSSProperties = {
-    margin: props.margin,
+    margin: 0,
+    width: Math.round(props.photo.width * props.photo.scale),
+    height: Math.round(props.photo.height * props.photo.scale),
     display: 'block',
     position: 'absolute',
     zIndex: 0

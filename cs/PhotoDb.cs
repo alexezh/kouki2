@@ -10,7 +10,8 @@ public class PhotoEntry
   public Int64 FolderId { get; set; }
   public Int64 Id { get; set; }
   public string Hash { get; set; }
-  public string Name { get; set; }
+  public string FileName { get; set; }
+  public string FileExt { get; set; }
   public int Favorite { get; set; }
   public int Stars { get; set; }
   public string Color { get; set; }
@@ -223,9 +224,10 @@ public class PhotoDb
   public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, name, hash, fav, width, height, format, originalDt) VALUES($folder, $name, $hash, $fav, $width, $height, $format, $originalDt)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, hash, fav, width, height, format, originalDt) VALUES($folder, $filename, $fileext, $hash, $fav, $width, $height, $format, $originalDt)";
     command.Parameters.AddWithValue("$folder", entry.FolderId);
-    command.Parameters.AddWithValue("$name", entry.Name);
+    command.Parameters.AddWithValue("$filename", entry.FileName);
+    command.Parameters.AddWithValue("$fileext", entry.FileExt);
     command.Parameters.AddWithValue("$hash", entry.Hash);
     command.Parameters.AddWithValue("$fav", entry.Favorite);
     command.Parameters.AddWithValue("$width", entry.Width);
@@ -247,12 +249,13 @@ public class PhotoDb
     }
   }
 
-  public bool HasPhoto(Int64 folderId, string fileName)
+  public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and name == $name";
     command.Parameters.AddWithValue("$folder", folderId);
-    command.Parameters.AddWithValue("$name", fileName);
+    command.Parameters.AddWithValue("$filename", fileName);
+    command.Parameters.AddWithValue("$fileext", fileExt);
 
     using (var reader = command.ExecuteReader())
     {
@@ -272,7 +275,8 @@ public class PhotoDb
       FolderId = (Int64)reader["folder"],
       Id = (Int64)reader["id"],
       Hash = (string)reader["hash"],
-      Name = (string)reader["name"],
+      FileName = (string)reader["filename"],
+      FileExt = (string)reader["fileext"],
       Favorite = reader.ReadInt32("fav"),
       Stars = reader.ReadInt32("stars"),
       Color = reader.ReadString("color"),
@@ -310,6 +314,14 @@ public class PhotoDb
     return SelectPhotos(_connection, (command) =>
     {
       command.CommandText = "SELECT * FROM Photos";
+    });
+  }
+
+  public List<PhotoEntry> GetDuplicates()
+  {
+    return SelectPhotos(_connection, (command) =>
+    {
+      command.CommandText = "SELECT Name, count(Hash) AS count FROM Photos GROUP BY Name;";
     });
   }
 

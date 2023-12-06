@@ -38,9 +38,10 @@ public class Importer
         }
       }
 
-      var fileName = Path.GetFileName(file);
+      var fileName = Path.GetFileNameWithoutExtension(file);
+      var fileExt = Path.GetExtension(file);
 
-      if (db.HasPhoto(folderId.Value, fileName))
+      if (db.HasPhoto(folderId.Value, fileName, fileExt))
       {
         skipped++;
         continue;
@@ -55,7 +56,8 @@ public class Importer
         var entry = new PhotoEntry()
         {
           FolderId = folderId.Value,
-          Name = fileName,
+          FileName = fileName,
+          FileExt = fileExt,
           Hash = hash,
         };
 

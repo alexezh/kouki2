@@ -55,7 +55,8 @@ public class PhotoDbStatics
           "importedDt TEXT",
           "stackHash", // hash of any photo in the stack
           "folder INTEGER",
-          "name TEXT",
+          "filename TEXT",
+          "fileext TEXT",
           "fav NUMBER",
           "stars NUMBER",
           "color TEXT",
@@ -90,7 +91,16 @@ public class PhotoDbStatics
 
       {
         var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` (`folder` ASC, 'name' ASC);";
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` ('filename' ASC);";
+        using (var reader = command.ExecuteReader())
+        {
+          // TODO: check error
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
+        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoPath` ON `Photos` (`folder` ASC, 'filename' ASC, 'fileext' ASC);";
         using (var reader = command.ExecuteReader())
         {
           // TODO: check error
