@@ -9,7 +9,12 @@ public class DuplicateFinder
 {
   public static List<PhotoEntry> GetDuplicates(PhotoDb photoDb)
   {
-    return photoDb.GetAllPhotos();
+    return photoDb.SelectPhotos((command) =>
+    {
+      command.CommandText = "select * from photos where exists (select 1 from photos p2 where photos.filename == p2.filename and photos.rowid != p2.rowid) order by filename";
+
+      //command.CommandText = "SELECT Name, count(Hash) AS count FROM Photos GROUP BY Name;";
+    });
   }
 
   /// <summary>

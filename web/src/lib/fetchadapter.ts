@@ -53,17 +53,17 @@ export async function fetchResource(url: string): Promise<ArrayBuffer> {
 export type WirePhotoEntry = {
   id: number;
   hash: string;
-  filename: string;
-  fileext: string;
+  fileName: string;
+  fileExt: string;
   favorite: number;
   stars: number;
   color: string;
   width: number;
   height: number;
   format: number;
-  originaldatetime: string;
-  originalhash: string;
-  stackhash: string
+  originalDateTime: string;
+  originalHash: string;
+  stackHash: string
 }
 
 export type WireFolder = {

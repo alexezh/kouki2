@@ -39,7 +39,7 @@ export class AlbumPhoto {
   }
 
   public get originalDate(): Date {
-    return new Date(this.wire.originaldatetime);
+    return new Date(this.wire.originalDateTime);
   }
 
   public constructor(wire: WirePhotoEntry, src: string) {
@@ -127,6 +127,10 @@ export function makeRows(photos: AlbumPhoto[],
   let rows: AlbumRow[] = [];
   for (let idx = 0; idx < photos.length; idx++) {
     let photo = photos[idx];
+    if (photo.height === 0) {
+      continue;
+    }
+
     if (options.startNewRow) {
       let startRow = options.startNewRow(photo, idx, photos);
       if (startRow) {
@@ -143,9 +147,6 @@ export function makeRows(photos: AlbumPhoto[],
       }
     }
 
-    if (photo.height === 0) {
-      continue;
-    }
     prevRow = row;
     prevHeight = height;
     row.push(photo);

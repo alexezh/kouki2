@@ -123,9 +123,12 @@ public class PhotoFs
   {
     if (name == "all")
     {
-      return _photoDb.GetAllPhotos();
+      return _photoDb.SelectPhotos((command) =>
+      {
+        command.CommandText = "SELECT * FROM Photos";
+      });
     }
-    else if (name == "dup")
+    else if (name == "dups")
     {
       return DuplicateFinder.GetDuplicates(_photoDb);
     }

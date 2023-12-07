@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using System.Linq.Expressions;
 using ImageMagick;
 using Org.BouncyCastle.Utilities.Encoders;
@@ -108,7 +109,7 @@ public class Importer
     else
     {
       var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
-      entry.OriginalDateTime = original.Value;
+      entry.OriginalDateTime = original.ToString();
     }
   }
 

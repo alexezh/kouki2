@@ -1,7 +1,7 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
-import { PhotoRowLayout } from "./PhotoRowLayout";
+import { DayRowLayout, PhotoRowLayout } from "./PhotoRowLayout";
 import { selectionManager } from "./SelectionManager";
 
 type PhotoAlbumProps = {
@@ -81,9 +81,16 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   //   )
   // }, areEqual)
   function renderRow(props: ListChildComponentProps) {
-    return (
-      <PhotoRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoSelected} onSelected={handlePhotoSelected}></PhotoRowLayout >
-    )
+    let row = rows[props.index];
+    if (row.dt) {
+      return (
+        <DayRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoSelected} onSelected={handlePhotoSelected}></DayRowLayout >
+      )
+    } else {
+      return (
+        <PhotoRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoSelected} onSelected={handlePhotoSelected}></PhotoRowLayout >
+      )
+    }
   }
 
   return (

@@ -1,4 +1,5 @@
 using System.Data.SqlTypes;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -151,23 +152,6 @@ public class FolderQueries
   }
 }
 
-public class CollectionTable
-{
-  private SqliteConnection _connection;
-  public CollectionTable(SqliteConnection connection)
-  {
-    _connection = connection;
-  }
-  public List<PhotoEntry> GetCollection(Int64 collectionId)
-  {
-    return PhotoDb.SelectPhotos(_connection, (command) =>
-    {
-      command.CommandText = "SELECT * FROM Collection INNER JOIN Photos ON Collection.hash == Photos.hash  WHERE id == $id";
-      command.Parameters.AddWithValue("$id", collectionId);
-    });
-  }
-}
-
 public static class ReaderExt
 {
   public static string ReadString(this SqliteDataReader reader, string name)
@@ -270,6 +254,14 @@ public class PhotoDb
 
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
+    var dtStr = reader.ReadString("originalDt");
+    DateTime? dt = null;
+    if (dtStr != null)
+    {
+      CultureInfo provider = CultureInfo.InvariantCulture;
+      dt = DateTime.ParseExact(dtStr, "yyyy:MM:dd HH:mm:ss", provider);
+    }
+
     var en = new PhotoEntry()
     {
       FolderId = (Int64)reader["folder"],
@@ -283,7 +275,7 @@ public class PhotoDb
       Width = unchecked((int)(Int64)reader["width"]),
       Height = unchecked((int)(Int64)reader["height"]),
       Format = unchecked((int)(Int64)reader["format"]),
-      OriginalDateTime = reader.ReadString("originalDt"),
+      OriginalDateTime = dt?.ToString(),
       OriginalHash = reader.ReadString("originalHash"),
       StackHash = reader.ReadString("stackHash"),
     };
@@ -293,7 +285,7 @@ public class PhotoDb
 
   public List<PhotoEntry> GetPhotosByHash(string hash)
   {
-    return SelectPhotos(_connection, (command) =>
+    return SelectPhotos((command) =>
     {
       command.CommandText = "SELECT * FROM Photos WHERE hash == $hash";
       command.Parameters.AddWithValue("$hash", hash);
@@ -302,32 +294,25 @@ public class PhotoDb
 
   public List<PhotoEntry> GetPhotosByFolder(Int64 folderId)
   {
-    return SelectPhotos(_connection, (command) =>
+    return SelectPhotos((command) =>
     {
       command.CommandText = "SELECT * FROM Photos WHERE folder == $folder";
       command.Parameters.AddWithValue("$folder", folderId);
     });
   }
 
-  public List<PhotoEntry> GetAllPhotos()
+  public List<PhotoEntry> GetCollection(Int64 collectionId)
   {
-    return SelectPhotos(_connection, (command) =>
+    return SelectPhotos((command) =>
     {
-      command.CommandText = "SELECT * FROM Photos";
+      command.CommandText = "SELECT * FROM Collection INNER JOIN Photos ON Collection.hash == Photos.hash  WHERE id == $id";
+      command.Parameters.AddWithValue("$id", collectionId);
     });
   }
 
-  public List<PhotoEntry> GetDuplicates()
+  public List<PhotoEntry> SelectPhotos(Action<SqliteCommand> func)
   {
-    return SelectPhotos(_connection, (command) =>
-    {
-      command.CommandText = "SELECT Name, count(Hash) AS count FROM Photos GROUP BY Name;";
-    });
-  }
-
-  public static List<PhotoEntry> SelectPhotos(SqliteConnection connection, Action<SqliteCommand> func)
-  {
-    var command = connection.CreateCommand();
+    var command = _connection.CreateCommand();
     func(command);
 
     var entries = new List<PhotoEntry>();
