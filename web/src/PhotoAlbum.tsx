@@ -36,7 +36,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     }));
   }, [props.photos, props.width]);
 
-  function getItemSize(idx: number) {
+  function getItemHeight(idx: number): number {
     return rows[idx].height;
   }
 
@@ -97,7 +97,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     <List
       height={props.height}
       itemCount={rows.length}
-      itemSize={getItemSize}
+      itemSize={getItemHeight}
       width={props.width}
     >
       {renderRow}

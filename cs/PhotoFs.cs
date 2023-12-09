@@ -53,15 +53,12 @@ public class PhotoFs
     _thumbnailDb = new ThumbnailDb(path + "thumbnail.sqlite");
   }
 
+  public PhotoDb PhotoDb => _photoDb;
+  public ThumbnailDb ThumbnailDb => _thumbnailDb;
+
   public static void Open(string path)
   {
     _instance = new PhotoFs(path);
-  }
-
-  public int AddSourceFolder(FolderName folder)
-  {
-    int added = Importer.ScanFiles(_photoDb, _thumbnailDb, folder);
-    return added;
   }
 
   public bool CheckSourceFolder(FolderName folder)

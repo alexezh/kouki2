@@ -1,8 +1,48 @@
 
+using System.Drawing;
 using System.Globalization;
 using System.Linq.Expressions;
 using ImageMagick;
 using Org.BouncyCastle.Utilities.Encoders;
+
+public class ImportJobResponse
+{
+  public int ProcessedFiles { get; set; }
+  public string Result { get; set; }
+}
+
+public class ImportJob : IJob
+{
+  public void Run()
+  {
+    _status.Result = "Processing";
+
+    Importer.ScanFiles(
+      PhotoFs.Instance.PhotoDb,
+      PhotoFs.Instance.ThumbnailDb,
+      new FolderName(_path),
+      () =>
+      {
+        _status.ProcessedFiles++;
+      });
+
+    _status.Result = "Done";
+    _completed = true;
+  }
+
+  private bool _completed = false;
+  private ImportJobResponse _status = new ImportJobResponse();
+  private string _path;
+
+  public ImportJob(string path)
+  {
+    _path = path;
+  }
+
+  public bool Completed => _completed;
+
+  public object Status => _status;
+}
 
 public class Importer
 {
@@ -15,14 +55,14 @@ public class Importer
     return Convert.ToHexString(hash);
   }
 
-  public static int ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder)
+  public static int ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Action onAdded)
   {
     int added = 0;
     int skipped = 0;
 
     foreach (var dir in Directory.EnumerateDirectories(folder.Path))
     {
-      added += ScanFiles(db, thumbnailDb, new FolderName(dir));
+      added += ScanFiles(db, thumbnailDb, new FolderName(dir), onAdded);
     }
 
     Int64? folderId = null;
@@ -72,16 +112,15 @@ public class Importer
 
           using (var image = new MagickImage(stm))
           {
+            // save image and orientation
+            var imageSize = GetImageSize(image);
+            entry.Width = imageSize.Width;
+            entry.Height = imageSize.Height;
+            entry.Format = (int)info.Format;
+
             ReadExif(image, entry);
             GenerateThumbnail(image, thumbnailDb, hash);
           }
-
-          entry.Width = info.Width;
-          entry.Height = info.Height;
-          entry.Format = (int)info.Format;
-
-
-          //ExifProfile
         }
         catch (Exception _)
         {
@@ -91,6 +130,7 @@ public class Importer
 
         db.AddPhoto(entry);
         added++;
+        onAdded();
       }
     }
 
@@ -113,17 +153,46 @@ public class Importer
     }
   }
 
+  private static Size GetImageSize(MagickImage image)
+  {
+    var width = image.Width;
+    var height = image.Height;
+
+    switch (image.Orientation)
+    {
+      case OrientationType.Undefined:
+      case OrientationType.TopLeft:
+      case OrientationType.BottomLeft:
+      case OrientationType.LeftBotom:
+      case OrientationType.LeftTop:
+        return new Size(width, height);
+      case OrientationType.TopRight:
+      case OrientationType.BottomRight:
+      case OrientationType.RightTop:
+      case OrientationType.RightBottom:
+        return new Size(height, width);
+      default:
+        return new Size(width, height);
+    }
+  }
+
   private static void GenerateThumbnail(MagickImage image, ThumbnailDb db, string hash)
   {
-    image.Resize(256, 0);
 
+    // if (image.Orientation != OrientationType.Undefined)
+    // {
+    //   Console.WriteLine("hello");
+    // }
+
+    image.Resize(256, 0);
+    var thumbSize = GetImageSize(image);
     image.Format = MagickFormat.Jpeg;
 
     using (var stm = new MemoryStream())
     {
       image.Write(stm);
       var imageBytes = stm.ToArray();
-      db.AddThumbnail(hash, image.Width, image.Height, imageBytes);
+      db.AddThumbnail(hash, thumbSize.Width, thumbSize.Height, imageBytes);
     }
   }
 }

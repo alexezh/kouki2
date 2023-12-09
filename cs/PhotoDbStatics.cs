@@ -57,6 +57,7 @@ public class PhotoDbStatics
           "folder INTEGER",
           "filename TEXT",
           "fileext TEXT",
+          "filesize NUMBER",
           "fav NUMBER",
           "stars NUMBER",
           "color TEXT",

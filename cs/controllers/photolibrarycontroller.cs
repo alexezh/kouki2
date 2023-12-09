@@ -12,16 +12,18 @@ namespace kouki2.Controllers;
 public class PhotoLibraryController : Controller
 {
   [HttpPost]
-  public async Task<ResultResponse> AddSourceFolder()
+  public async Task<AddFolderResponse> AddSourceFolder()
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<AddFolderRequest>(content);
 
-      PhotoFs.Instance.AddSourceFolder(new FolderName(request.folder));
+      var id = JobRunner.Instance.RunJob(new ImportJob(request.folder));
 
-      return new ResultResponse() { Result = "Ok" };
+      //PhotoFs.Instance.AddSourceFolder(new FolderName(request.folder));
+
+      return new AddFolderResponse() { Result = "Ok", JobId = id };
     }
   }
 

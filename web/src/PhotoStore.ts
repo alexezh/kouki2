@@ -122,9 +122,10 @@ export function makeRows(photos: AlbumPhoto[],
   }): AlbumRow[] {
   let prevRow: AlbumPhoto[] = [];
   let row: AlbumPhoto[] = [];
-  let height = Number.MAX_SAFE_INTEGER;
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
+  let maxHeight = Math.round(options.optimalHeight * 1.3);
+  let height = Number.MAX_SAFE_INTEGER;
   for (let idx = 0; idx < photos.length; idx++) {
     let photo = photos[idx];
     if (photo.height === 0) {
@@ -134,14 +135,17 @@ export function makeRows(photos: AlbumPhoto[],
     if (options.startNewRow) {
       let startRow = options.startNewRow(photo, idx, photos);
       if (startRow) {
+        if (row.length > 0) {
+          rows.push(enforceMaxHeight({
+            height: height,
+            photos: row,
+          }, maxHeight));
+        }
+
         if (startRow.headerRow) {
           rows.push(startRow.headerRow);
         }
 
-        rows.push({
-          height: height,
-          photos: row,
-        });
         row = [];
         height = Number.MAX_SAFE_INTEGER;
       }
@@ -153,28 +157,48 @@ export function makeRows(photos: AlbumPhoto[],
 
     height = computeRowHeight(row, options.targetWidth, options.padding);
     if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
-      rows.push({
+      rows.push(enforceMaxHeight({
         height: height,
         photos: prevRow,
-      });
+      }, maxHeight));
       row = [];
       height = Number.MAX_SAFE_INTEGER;
     }
   }
 
+  if (row.length > 0) {
+    rows.push(enforceMaxHeight({
+      height: height,
+      photos: row,
+    }, maxHeight));
+  }
+
   return rows;
+}
+
+function enforceMaxHeight(row: AlbumRow, maxHeight: number): AlbumRow {
+  if (row.height > maxHeight) {
+    for (let p of row.photos!) {
+      p.scale = maxHeight / p.wire.height;
+    }
+    row.height = maxHeight;
+  }
+
+  return row;
 }
 
 function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: number): number {
   // take the first photo and scale everything to it
   let height = row[0].height;
   let actualWidth = row[0].width;
+  row[0].scale = 1;
   for (let i = 1; i < row.length; i++) {
     let p = row[i];
-    if (p.height === 0) {
-      continue;
-    }
     p.scale = height / p.height;
+    if (p.scale > 50) {
+      console.log("dd")
+    }
+
     actualWidth += p.width * p.scale;
   }
 

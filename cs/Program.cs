@@ -71,6 +71,10 @@ app.MapControllerRoute(
     name: "CheckSourceFolder",
     pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
 
+app.MapControllerRoute(
+    name: "GetJobStatus",
+    pattern: "/api/{controller=Job}/{action=GetJobStatus}/{id}");
+
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");
 

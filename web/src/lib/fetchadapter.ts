@@ -74,6 +74,7 @@ export type WireFolder = {
 export type UpdateString = {
   val: string;
 }
+
 export type UpdatePhotoRequest =
   {
     hash: string;
@@ -105,15 +106,29 @@ export async function wireCheckFolder(name: string): Promise<boolean> {
   return response.result === "Ok";
 }
 
-export async function wireAddFolder(name: string): Promise<boolean> {
-  let request = { folder: name };
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
-  return response.result === "Ok";
+export type AddFolderRequest = {
+  folder: string;
 }
 
-// export async function wireSetUserString(key: string, value: string): Promise<void> {
-//   let request: WireString[] = [{ key: key, data: value }]
-//   let requestData = JSON.stringify(request);
-//   let res = await (await fetchAdapter!.post(`/api/user/setstrings/${sessionId}`, requestData)).json();
-// }
+export type AddFolderResponse = {
+  jobId: string;
+  result: string;
+}
+
+export async function wireAddFolder(name: string): Promise<AddFolderResponse> {
+  let request: AddFolderRequest = { folder: name };
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
+  return response;
+}
+
+export type GetJobInfoResponse = {
+  processedFiles: number;
+  result: string;
+}
+
+export async function wireGetJobStatus(name: string): Promise<GetJobInfoResponse> {
+  let request: AddFolderRequest = { folder: name };
+  let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${name}`)).json();
+  return response;
+}
 

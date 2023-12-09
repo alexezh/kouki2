@@ -13,6 +13,7 @@ public class PhotoEntry
   public string Hash { get; set; }
   public string FileName { get; set; }
   public string FileExt { get; set; }
+  public Int64 FileSize { get; set; }
   public int Favorite { get; set; }
   public int Stars { get; set; }
   public string Color { get; set; }
@@ -39,6 +40,13 @@ public class ResultResponse
 {
   public string Result { get; set; }
 }
+
+public class AddFolderResponse
+{
+  public string JobId { get; set; }
+  public string Result { get; set; }
+}
+
 public class UpdatePhotoRequest
 {
   public string Hash { get; set; }
@@ -208,10 +216,11 @@ public class PhotoDb
   public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, hash, fav, width, height, format, originalDt) VALUES($folder, $filename, $fileext, $hash, $fav, $width, $height, $format, $originalDt)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt)";
     command.Parameters.AddWithValue("$folder", entry.FolderId);
     command.Parameters.AddWithValue("$filename", entry.FileName);
     command.Parameters.AddWithValue("$fileext", entry.FileExt);
+    command.Parameters.AddWithValue("$filesize", entry.FileSize);
     command.Parameters.AddWithValue("$hash", entry.Hash);
     command.Parameters.AddWithValue("$fav", entry.Favorite);
     command.Parameters.AddWithValue("$width", entry.Width);
@@ -269,6 +278,7 @@ public class PhotoDb
       Hash = (string)reader["hash"],
       FileName = (string)reader["filename"],
       FileExt = (string)reader["fileext"],
+      FileSize = (Int64)reader["filesize"],
       Favorite = reader.ReadInt32("fav"),
       Stars = reader.ReadInt32("stars"),
       Color = reader.ReadString("color"),
@@ -296,7 +306,7 @@ public class PhotoDb
   {
     return SelectPhotos((command) =>
     {
-      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder";
+      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder order by originalDt";
       command.Parameters.AddWithValue("$folder", folderId);
     });
   }

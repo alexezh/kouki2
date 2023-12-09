@@ -16,8 +16,6 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
     });
   }
 
-  let rowStyle: React.CSSProperties = { ...props.style, display: 'flex', flexWrap: 'wrap', flexDirection: 'row' } as CSSProperties;
-
   return (
     <div style={props.style} className="PhotoRow" >
       {renderRow(props.row)}
