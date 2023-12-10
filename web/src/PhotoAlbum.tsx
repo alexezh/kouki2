@@ -111,25 +111,14 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       {renderRow}
     </List>);
   } else {
-    let divStyle: CSSProperties = {
-      width: props.width,
-      height: props.height,
-    }
-
     return (
-      <div className="AlbumZoomView" style={divStyle}>
-        <PhotoLayout key={selectedPhoto!.wire.hash} className="Photo" photo={selectedPhoto!} margin={0} selected={true}></PhotoLayout>
-        <List
-          className="List"
-          height={props.height}
-          itemCount={rows.length}
-          itemSize={getItemHeight}
-          width={props.width}
-          layout='horizontal'
-        >
-          {renderRow}
-        </List>
-      </div>
+      <PhotoLayout key={selectedPhoto!.wire.hash}
+        className="Photo"
+        photo={selectedPhoto!}
+        margin={0}
+        width={props.width}
+        height={props.height}
+        selected={true}></PhotoLayout>
     );
   }
 }

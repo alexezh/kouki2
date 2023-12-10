@@ -9,6 +9,10 @@ export type PhotoPropTypes = {
   onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
   margin: number;
+  // if set, specify size of div
+  // in which case picture is set to 100%
+  width?: number;
+  height?: number;
   selected: boolean;
 };
 
@@ -38,21 +42,50 @@ export function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
-  let divStyle: CSSProperties = {
+  let divStyle: CSSProperties = (!props.width) ? {
     width: props.photo.width * props.photo.scale,
     height: props.photo.height * props.photo.scale,
     display: 'block',
     position: 'relative'
+  } : {
+    width: props.width,
+    height: props.height,
+    display: 'block',
+    position: 'relative'
   }
 
-  const imgStyle: CSSProperties = {
-    margin: 0,
-    width: Math.round(props.photo.width * props.photo.scale),
-    height: Math.round(props.photo.height * props.photo.scale),
-    display: 'block',
-    position: 'absolute',
-    zIndex: 0
-  };
+  let imgStyle: CSSProperties;
+
+  if (!props.width) {
+    imgStyle = {
+      margin: 0,
+      width: Math.round(props.photo.width * props.photo.scale),
+      height: Math.round(props.photo.height * props.photo.scale),
+      display: 'block',
+      position: 'absolute',
+      zIndex: 0
+    }
+  } else {
+    let imageHeight = props.height!;
+    let imageWidth = Math.round(imageHeight * props.photo.width / props.photo.height);
+    if (imageWidth > props.width) {
+      imageWidth = props.width;
+      imageHeight = Math.round(imageWidth * props.photo.height / props.photo.width);
+    }
+
+    imgStyle = {
+      margin: 'auto',
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      height: imageHeight,
+      width: imageWidth,
+      display: 'block',
+      position: 'absolute',
+      zIndex: 0
+    };
+  }
 
   let checkStyle: CSSProperties = {
     position: 'absolute',
