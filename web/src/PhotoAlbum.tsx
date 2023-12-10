@@ -3,6 +3,7 @@ import { VariableSizeList as List, ListChildComponentProps } from 'react-window'
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
 import { DayRowLayout, PhotoRowLayout } from "./PhotoRowLayout";
 import { selectionManager } from "./SelectionManager";
+import { PhotoLayout } from "./PhotoLayout";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -10,8 +11,15 @@ type PhotoAlbumProps = {
   height: number
 }
 
+enum ViewMode {
+  grid,
+  zoom
+}
+
 export function PhotoAlbum(props: PhotoAlbumProps) {
   const [rows, setRows] = useState([] as AlbumRow[]);
+  const [viewMode, setViewMode] = useState(ViewMode.grid);
+  const [selectedPhoto, setSelectedPhoto] = useState<AlbumPhoto | null>(null);
 
   useEffect(() => {
     setRows(makeRows(props.photos, {
@@ -38,6 +46,11 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
 
   function getItemHeight(idx: number): number {
     return rows[idx].height;
+  }
+
+  function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
+    setViewMode(ViewMode.zoom);
+    setSelectedPhoto(photo);
   }
 
   function handlePhotoSelected(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
@@ -75,26 +88,21 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     selectionManager.lastIndex = index;
   }
 
-  // const renderRow = memo((props: ListChildComponentProps) => {
-  //   return (
-  //     <RowLayout row={rows[props.index]}></RowLayout>
-  //   )
-  // }, areEqual)
   function renderRow(props: ListChildComponentProps) {
     let row = rows[props.index];
     if (row.dt) {
       return (
-        <DayRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoSelected} onSelected={handlePhotoSelected}></DayRowLayout >
+        <DayRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoClick} onSelected={handlePhotoSelected}></DayRowLayout >
       )
     } else {
       return (
-        <PhotoRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoSelected} onSelected={handlePhotoSelected}></PhotoRowLayout >
+        <PhotoRowLayout style={props.style} row={rows[props.index]} onClick={handlePhotoClick} onSelected={handlePhotoSelected}></PhotoRowLayout >
       )
     }
   }
 
-  return (
-    <List
+  if (viewMode === ViewMode.grid || !selectedPhoto) {
+    return (<List
       height={props.height}
       itemCount={rows.length}
       itemSize={getItemHeight}
@@ -102,4 +110,26 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     >
       {renderRow}
     </List>);
+  } else {
+    let divStyle: CSSProperties = {
+      width: props.width,
+      height: props.height,
+    }
+
+    return (
+      <div className="AlbumZoomView" style={divStyle}>
+        <PhotoLayout key={selectedPhoto!.wire.hash} className="Photo" photo={selectedPhoto!} margin={0} selected={true}></PhotoLayout>
+        <List
+          className="List"
+          height={props.height}
+          itemCount={rows.length}
+          itemSize={getItemHeight}
+          width={props.width}
+          layout='horizontal'
+        >
+          {renderRow}
+        </List>
+      </div>
+    );
+  }
 }

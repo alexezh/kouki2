@@ -4,6 +4,7 @@ import { selectionManager } from "./SelectionManager";
 
 export type PhotoPropTypes = {
   key: string;
+  className?: string;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
@@ -61,7 +62,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
   }
 
   return (
-    <div style={divStyle}>
+    <div style={divStyle} className={props.className}>
       <img
         style={checkStyle}
         width={20}

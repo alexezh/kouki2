@@ -16,6 +16,7 @@
 :root {
   --header-height: 40px;
   --sidebar-width: 200px;
+  --zoom-list-height: 200px;
 }
 
 .App-header {
@@ -90,6 +91,19 @@
 .HeaderRow {
   display: block;
   height: 24px;
+}
+
+.AlbumZoomView {
+  display: grid;
+  grid-template-rows: auto var(--zoom-list-height);
+}
+
+.AlbumZoomView-Photo {
+  grid-row: 1;
+}
+
+.AlbumZoomView-List {
+  grid-row: 2;
 }
 
 @keyframes App-logo-spin {
