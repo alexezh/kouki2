@@ -28,7 +28,7 @@ export class AlbumPhoto {
   public width: number = 0;
   public height: number = 0;
   public scale: number = 1;
-  public src: string;
+  //public src: string;
 
   public get favorite(): number {
     return this.wire.favorite;
@@ -42,11 +42,18 @@ export class AlbumPhoto {
     return new Date(this.wire.originalDateTime);
   }
 
-  public constructor(wire: WirePhotoEntry, src: string) {
+  public constructor(wire: WirePhotoEntry) {
     this.wire = wire;
     this.width = wire.width;
     this.height = wire.height;
-    this.src = src;
+  }
+
+  public getPhotoUrl(): string {
+    return '/api/photolibrary/getimage/' + this.wire.hash;
+  }
+
+  public getThumbnailUrl(): string {
+    return '/api/photolibrary/getthumbnail/' + this.wire.hash;
   }
 
   public addOnChanged(func: (p: AlbumPhoto) => void) {
@@ -72,14 +79,6 @@ export type AlbumRow = {
   height: number;
 }
 
-function getPhotoUrl(wire: WirePhotoEntry) {
-  return '/api/photolibrary/getimage/' + wire.hash;
-}
-
-function getThumbnailUrl(wire: WirePhotoEntry) {
-  return '/api/photolibrary/getthumbnail/' + wire.hash;
-}
-
 function loadPhotos(wirePhotos: WirePhotoEntry[]): AlbumPhoto[] {
   let af: AlbumPhoto[] = [];
   for (let wirePhoto of wirePhotos) {
@@ -87,7 +86,7 @@ function loadPhotos(wirePhotos: WirePhotoEntry[]): AlbumPhoto[] {
     if (photo) {
       af.push(photo);
     } else {
-      photo = new AlbumPhoto(wirePhoto, getThumbnailUrl(wirePhoto));
+      photo = new AlbumPhoto(wirePhoto);
       af.push(photo);
       photoMap.set(wirePhoto.hash, photo);
     }

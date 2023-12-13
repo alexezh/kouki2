@@ -42,10 +42,21 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         }
       }
     }));
+    // reset to grid mode
+    setViewMode(ViewMode.grid);
   }, [props.photos, props.width]);
 
   function getItemHeight(idx: number): number {
     return rows[idx].height;
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      if (viewMode !== ViewMode.grid) {
+        setViewMode(ViewMode.grid);
+      }
+      event.preventDefault();
+    }
   }
 
   function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
@@ -101,24 +112,41 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     }
   }
 
-  if (viewMode === ViewMode.grid || !selectedPhoto) {
-    return (<List
+  let showList = (viewMode === ViewMode.grid || !selectedPhoto);
+  let listStyle: CSSProperties = {
+    visibility: showList ? "visible" : "hidden",
+    height: props.height,
+    width: props.width,
+    position: 'absolute',
+  }
+  let photoStyle: CSSProperties = {
+    visibility: showList ? "hidden" : "visible",
+    height: props.height,
+    width: props.width,
+    position: 'absolute',
+  }
+
+  return (<div className="Container" tabIndex={0} onKeyDown={handleKeyDown}>
+    <List
+      style={listStyle}
       height={props.height}
       itemCount={rows.length}
       itemSize={getItemHeight}
       width={props.width}
     >
       {renderRow}
-    </List>);
-  } else {
-    return (
-      <PhotoLayout key={selectedPhoto!.wire.hash}
-        className="Photo"
-        photo={selectedPhoto!}
-        margin={0}
-        width={props.width}
-        height={props.height}
-        selected={true}></PhotoLayout>
-    );
-  }
+    </List>
+    {
+      (selectedPhoto) ? (
+        <PhotoLayout key={selectedPhoto!.wire.hash}
+          className="Photo"
+          style={photoStyle}
+          photo={selectedPhoto!}
+          margin={0}
+          width={props.width}
+          height={props.height}
+          selected={true}></PhotoLayout>
+      ) : null
+    }
+  </div>);
 }

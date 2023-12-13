@@ -98,6 +98,10 @@
   grid-template-rows: auto var(--zoom-list-height);
 }
 
+.AlbumZoomView-Container {
+  display: block;
+}
+
 .AlbumZoomView-Photo {
   grid-row: 1;
 }

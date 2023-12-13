@@ -5,6 +5,7 @@ import { selectionManager } from "./SelectionManager";
 export type PhotoPropTypes = {
   key: string;
   className?: string;
+  style?: CSSProperties;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
@@ -42,12 +43,15 @@ export function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
+  let divStyleBase = props.style ?? {};
   let divStyle: CSSProperties = (!props.width) ? {
+    ...divStyleBase,
     width: props.photo.width * props.photo.scale,
     height: props.photo.height * props.photo.scale,
     display: 'block',
     position: 'relative'
   } : {
+    ...divStyleBase,
     width: props.width,
     height: props.height,
     display: 'block',
@@ -55,6 +59,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
   }
 
   let imgStyle: CSSProperties;
+
+  let src: string;
 
   if (!props.width) {
     imgStyle = {
@@ -65,6 +71,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
       position: 'absolute',
       zIndex: 0
     }
+
+    src = props.photo.getThumbnailUrl();
   } else {
     let imageHeight = props.height!;
     let imageWidth = Math.round(imageHeight * props.photo.width / props.photo.height);
@@ -85,6 +93,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
       position: 'absolute',
       zIndex: 0
     };
+
+    src = props.photo.getPhotoUrl();
   }
 
   let checkStyle: CSSProperties = {
@@ -108,7 +118,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
         style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
         width={props.photo.width * props.photo.scale}
         height={props.photo.height * props.photo.scale}
-        src={props.photo.src}
+        src={src}
         onClick={handleClick}
       />
     </div>

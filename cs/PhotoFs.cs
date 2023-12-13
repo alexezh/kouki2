@@ -85,7 +85,7 @@ public class PhotoFs
     }
 
     var folder = _photoDb.folders.GetFolder(infos[0].FolderId);
-    var fileName = Path.Combine(folder.Path, $"{infos[0].FileName}.{infos[0].FileExt}");
+    var fileName = Path.Combine(folder.Path, $"{infos[0].FileName}{infos[0].FileExt}");
     var file = File.OpenRead(fileName);
     return new FileStreamResult(file, "image/jpeg");
   }
