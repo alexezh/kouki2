@@ -23,11 +23,16 @@ export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
 
   useEffect(() => {
-    let id = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
+    let idSelected = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
       setSelected(selected);
     })
+
+    let idChanged = props.photo.addOnChanged((photo: AlbumPhoto) => {
+
+    });
     return () => {
-      selectionManager.removeOnSelected(props.photo, id);
+      selectionManager.removeOnSelected(props.photo, idSelected);
+      props.photo.removeOnChanged(idChanged);
     }
   })
 

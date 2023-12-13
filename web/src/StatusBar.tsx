@@ -28,33 +28,37 @@ const thumbsDownFill = (
     <img className='StatusBarIcon' src="./assets/thumbs-down-fill.svg" width='100%' height='100%' />
   </Icon >);
 
+function computeAggregatedFavs(): number {
+  let fav: number = 0;
+  let unfav: number = 0;
+  let none: number = 0;
+
+  for (let photo of selectionManager.items) {
+    let v = photo[1].wire.favorite;
+    if (!v) {
+      none++;
+    } else if (v > 0) {
+      fav++;
+    } else {
+      unfav++;
+    }
+  }
+
+  if (fav > 0 && (unfav > 0 || none > 0)) {
+    return 1;
+  } else if (unfav > 0 && (fav > 0 || none > 0)) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
 export function StatusBar(props: { className?: string }) {
   let [favorite, setFavorite] = useState(0);
 
   useEffect(() => {
     let id = selectionManager.addOnAnySelected((photo: AlbumPhoto, value: boolean) => {
-      let fav: number = 0;
-      let unfav: number = 0;
-      let none: number = 0;
-
-      for (let photo of selectionManager.items) {
-        let v = photo[1].wire.favorite;
-        if (!v) {
-          none++;
-        } else if (v > 0) {
-          fav++;
-        } else {
-          unfav++;
-        }
-      }
-
-      if (fav > 0 && (unfav > 0 || none > 0)) {
-        setFavorite(1);
-      } else if (unfav > 0 && (fav > 0 || none > 0)) {
-        setFavorite(-1);
-      } else {
-        setFavorite(0);
-      }
+      setFavorite(computeAggregatedFavs());
     });
     return () => {
       selectionManager.removeOnAnySelected(id);
@@ -62,17 +66,19 @@ export function StatusBar(props: { className?: string }) {
   });
 
   function handleThumbsUp() {
-    let val = (favorite !== 0) ? 1 : 0;
+    let val = (favorite !== 1) ? 1 : 0;
     for (let x of selectionManager.items) {
       x[1].favorite = val;
     }
+    setFavorite(computeAggregatedFavs());
   }
 
   function handleThumbsDown() {
-    let val = (favorite !== 0) ? -1 : 0;
+    let val = (favorite !== -1) ? -1 : 0;
     for (let x of selectionManager.items) {
       x[1].favorite = val;
     }
+    setFavorite(computeAggregatedFavs());
   }
 
   return (

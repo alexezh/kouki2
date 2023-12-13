@@ -62,7 +62,7 @@ export class AlbumPhoto {
     return id;
   }
 
-  public removeOnSelected(id: number) {
+  public removeOnChanged(id: number) {
     this.onChanged = this.onChanged.filter(x => x.id !== id);
   }
 
