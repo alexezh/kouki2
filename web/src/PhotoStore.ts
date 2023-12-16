@@ -1,4 +1,5 @@
-import { WireFolder, WirePhotoEntry, wireGetCollection, wireGetFolder, wireGetFolders } from "./lib/fetchadapter";
+import { DispatchQueue } from "./lib/DispatchQueue";
+import { WireFolder, WirePhotoEntry, WirePhotoUpdate, wireGetCollection, wireGetFolder, wireGetFolders, wireUpdatePhotos } from "./lib/fetchadapter";
 import SyncEventSource, { SimpleEventSource } from "./lib/synceventsource";
 
 export async function loadFolders(): Promise<WireFolder[]> {
@@ -36,6 +37,11 @@ export class AlbumPhoto {
   public set favorite(val: number) {
     this.wire.favorite = val;
     this.invokeOnChanged();
+    let upd: WirePhotoUpdate = {
+      hash: this.wire.hash,
+      favorite: val
+    }
+    wireUpdatePhotos(upd);
   }
 
   public get originalDate(): Date {
@@ -103,6 +109,7 @@ export async function loadCollection(id: string): Promise<AlbumPhoto[]> {
   let wirePhotos = await wireGetCollection(id);
   return loadPhotos(wirePhotos);
 }
+
 
 /**
  * split photo array into rows

@@ -1,28 +1,4 @@
-
-type QueueItem = () => Promise<void>;
-export class DispatchQueue {
-  private items: QueueItem[] = [];
-  private processing: boolean = false;
-
-  public push(func: QueueItem) {
-    this.items.push(func);
-    this.tryRun();
-  }
-
-  private tryRun() {
-    if (this.processing || this.items.length === 0) {
-      return;
-    }
-    this.processing = true;
-    setTimeout(async () => {
-      let item = this.items.shift();
-      await item!();
-
-      this.processing = false;
-      this.tryRun();
-    });
-  }
-}
+import { BatchDelayedQueue } from "./DispatchQueue";
 
 export interface IFetchAdapter {
   get(uri: string): Promise<Response>;
@@ -31,7 +7,6 @@ export interface IFetchAdapter {
 
 let fetchAdapter: IFetchAdapter | undefined = undefined;
 let sessionId: string | undefined;
-let updateQueue: DispatchQueue = new DispatchQueue();
 
 export function getSessionId(): string | undefined {
   return sessionId;
@@ -64,6 +39,15 @@ export type WirePhotoEntry = {
   originalDateTime: string;
   originalHash: string;
   stackHash: string
+}
+
+export type WirePhotoUpdate = {
+  hash: string;
+  favorite?: number;
+  stars?: number;
+  color?: UpdateString;
+  originalHash?: UpdateString;
+  stackHash?: UpdateString;
 }
 
 export type WireFolder = {
@@ -106,6 +90,15 @@ export async function wireCheckFolder(name: string): Promise<boolean> {
   return response.result === "Ok";
 }
 
+let photoUpdateQueue = new BatchDelayedQueue<WirePhotoUpdate>(1000, async (items: WirePhotoUpdate[]) => {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/updatephotos`, JSON.stringify(items))).json();
+});
+
+export function wireUpdatePhotos(wire: WirePhotoUpdate) {
+  photoUpdateQueue.queue(wire);
+}
+
+// ------------- add source folder ----------------
 export type AddFolderRequest = {
   folder: string;
 }

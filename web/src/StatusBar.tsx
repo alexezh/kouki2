@@ -44,9 +44,9 @@ function computeAggregatedFavs(): number {
     }
   }
 
-  if (fav > 0 && (unfav > 0 || none > 0)) {
+  if (fav > 0 && (unfav == 0 || none == 0)) {
     return 1;
-  } else if (unfav > 0 && (fav > 0 || none > 0)) {
+  } else if (unfav > 0 && (fav == 0 || none == 0)) {
     return -1;
   } else {
     return 0;

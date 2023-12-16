@@ -72,6 +72,10 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
 
 app.MapControllerRoute(
+    name: "UpdatePhotos",
+    pattern: "/api/{controller=PhotoLibrary}/{action=UpdatePhotos}");
+
+app.MapControllerRoute(
     name: "GetJobStatus",
     pattern: "/api/{controller=Job}/{action=GetJobStatus}/{id}");
 

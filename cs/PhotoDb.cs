@@ -8,22 +8,22 @@ using Microsoft.Data.Sqlite;
 
 public class PhotoEntry
 {
-  public Int64 FolderId { get; set; }
-  public Int64 Id { get; set; }
-  public string Hash { get; set; }
-  public string FileName { get; set; }
-  public string FileExt { get; set; }
-  public Int64 FileSize { get; set; }
-  public int Favorite { get; set; }
-  public int Stars { get; set; }
-  public string Color { get; set; }
-  public int Width { get; set; }
-  public int Height { get; set; }
+  public Int64 folderId { get; set; }
+  public Int64 id { get; set; }
+  public string hash { get; set; }
+  public string fileName { get; set; }
+  public string fileExt { get; set; }
+  public Int64 fileSize { get; set; }
+  public int favorite { get; set; }
+  public int stars { get; set; }
+  public string color { get; set; }
+  public int width { get; set; }
+  public int height { get; set; }
   // MagickFormat value
-  public int Format { get; set; }
-  public string OriginalDateTime { get; set; }
-  public string OriginalHash { get; set; }
-  public string StackHash { get; set; }
+  public int format { get; set; }
+  public string originalDateTime { get; set; }
+  public string originalHash { get; set; }
+  public string stackHash { get; set; }
 }
 
 public class UpdateString
@@ -38,23 +38,23 @@ public class AddFolderRequest
 
 public class ResultResponse
 {
-  public string Result { get; set; }
+  public string result { get; set; }
 }
 
 public class AddFolderResponse
 {
-  public string JobId { get; set; }
-  public string Result { get; set; }
+  public string jobId { get; set; }
+  public string result { get; set; }
 }
 
 public class UpdatePhotoRequest
 {
-  public string Hash { get; set; }
-  public int? Favorite { get; set; }
-  public int? Stars { get; set; }
-  public UpdateString? Color { get; set; }
-  public UpdateString? OriginalHash { get; set; }
-  public UpdateString? StackHash { get; set; }
+  public string hash { get; set; }
+  public int? favorite { get; set; }
+  public int? stars { get; set; }
+  public UpdateString? color { get; set; }
+  public UpdateString? originalHash { get; set; }
+  public UpdateString? stackHash { get; set; }
 }
 
 public class UpdatePhotoResponse
@@ -217,18 +217,18 @@ public class PhotoDb
   {
     var command = _connection.CreateCommand();
     command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt)";
-    command.Parameters.AddWithValue("$folder", entry.FolderId);
-    command.Parameters.AddWithValue("$filename", entry.FileName);
-    command.Parameters.AddWithValue("$fileext", entry.FileExt);
-    command.Parameters.AddWithValue("$filesize", entry.FileSize);
-    command.Parameters.AddWithValue("$hash", entry.Hash);
-    command.Parameters.AddWithValue("$fav", entry.Favorite);
-    command.Parameters.AddWithValue("$width", entry.Width);
-    command.Parameters.AddWithValue("$height", entry.Height);
-    command.Parameters.AddWithValue("$format", entry.Format);
-    if (entry.OriginalDateTime != null)
+    command.Parameters.AddWithValue("$folder", entry.folderId);
+    command.Parameters.AddWithValue("$filename", entry.fileName);
+    command.Parameters.AddWithValue("$fileext", entry.fileExt);
+    command.Parameters.AddWithValue("$filesize", entry.fileSize);
+    command.Parameters.AddWithValue("$hash", entry.hash);
+    command.Parameters.AddWithValue("$fav", entry.favorite);
+    command.Parameters.AddWithValue("$width", entry.width);
+    command.Parameters.AddWithValue("$height", entry.height);
+    command.Parameters.AddWithValue("$format", entry.format);
+    if (entry.originalDateTime != null)
     {
-      command.Parameters.AddWithValue("$originalDt", entry.OriginalDateTime);
+      command.Parameters.AddWithValue("$originalDt", entry.originalDateTime);
     }
     else
     {
@@ -273,21 +273,21 @@ public class PhotoDb
 
     var en = new PhotoEntry()
     {
-      FolderId = (Int64)reader["folder"],
-      Id = (Int64)reader["id"],
-      Hash = (string)reader["hash"],
-      FileName = (string)reader["filename"],
-      FileExt = (string)reader["fileext"],
-      FileSize = (Int64)reader["filesize"],
-      Favorite = reader.ReadInt32("fav"),
-      Stars = reader.ReadInt32("stars"),
-      Color = reader.ReadString("color"),
-      Width = unchecked((int)(Int64)reader["width"]),
-      Height = unchecked((int)(Int64)reader["height"]),
-      Format = unchecked((int)(Int64)reader["format"]),
-      OriginalDateTime = dt?.ToString(),
-      OriginalHash = reader.ReadString("originalHash"),
-      StackHash = reader.ReadString("stackHash"),
+      folderId = (Int64)reader["folder"],
+      id = (Int64)reader["id"],
+      hash = (string)reader["hash"],
+      fileName = (string)reader["filename"],
+      fileExt = (string)reader["fileext"],
+      fileSize = (Int64)reader["filesize"],
+      favorite = reader.ReadInt32("fav"),
+      stars = reader.ReadInt32("stars"),
+      color = reader.ReadString("color"),
+      width = unchecked((int)(Int64)reader["width"]),
+      height = unchecked((int)(Int64)reader["height"]),
+      format = unchecked((int)(Int64)reader["format"]),
+      originalDateTime = dt?.ToString(),
+      originalHash = reader.ReadString("originalHash"),
+      stackHash = reader.ReadString("stackHash"),
     };
 
     return en;
@@ -341,23 +341,23 @@ public class PhotoDb
   {
     var command = _connection.CreateCommand();
     var setFields = "";
-    if (updateReqest.Favorite != null)
+    if (updateReqest.favorite != null)
     {
       setFields += "fav = $fav";
-      command.Parameters.AddWithValue("$fav", updateReqest.Favorite);
+      command.Parameters.AddWithValue("$fav", updateReqest.favorite);
     }
-    if (updateReqest.Stars != null)
+    if (updateReqest.stars != null)
     {
       setFields += "stars = $stars";
-      command.Parameters.AddWithValue("$stars", updateReqest.Stars);
+      command.Parameters.AddWithValue("$stars", updateReqest.stars);
     }
-    if (updateReqest.Color != null)
+    if (updateReqest.color != null)
     {
       setFields += "color = $color";
-      command.Parameters.AddWithValue("$color", updateReqest.Color);
+      command.Parameters.AddWithValue("$color", updateReqest.color);
     }
-    command.CommandText = $"UPDATE {{Photos}} SET {setFields} WHERE hash == $hash";
-    command.Parameters.AddWithValue("$id", updateReqest.Hash);
+    command.CommandText = $"UPDATE Photos SET {setFields} WHERE hash == $hash";
+    command.Parameters.AddWithValue("$hash", updateReqest.hash);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)

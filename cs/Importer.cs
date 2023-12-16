@@ -96,10 +96,10 @@ public class Importer
 
         var entry = new PhotoEntry()
         {
-          FolderId = folderId.Value,
-          FileName = fileName,
-          FileExt = fileExt,
-          Hash = hash,
+          folderId = folderId.Value,
+          fileName = fileName,
+          fileExt = fileExt,
+          hash = hash,
         };
 
         try
@@ -114,9 +114,9 @@ public class Importer
           {
             // save image and orientation
             var imageSize = GetImageSize(image);
-            entry.Width = imageSize.Width;
-            entry.Height = imageSize.Height;
-            entry.Format = (int)info.Format;
+            entry.width = imageSize.Width;
+            entry.height = imageSize.Height;
+            entry.format = (int)info.Format;
 
             ReadExif(image, entry);
             GenerateThumbnail(image, thumbnailDb, hash);
@@ -149,7 +149,7 @@ public class Importer
     else
     {
       var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
-      entry.OriginalDateTime = original.ToString();
+      entry.originalDateTime = original.ToString();
     }
   }
 

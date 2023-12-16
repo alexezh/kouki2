@@ -23,7 +23,7 @@ public class PhotoLibraryController : Controller
 
       //PhotoFs.Instance.AddSourceFolder(new FolderName(request.folder));
 
-      return new AddFolderResponse() { Result = "Ok", JobId = id };
+      return new AddFolderResponse() { result = "Ok", jobId = id };
     }
   }
 
@@ -37,7 +37,7 @@ public class PhotoLibraryController : Controller
 
       bool exists = PhotoFs.Instance.CheckSourceFolder(new FolderName(request.folder));
 
-      return new ResultResponse() { Result = (exists) ? "Ok" : "NotFound" };
+      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
     }
   }
 
@@ -69,14 +69,14 @@ public class PhotoLibraryController : Controller
 
   // get string as resource
   [HttpPost]
-  public async Task<UpdatePhotoResponse> UpdatePhoto(string id)
+  public async Task<UpdatePhotoResponse> UpdatePhotos(string id)
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<UpdatePhotoRequest[]>(content);
 
-      PhotoFs.Instance.UpdatePhoto(request);
+      PhotoFs.Instance.UpdatePhotos(request);
 
       return new UpdatePhotoResponse() { Error = "ok" };
     }

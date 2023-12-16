@@ -16,6 +16,25 @@ enum ViewMode {
   zoom
 }
 
+class MouseController {
+  private lastClick: number = -1;
+
+  /**
+   * return true if double click
+   */
+  public onClick(event: React.MouseEvent<HTMLImageElement>): boolean {
+    if (this.lastClick + 300 > event.timeStamp) {
+      this.lastClick = -1;
+      return true;
+    } else {
+      this.lastClick = event.timeStamp;
+      return false;
+    }
+  }
+}
+
+let mouseController = new MouseController();
+
 export function PhotoAlbum(props: PhotoAlbumProps) {
   const [rows, setRows] = useState([] as AlbumRow[]);
   const [viewMode, setViewMode] = useState(ViewMode.grid);
@@ -60,8 +79,20 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   }
 
   function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
-    setViewMode(ViewMode.zoom);
-    setSelectedPhoto(photo);
+    if (mouseController.onClick(event)) {
+      selectionManager.clear();
+      selectionManager.add([photo]);
+
+      setViewMode(ViewMode.zoom);
+      setSelectedPhoto(photo);
+      event.preventDefault();
+    } else {
+      if (!event.shiftKey) {
+        selectionManager.clear();
+      }
+      selectionManager.add([photo]);
+      event.preventDefault();
+    }
   }
 
   function handlePhotoSelected(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {

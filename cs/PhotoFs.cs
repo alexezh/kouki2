@@ -66,11 +66,18 @@ public class PhotoFs
     return Directory.Exists(folder.Path);
   }
 
-  public string UpdatePhoto(UpdatePhotoRequest[] reqs)
+  public string UpdatePhotos(UpdatePhotoRequest[] reqs)
   {
-    foreach (var req in reqs)
+    try
     {
-      _photoDb.UpdatePhoto(req);
+      foreach (var req in reqs)
+      {
+        _photoDb.UpdatePhoto(req);
+      }
+    }
+    catch (Exception e)
+    {
+      return "failed";
     }
 
     return "ok";
@@ -84,8 +91,8 @@ public class PhotoFs
       return null;
     }
 
-    var folder = _photoDb.folders.GetFolder(infos[0].FolderId);
-    var fileName = Path.Combine(folder.Path, $"{infos[0].FileName}{infos[0].FileExt}");
+    var folder = _photoDb.folders.GetFolder(infos[0].folderId);
+    var fileName = Path.Combine(folder.Path, $"{infos[0].fileName}{infos[0].fileExt}");
     var file = File.OpenRead(fileName);
     return new FileStreamResult(file, "image/jpeg");
   }
