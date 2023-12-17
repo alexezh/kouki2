@@ -18,5 +18,12 @@ Key things I am looking for are:
 
 On working with existing apps and services. In most cases apps and services can take a folder of photos as input. One of the great features of LR was an ability to export photos into a folder and keep folder in sync.
 
+[<img src="./readme-screen1.jpeg" width="400" />]
+
 Installation:
-- TBD
+- install DotNet Core
+- cd koiki2/cs
+- dotnet build koukisrv.csproj
+- dotnet run
+
+UI is built from web directory. 
