@@ -22,7 +22,7 @@ On working with existing apps and services. In most cases apps and services can 
 
 Installation:
 - install DotNet Core
-- cd koiki2/cs
+- cd kouki2/cs
 - dotnet build koukisrv.csproj
 - dotnet run
 
