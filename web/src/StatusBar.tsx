@@ -6,7 +6,7 @@ import Button from '@mui/material/Button/Button';
 import Icon from '@mui/material/Icon/Icon';
 import { useEffect, useState } from 'react';
 import { AlbumPhoto } from './PhotoStore';
-import { selectionManager } from './SelectionManager';
+import { computeAggregatedFavs, selectionManager } from './SelectionManager';
 
 const thumbsUp = (
   <Icon>
@@ -27,31 +27,6 @@ const thumbsDownFill = (
   <Icon>
     <img className='StatusBarIcon' src="./assets/thumbs-down-fill.svg" width='100%' height='100%' />
   </Icon >);
-
-function computeAggregatedFavs(): number {
-  let fav: number = 0;
-  let unfav: number = 0;
-  let none: number = 0;
-
-  for (let photo of selectionManager.items) {
-    let v = photo[1].wire.favorite;
-    if (!v) {
-      none++;
-    } else if (v > 0) {
-      fav++;
-    } else {
-      unfav++;
-    }
-  }
-
-  if (fav > 0 && (unfav == 0 || none == 0)) {
-    return 1;
-  } else if (unfav > 0 && (fav == 0 || none == 0)) {
-    return -1;
-  } else {
-    return 0;
-  }
-}
 
 export function StatusBar(props: { className?: string }) {
   let [favorite, setFavorite] = useState(0);
@@ -75,9 +50,7 @@ export function StatusBar(props: { className?: string }) {
 
   function handleThumbsDown() {
     let val = (favorite !== -1) ? -1 : 0;
-    for (let x of selectionManager.items) {
-      x[1].favorite = val;
-    }
+    selectionManager.forEach((x) => { x.favorite = val; });
     setFavorite(computeAggregatedFavs());
   }
 

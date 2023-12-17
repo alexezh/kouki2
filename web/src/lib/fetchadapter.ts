@@ -30,6 +30,7 @@ export type WirePhotoEntry = {
   hash: string;
   fileName: string;
   fileExt: string;
+  fileSize: number;
   favorite: number;
   stars: number;
   color: string;

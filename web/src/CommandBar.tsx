@@ -57,6 +57,11 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
     setOpenAddFolder(true);
   }
 
+  function handleRescanFolder() {
+    handleCloseLibraryMenu();
+
+  }
+
   function handleNewCollection() {
     handleCloseLibraryMenu();
   }
@@ -108,6 +113,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
             onClose={handleCloseLibraryMenu}
           >
             <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Add Folder</MenuItem>
+            <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Rescan Folder</MenuItem>
             <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
           </Menu>
           {

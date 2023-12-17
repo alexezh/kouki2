@@ -9,6 +9,7 @@ import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, addOnFoldersChanged, loadCollection, loadFolder, loadFolders, removeOnFoldersChanged } from "./PhotoStore";
 import { WireFolder } from "./lib/fetchadapter";
 import { Typography } from "@mui/material";
+import { PhotoInfo } from "./PhotoInfo";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -30,19 +31,31 @@ let catalogs: { name: string, id: string }[] =
   ];
 
 export function collapsableList(text: string, open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>, items: any) {
-  function handleClick() {
-    setOpen(!open);
-  }
-
   return [(
-    <ListItemButton onClick={handleClick} key={'cat_' + text}>
+    <ListItemButton onClick={() => setOpen(!open)} key={'cat_' + text} >
       <ListItemText primary={text} />
       {open ? <ExpandLess /> : <ExpandMore />}
-    </ListItemButton>),
+    </ListItemButton >),
   (<Collapse in={open} timeout="auto" unmountOnExit>
     <List component="div" disablePadding>
       {items}
     </List>
+  </Collapse>)]
+}
+
+export function collapsablePane(
+  text: string,
+  open: boolean,
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  renderPane: () => JSX.Element) {
+
+  return [(
+    <ListItemButton onClick={() => setOpen(!open)} key={'cat_' + text}>
+      <ListItemText primary={text} />
+      {open ? <ExpandLess /> : <ExpandMore />}
+    </ListItemButton>),
+  (<Collapse in={open} timeout="auto" unmountOnExit>
+    {renderPane()}
   </Collapse>)]
 }
 
@@ -72,8 +85,9 @@ function CollectionItem(props: { text: string, id: string, setPhotos: SetPhotoHa
 //export function NavigationBar() {
 //  return (
 export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
-  let [openCollections, setOpenCollections] = useState(false);
+  let [openCollections, setOpenCollections] = useState(true);
   let [openFolders, setOpenFolders] = useState(false);
+  let [openInfo, setOpenInfo] = useState(true);
 
   const [folders, setFolders] = useState([] as WireFolder[]);
   useEffect(() => {
@@ -96,6 +110,8 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
     };
   }, []);
 
+  // TODO: add by month navigation in photo-all.
+
   return (
     <div>
       {collapsableList("Catalogs", openCollections, setOpenCollections,
@@ -103,5 +119,9 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
         folders.map((x) => { return (<FolderItem folder={x} setPhotos={props.setPhotos} />) }))}
+      <Divider />
+      {collapsablePane("Photo Info", openInfo, setOpenInfo,
+        () => (<PhotoInfo />))
+      }
     </div>);
 }

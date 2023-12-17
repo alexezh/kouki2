@@ -62,6 +62,10 @@ export class AlbumPhoto {
     return '/api/photolibrary/getthumbnail/' + this.wire.hash;
   }
 
+  public getFileName(): string {
+    return this.wire.fileName + this.wire.fileExt;
+  }
+
   public addOnChanged(func: (p: AlbumPhoto) => void) {
     let id = (this.onChanged.length > 0) ? this.onChanged[this.onChanged.length - 1].id + 1 : 1;
     this.onChanged.push({ id: id, func: func });

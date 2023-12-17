@@ -129,7 +129,7 @@ public class PhotoFs
     {
       return _photoDb.SelectPhotos((command) =>
       {
-        command.CommandText = "SELECT * FROM Photos";
+        command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
       });
     }
     else if (name == "dups")

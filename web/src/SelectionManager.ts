@@ -39,6 +39,10 @@ export class SelectionManager {
     }
   }
 
+  public forEach(func: (x: AlbumPhoto) => void) {
+    this.items.forEach(func);
+  }
+
   public get items(): ReadonlyMap<string, AlbumPhoto> { return this._selected }
 
   private invokeOnSelected(p: AlbumPhoto, value: boolean) {
@@ -98,3 +102,29 @@ export class SelectionManager {
 }
 
 export const selectionManager = new SelectionManager();
+
+export function computeAggregatedFavs(): number {
+  let fav: number = 0;
+  let unfav: number = 0;
+  let none: number = 0;
+
+  for (let photo of selectionManager.items) {
+    let v = photo[1].wire.favorite;
+    if (!v) {
+      none++;
+    } else if (v > 0) {
+      fav++;
+    } else {
+      unfav++;
+    }
+  }
+
+  if (fav > 0 && (unfav == 0 || none == 0)) {
+    return 1;
+  } else if (unfav > 0 && (fav == 0 || none == 0)) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+

@@ -23,10 +23,33 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   );
 }
 
-export function DayRowLayout(props: PhotoRowLayoutProps) {
+type DeyRowLayoutProps = {
+  style?: CSSProperties,
+  dt: Date,
+  selected?: boolean,
+  onSelected?: (val: boolean, dt: Date) => void
+}
+export function DayRowLayout(props: DeyRowLayoutProps) {
+  let [selected, setSelected] = useState<boolean>(props.selected ?? false);
+  function handleSelect() {
+    let val = !selected;
+    setSelected(val);
+    if (props.onSelected) {
+      props.onSelected(val, props.dt);
+    }
+  }
   return (
     <div style={props.style} className="HeaderRow">
-      {props.row.dt?.toLocaleDateString()}
+      <div>
+        {props.dt?.toLocaleDateString()}
+      </div>
+      <img
+        className="HeaderRow-Check"
+        width={20}
+        height={20}
+        src={(selected) ? './assets/checkbox-check.svg' : './assets/checkbox-unchecked.svg'}
+        onClick={handleSelect}
+      />
     </div>
   );
 }
