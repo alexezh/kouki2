@@ -6,13 +6,13 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, addOnFoldersChanged, loadCollection, loadFolder, loadFolders, removeOnFoldersChanged } from "./PhotoStore";
-import { WireFolder } from "./lib/fetchadapter";
+import { AlbumPhoto, CatalogId, FolderId, loadCollection, loadFolder, loadFolders } from "../photo/PhotoStore";
+import { WireFolder } from "../lib/fetchadapter";
 import { Typography } from "@mui/material";
-import { PhotoInfo } from "./PhotoInfo";
+import { PhotoInfo } from "../photo/PhotoInfo";
+import { addOnFoldersChanged, addOnListChanged, removeOnFoldersChanged, setCurrentList } from "./NavigationState";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
-
 
 function onDevice() {
   //setView(new ViewDesc(CanvasViewKind.Device));
@@ -22,7 +22,7 @@ function onAlbum(setPhoto: SetPhotoHandler) {
   //setView(new ViewDesc(CanvasViewKind.Album));
 }
 
-let catalogs: { name: string, id: string }[] =
+let catalogs: { name: string, id: CatalogId }[] =
   [
     { name: 'Quick collection', id: 'quick' },
     { name: 'All Photos', id: 'all' },
@@ -59,10 +59,11 @@ export function collapsablePane(
   </Collapse>)]
 }
 
-function FolderItem(props: { folder: WireFolder, setPhotos: SetPhotoHandler }) {
+function FolderItem(props: { folder: WireFolder }) {
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     let photos = await loadFolder(props.folder.id);
-    props.setPhotos(photos);
+    //props.setPhotos(photos);
+    setCurrentList(props.folder.id as FolderId, photos);
   }
 
   return (
@@ -71,10 +72,10 @@ function FolderItem(props: { folder: WireFolder, setPhotos: SetPhotoHandler }) {
     </ListItemButton>);
 }
 
-function CollectionItem(props: { text: string, id: string, setPhotos: SetPhotoHandler }) {
+function CollectionItem(props: { text: string, id: CatalogId }) {
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     let photos = await loadCollection(props.id);
-    props.setPhotos(photos);
+    setCurrentList(props.id, photos);
   }
 
   return (
@@ -84,29 +85,29 @@ function CollectionItem(props: { text: string, id: string, setPhotos: SetPhotoHa
 }
 //export function NavigationBar() {
 //  return (
-export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
+export function NavigationBar() {
   let [openCollections, setOpenCollections] = useState(true);
   let [openFolders, setOpenFolders] = useState(false);
   let [openInfo, setOpenInfo] = useState(true);
 
   const [folders, setFolders] = useState([] as WireFolder[]);
   useEffect(() => {
-    let id = addOnFoldersChanged(async () => {
+    // reload folder list when folders change
+    let idFolders = addOnFoldersChanged(async () => {
       let folders = await loadFolders();
       setFolders(folders);
     });
 
+    // initially, open "All collection"
     setTimeout(async () => {
       let folders = await loadFolders();
       setFolders(folders);
 
-      if (folders.length > 0) {
-        let photos = await loadFolder(folders[0].id);
-        props.setPhotos(photos);
-      }
+      let photos = await loadCollection('all');
+      setCurrentList('all', photos)
     });
     return () => {
-      removeOnFoldersChanged(id);
+      removeOnFoldersChanged(idFolders);
     };
   }, []);
 
@@ -115,10 +116,10 @@ export function NavigationBar(props: { setPhotos: SetPhotoHandler }) {
   return (
     <div>
       {collapsableList("Catalogs", openCollections, setOpenCollections,
-        catalogs.map((x) => { return (<CollectionItem text={x.name} id={x.id} setPhotos={props.setPhotos} />) }))}
+        catalogs.map((x) => { return (<CollectionItem text={x.name} id={x.id} />) }))}
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
-        folders.map((x) => { return (<FolderItem folder={x} setPhotos={props.setPhotos} />) }))}
+        folders.map((x) => { return (<FolderItem folder={x} />) }))}
       <Divider />
       {collapsablePane("Photo Info", openInfo, setOpenInfo,
         () => (<PhotoInfo />))

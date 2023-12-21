@@ -21,7 +21,19 @@ public class PhotoLibraryController : Controller
 
       var id = JobRunner.Instance.RunJob(new ImportJob(request.folder));
 
-      //PhotoFs.Instance.AddSourceFolder(new FolderName(request.folder));
+      return new AddFolderResponse() { result = "Ok", jobId = id };
+    }
+  }
+
+  [HttpPost]
+  public async Task<AddFolderResponse> RescanSourceFolder()
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<RescanFolderRequest>(content);
+
+      var id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
 
       return new AddFolderResponse() { result = "Ok", jobId = id };
     }

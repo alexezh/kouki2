@@ -1,26 +1,17 @@
-import { DispatchQueue } from "./lib/DispatchQueue";
-import { WireFolder, WirePhotoEntry, WirePhotoUpdate, wireGetCollection, wireGetFolder, wireGetFolders, wireUpdatePhotos } from "./lib/fetchadapter";
-import SyncEventSource, { SimpleEventSource } from "./lib/synceventsource";
+import { WireFolder, WirePhotoEntry, WirePhotoUpdate, wireGetCollection, wireGetFolder, wireGetFolders, wireUpdatePhotos } from "../lib/fetchadapter";
 
 export async function loadFolders(): Promise<WireFolder[]> {
   let folders = await wireGetFolders();
   return folders;
 }
 
-export function addOnFoldersChanged(func: () => void): number {
-  return folderChanged.add(func);
+export type CatalogId = 'quick' | 'all' | 'starred' | 'dups';
+export type FolderId = number & {
+  __tag_folder: boolean;
 }
+export type PhotoListId = CatalogId | FolderId;
 
-export function removeOnFoldersChanged(id: number) {
-  return folderChanged.remove(id);
-}
-
-export function triggerRefreshFolders() {
-  folderChanged.invoke();
-}
-
-let folderChanged = new SimpleEventSource();
-let photoMap = new Map<string, AlbumPhoto>();
+let photoMap = new Map<number, AlbumPhoto>();
 
 
 export class AlbumPhoto {
@@ -92,13 +83,13 @@ export type AlbumRow = {
 function loadPhotos(wirePhotos: WirePhotoEntry[]): AlbumPhoto[] {
   let af: AlbumPhoto[] = [];
   for (let wirePhoto of wirePhotos) {
-    let photo = photoMap.get(wirePhoto.hash);
+    let photo = photoMap.get(wirePhoto.id);
     if (photo) {
       af.push(photo);
     } else {
       photo = new AlbumPhoto(wirePhoto);
       af.push(photo);
-      photoMap.set(wirePhoto.hash, photo);
+      photoMap.set(wirePhoto.id, photo);
     }
   }
   return af;
@@ -109,7 +100,7 @@ export async function loadFolder(folderId: number): Promise<AlbumPhoto[]> {
   return loadPhotos(wirePhotos);
 }
 
-export async function loadCollection(id: string): Promise<AlbumPhoto[]> {
+export async function loadCollection(id: CatalogId): Promise<AlbumPhoto[]> {
   let wirePhotos = await wireGetCollection(id);
   return loadPhotos(wirePhotos);
 }

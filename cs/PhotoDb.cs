@@ -24,6 +24,7 @@ public class PhotoEntry
   public string originalDateTime { get; set; }
   public string originalHash { get; set; }
   public string stackHash { get; set; }
+  public string imageId { get; set; }
 }
 
 public class UpdateString
@@ -42,6 +43,17 @@ public class ResultResponse
 }
 
 public class AddFolderResponse
+{
+  public string jobId { get; set; }
+  public string result { get; set; }
+}
+
+public class RescanFolderRequest
+{
+  public Int64 folderId { get; set; }
+}
+
+public class RescanFolderResponse
 {
   public string jobId { get; set; }
   public string result { get; set; }
@@ -216,24 +228,18 @@ public class PhotoDb
   public void AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt, imageId) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt, $imageId)";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
     command.Parameters.AddWithValue("$filesize", entry.fileSize);
+    AddStringValue(command, "$imageId", entry.imageId);
     command.Parameters.AddWithValue("$hash", entry.hash);
     command.Parameters.AddWithValue("$fav", entry.favorite);
     command.Parameters.AddWithValue("$width", entry.width);
     command.Parameters.AddWithValue("$height", entry.height);
     command.Parameters.AddWithValue("$format", entry.format);
-    if (entry.originalDateTime != null)
-    {
-      command.Parameters.AddWithValue("$originalDt", entry.originalDateTime);
-    }
-    else
-    {
-      command.Parameters.AddWithValue("$originalDt", DBNull.Value);
-    }
+    AddStringValue(command, "$originalDt", entry.originalDateTime);
 
     var inserted = command.ExecuteNonQuery();
     if (inserted != 1)
@@ -242,6 +248,41 @@ public class PhotoDb
     }
   }
 
+  private void AddStringValue(SqliteCommand command, string name, string val)
+  {
+    if (val != null)
+    {
+      command.Parameters.AddWithValue(name, val);
+    }
+    else
+    {
+      command.Parameters.AddWithValue(name, DBNull.Value);
+    }
+  }
+
+  public void UpdatePhotoFileInfo(PhotoEntry entry)
+  {
+    var command = _connection.CreateCommand();
+
+    command.CommandText = "UPDATE Photos SET hash=$hash, filesize=$filesize, imageId=$imageId, width=$width, height=$height, format=$format, originalDt=$originalDt WHERE folder == $folderId AND filename == $filename AND fileext == $fileext";
+
+    command.Parameters.AddWithValue("$folderId", entry.folderId);
+    command.Parameters.AddWithValue("$filename", entry.fileName);
+    command.Parameters.AddWithValue("$fileext", entry.fileExt);
+    command.Parameters.AddWithValue("$hash", entry.hash);
+    command.Parameters.AddWithValue("$filesize", entry.fileSize);
+    AddStringValue(command, "$imageId", entry.imageId);
+    command.Parameters.AddWithValue("$width", entry.width);
+    command.Parameters.AddWithValue("$height", entry.height);
+    command.Parameters.AddWithValue("$format", entry.format);
+    AddStringValue(command, "$originalDt", entry.originalDateTime);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      throw new ArgumentException("Cannot update");
+    }
+  }
   public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
     var command = _connection.CreateCommand();
@@ -288,6 +329,7 @@ public class PhotoDb
       originalDateTime = dt?.ToString(),
       originalHash = reader.ReadString("originalHash"),
       stackHash = reader.ReadString("stackHash"),
+      imageId = reader.ReadString("imageId"),
     };
 
     return en;
@@ -384,6 +426,19 @@ public class ThumbnailDb
 
   public void AddThumbnail(string hash, int width, int height, byte[] data)
   {
+    var currentThumbnails = GetThumbnail(hash);
+    if (currentThumbnails.Count > 0)
+    {
+      var delCommand = _connection.CreateCommand();
+      delCommand.CommandText = "DELETE FROM Thumbnails WHERE hash == $hash";
+      delCommand.Parameters.AddWithValue("$hash", hash);
+      var deleted = delCommand.ExecuteNonQuery();
+      if (deleted == 0)
+      {
+        Console.WriteLine("Cannot delete thumbnail");
+      }
+    }
+
     var command = _connection.CreateCommand();
     command.CommandText = "INSERT INTO Thumbnails(hash, width, height, data) VALUES($hash, $width, $height, $data)";
     command.Parameters.AddWithValue("$hash", hash);

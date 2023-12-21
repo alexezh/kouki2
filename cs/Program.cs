@@ -68,6 +68,10 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=AddSourceFolder}");
 
 app.MapControllerRoute(
+    name: "UpdateSourceFolder",
+    pattern: "/api/{controller=PhotoLibrary}/{action=RescanSourceFolder}");
+
+app.MapControllerRoute(
     name: "CheckSourceFolder",
     pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
 

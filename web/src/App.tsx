@@ -8,19 +8,20 @@ import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Lightbox from "yet-another-react-lightbox";
-import { AlbumPhoto, loadCollection, loadFolders, loadFolder } from './PhotoStore';
+import { AlbumPhoto, loadCollection, loadFolders, loadFolder } from './photo/PhotoStore';
 import "yet-another-react-lightbox/styles.css";
 import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
 import AutoSizer from "react-virtualized-auto-sizer";
-import { PhotoAlbum } from './PhotoAlbum';
-import { CommandBar } from './CommandBar';
+import { PhotoAlbum } from './photo/PhotoAlbum';
+import { CommandBar } from './commands/CommandBar';
 import Drawer from '@mui/material/Drawer/Drawer';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { NavigationBar } from './NatigationBar';
-import { StatusBar } from './StatusBar';
+import { NavigationBar } from './commands/NatigationBar';
+import { StatusBar } from './commands/StatusBar';
 import Typography from '@mui/material/Typography/Typography';
+import { addOnListChanged, getCurrentList, removeOnListChanged } from './commands/NavigationState';
 
 const darkTheme = createTheme({
   palette: {
@@ -55,29 +56,38 @@ function useWindowSize() {
   return size;
 }
 
+function renderWorkarea(photos: AlbumPhoto[]) {
+  // if (view.kind === CanvasViewKind.Folder) {
+  //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+  // } else {
+  //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
+  // }
+
+  // UI
+  return (
+    <div className="Workarea">
+      <AutoSizer>
+        {({ width, height }: { width: number, height: number }) => {
+          return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
+        }}
+      </AutoSizer>
+    </div>);
+}
+
 function App() {
   const size = useWindowSize();
   const [photos, setPhotos] = useState([] as AlbumPhoto[]);
-  const [selectedPhoto, setSelectedPhoto] = useState([] as AlbumPhoto[]);
-  const [view, setView] = useState(new ViewDesc(CanvasViewKind.Folder));
 
-  function renderWorkarea(photos: AlbumPhoto[]) {
-    // if (view.kind === CanvasViewKind.Folder) {
-    //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
-    // } else {
-    //   return (<PhotoAlbum layout="rows" photos={photos} onClick={({ index }) => setSelectedPhoto(index)} />);
-    // }
+  useEffect(() => {
+    let id = addOnListChanged(async () => {
+      setPhotos(getCurrentList());
+    });
 
-    // UI
-    return (
-      <div className="Workarea">
-        <AutoSizer>
-          {({ width, height }: { width: number, height: number }) => {
-            return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)
-          }}
-        </AutoSizer>
-      </div>);
-  }
+    return () => {
+      removeOnListChanged(id);
+    };
+  }, []);
+
 
   let appStyle = {
     'width': size[0], 'height': size[1]
@@ -117,7 +127,7 @@ function App() {
               }}
               open
             >
-              <NavigationBar setPhotos={setPhotos} />
+              <NavigationBar />
             </Drawer>
           </div>
 

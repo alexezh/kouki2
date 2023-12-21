@@ -39,7 +39,8 @@ export type WirePhotoEntry = {
   format: number;
   originalDateTime: string;
   originalHash: string;
-  stackHash: string
+  stackHash: string;
+  imageId: string;
 }
 
 export type WirePhotoUpdate = {
@@ -109,14 +110,30 @@ export type AddFolderResponse = {
   result: string;
 }
 
+export type RescanFolderRequest = {
+  folderId: number;
+}
+
+export type RescanFolderResponse = {
+  jobId: string;
+  result: string;
+}
+
 export async function wireAddFolder(name: string): Promise<AddFolderResponse> {
   let request: AddFolderRequest = { folder: name };
   let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
   return response;
 }
 
+export async function wireRescanFolder(folderId: number): Promise<RescanFolderResponse> {
+  let request: RescanFolderRequest = { folderId: folderId };
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/rescansourcefolder`, JSON.stringify(request))).json();
+  return response;
+}
+
 export type GetJobInfoResponse = {
-  processedFiles: number;
+  addedFiles: number;
+  updatedFiles: number;
   result: string;
 }
 

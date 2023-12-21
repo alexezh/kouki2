@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { selectionManager } from "./SelectionManager";
+import { selectionManager } from "../commands/SelectionManager";
 import { AlbumPhoto } from "./PhotoStore";
-import { Typography } from "@mui/material";
 
 function getProperties(photo: AlbumPhoto | null): { name: string, value: string }[] {
   if (!photo) {
@@ -15,6 +14,9 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   props.push({ name: 'Height:', value: photo.wire.height.toString() });
   props.push({ name: 'Size:', value: photo.wire.fileSize.toString() });
   props.push({ name: 'Date:', value: photo.wire.originalDateTime });
+  if (photo.wire.imageId) {
+    props.push({ name: 'ImageId:', value: photo.wire.imageId });
+  }
 
   return props;
 }

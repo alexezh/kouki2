@@ -1,18 +1,20 @@
 import AppBar from '@mui/material/AppBar/AppBar';
 import Toolbar from '@mui/material/Toolbar/Toolbar';
 import Button from '@mui/material/Button/Button';
-import { AlbumPhoto } from './PhotoStore';
+import { AlbumPhoto } from '../photo/PhotoStore';
 import { useState } from 'react';
 import Menu from '@mui/material/Menu/Menu';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
 import Box from '@mui/material/Box/Box';
 import { selectionManager } from './SelectionManager';
-import AddFolderDialog from './AddFolderDialog';
+import { AddFolderDialog, RescanFolderDialog } from './AddFolderDialog';
+import { getCurrentListId } from './NavigationState';
 
 export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) {
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
   const [anchorElLibrary, setAnchorElLibrary] = useState<null | HTMLElement>(null);
   const [openAddFolder, setOpenAddFolder] = useState(false);
+  const [openRescanFolder, setOpenRescanFolder] = useState(false);
 
   const handleOpenEditMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElEdit(event.currentTarget);
@@ -59,7 +61,10 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
 
   function handleRescanFolder() {
     handleCloseLibraryMenu();
-
+    let listId = getCurrentListId();
+    if (typeof listId === "number") {
+      setOpenRescanFolder(true);
+    }
   }
 
   function handleNewCollection() {
@@ -118,6 +123,9 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
           </Menu>
           {
             (openAddFolder) ? (<AddFolderDialog onClose={() => setOpenAddFolder(false)} />) : null
+          }
+          {
+            (openRescanFolder) ? (<RescanFolderDialog onClose={() => setOpenRescanFolder(false)} folderId={getCurrentListId() as number} />) : null
           }
 
         </Box>

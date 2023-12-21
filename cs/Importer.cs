@@ -1,13 +1,11 @@
 
 using System.Drawing;
-using System.Globalization;
-using System.Linq.Expressions;
 using ImageMagick;
-using Org.BouncyCastle.Utilities.Encoders;
 
 public class ImportJobResponse
 {
-  public int ProcessedFiles { get; set; }
+  public int AddedFiles { get; set; }
+  public int UpdatedFiles { get; set; }
   public string Result { get; set; }
 }
 
@@ -21,9 +19,10 @@ public class ImportJob : IJob
       PhotoFs.Instance.PhotoDb,
       PhotoFs.Instance.ThumbnailDb,
       new FolderName(_path),
-      () =>
+      (ScanStatus status) =>
       {
-        _status.ProcessedFiles++;
+        _status.AddedFiles = status.Added;
+        _status.UpdatedFiles = status.Updated;
       });
 
     _status.Result = "Done";
@@ -44,6 +43,47 @@ public class ImportJob : IJob
   public object Status => _status;
 }
 
+public class RescanJob : IJob
+{
+  public void Run()
+  {
+    _status.Result = "Processing";
+
+    Importer.RescanFolder(
+      PhotoFs.Instance.PhotoDb,
+      PhotoFs.Instance.ThumbnailDb,
+      _folderId,
+      (ScanStatus status) =>
+      {
+        _status.AddedFiles = status.Added;
+        _status.UpdatedFiles = status.Updated;
+      });
+
+    _status.Result = "Done";
+    _completed = true;
+  }
+
+  private bool _completed = false;
+  private ImportJobResponse _status = new ImportJobResponse();
+  private Int64 _folderId;
+
+  public RescanJob(Int64 folderId)
+  {
+    _folderId = folderId;
+  }
+
+  public bool Completed => _completed;
+
+  public object Status => _status;
+}
+
+public class ScanStatus
+{
+  public int Added;
+  public int Skipped;
+  public int Updated;
+}
+
 public class Importer
 {
   private static System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
@@ -55,18 +95,26 @@ public class Importer
     return Convert.ToHexString(hash);
   }
 
-  public static int ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Action onAdded)
+  public static void RescanFolder(PhotoDb db, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
   {
-    int added = 0;
-    int skipped = 0;
+    var status = new ScanStatus();
+    var folder = db.folders.GetFolder(folderId);
+    ScanFolder(db, thumbnailDb, new FolderName(folder.Path), folderId, onProgress, status);
+  }
 
+  public static void ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Action<ScanStatus> onProgress, ScanStatus status = null)
+  {
+    status = status ?? new ScanStatus();
     foreach (var dir in Directory.EnumerateDirectories(folder.Path))
     {
-      added += ScanFiles(db, thumbnailDb, new FolderName(dir), onAdded);
+      ScanFiles(db, thumbnailDb, new FolderName(dir), onProgress, status);
     }
 
-    Int64? folderId = null;
+    ScanFolder(db, thumbnailDb, folder, null, onProgress, status);
+  }
 
+  private static void ScanFolder(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Int64? folderId, Action<ScanStatus> onProgress, ScanStatus status)
+  {
     var e = Directory.EnumerateFiles(folder.Path);
     foreach (var file in e)
     {
@@ -84,57 +132,79 @@ public class Importer
 
       if (db.HasPhoto(folderId.Value, fileName, fileExt))
       {
-        skipped++;
-        continue;
+        PhotoEntry entry = BuildEntryFromFile(folderId, file, fileName, fileExt, thumbnailDb);
+        if (entry != null)
+        {
+          db.UpdatePhotoFileInfo(entry);
+        }
+
+        status.Updated++;
+        onProgress(status);
       }
-
-      using (var stm = File.OpenRead(file))
+      else
       {
-        // get hash of actual content
-        stm.Position = 0;
-        var hash = ComputeHash(stm);
-
-        var entry = new PhotoEntry()
+        PhotoEntry entry = BuildEntryFromFile(folderId, file, fileName, fileExt, thumbnailDb);
+        if (entry != null)
         {
-          folderId = folderId.Value,
-          fileName = fileName,
-          fileExt = fileExt,
-          hash = hash,
-        };
-
-        try
-        {
-          stm.Position = 0;
-          var info = new MagickImageInfo(stm);
-
-          // generate thumbnail
-          stm.Position = 0;
-
-          using (var image = new MagickImage(stm))
-          {
-            // save image and orientation
-            var imageSize = GetImageSize(image);
-            entry.width = imageSize.Width;
-            entry.height = imageSize.Height;
-            entry.format = (int)info.Format;
-
-            ReadExif(image, entry);
-            GenerateThumbnail(image, thumbnailDb, hash);
-          }
+          db.AddPhoto(entry);
+          status.Added++;
+          onProgress(status);
         }
-        catch (Exception _)
-        {
-          // nothing to do
-          Console.WriteLine("Cannot process " + fileName);
-        }
-
-        db.AddPhoto(entry);
-        added++;
-        onAdded();
       }
     }
+  }
 
-    return added;
+  private static PhotoEntry BuildEntryFromFile(
+    Int64? folderId,
+    string file,
+    string fileName,
+    string fileExt,
+    ThumbnailDb thumbnailDb)
+  {
+    using (var stm = File.OpenRead(file))
+    {
+      // get hash of actual content
+      stm.Position = 0;
+      var hash = ComputeHash(stm);
+
+      var entry = new PhotoEntry()
+      {
+        folderId = folderId.Value,
+        fileName = fileName,
+        fileExt = fileExt,
+        fileSize = stm.Length,
+        hash = hash,
+      };
+
+      try
+      {
+        stm.Position = 0;
+        var info = new MagickImageInfo(stm);
+
+        // generate thumbnail
+        stm.Position = 0;
+
+        using (var image = new MagickImage(stm))
+        {
+          // save image and orientation
+          var imageSize = GetImageSize(image);
+          entry.width = imageSize.Width;
+          entry.height = imageSize.Height;
+          entry.format = (int)info.Format;
+
+          ReadExif(image, entry);
+          GenerateThumbnail(image, thumbnailDb, hash);
+        }
+
+        return entry;
+      }
+      catch (Exception _)
+      {
+        // nothing to do
+        Console.WriteLine("Cannot process " + fileName);
+        return null;
+      }
+    }
   }
 
   private static void ReadExif(MagickImage image, PhotoEntry entry)
@@ -150,6 +220,9 @@ public class Importer
     {
       var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
       entry.originalDateTime = original.ToString();
+
+      var imageId = profile.GetValue<string>(ExifTag.ImageUniqueID);
+      entry.imageId = imageId?.ToString();
     }
   }
 
@@ -178,7 +251,6 @@ public class Importer
 
   private static void GenerateThumbnail(MagickImage image, ThumbnailDb db, string hash)
   {
-
     // if (image.Orientation != OrientationType.Undefined)
     // {
     //   Console.WriteLine("hello");

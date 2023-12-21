@@ -2,10 +2,10 @@ import { CSSProperties, useEffect, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
 import { DayRowLayout, PhotoRowLayout } from "./PhotoRowLayout";
-import { selectionManager } from "./SelectionManager";
+import { selectionManager } from "../commands/SelectionManager";
 import { PhotoLayout } from "./PhotoLayout";
-import { Measure } from "./Measure";
-import { isEqualDay, toDayStart } from "./lib/date";
+import { Measure } from "../Measure";
+import { isEqualDay, toDayStart } from "../lib/date";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -140,9 +140,9 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
             setCurrentPhoto(props.photos[idx]);
           }
         }
-      } else if (event.key === 'KeyP') {
+      } else if (event.key === 'p') {
         selectionManager.forEach((x) => { x.favorite = 1; });
-      } else if (event.key === 'KeyX') {
+      } else if (event.key === 'x') {
         selectionManager.forEach((x) => { x.favorite = -1; });
       }
     }

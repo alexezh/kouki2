@@ -74,6 +74,23 @@ public class PhotoDbStatics
 
       {
         var command = connection.CreateCommand();
+        command.CommandText = "ALTER TABLE Photos ADD COLUMN imageId TEXT";
+
+        try
+        {
+          using (var reader = command.ExecuteReader())
+          {
+            // TODO: check error
+          }
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException e)
+        {
+          Console.WriteLine("uniqueId column already exists");
+        }
+      }
+
+      {
+        var command = connection.CreateCommand();
         command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoHash` ON `Photos` (`hash` ASC);";
         using (var reader = command.ExecuteReader())
         {
