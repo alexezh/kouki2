@@ -121,7 +121,6 @@ export function makeRows(photos: AlbumPhoto[],
     padding: number,
     startNewRow?: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => { headerRow: AlbumRow } | null
   }): AlbumRow[] {
-  let prevRow: AlbumPhoto[] = [];
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
@@ -152,7 +151,6 @@ export function makeRows(photos: AlbumPhoto[],
       }
     }
 
-    prevRow = row;
     prevHeight = height;
     row.push(photo);
 
@@ -160,10 +158,12 @@ export function makeRows(photos: AlbumPhoto[],
     if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
       rows.push(enforceMaxHeight({
         height: height,
-        photos: prevRow,
+        photos: row.slice(0, row.length - 1),
       }, maxHeight));
       row = [];
-      height = Number.MAX_SAFE_INTEGER;
+      // add last element back
+      row.push(photo);
+      height = computeRowHeight(row, options.targetWidth, options.padding);
     }
   }
 

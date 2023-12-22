@@ -9,7 +9,7 @@ import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, CatalogId, FolderId, loadCollection, loadFolder, loadFolders } from "../photo/PhotoStore";
 import { WireFolder } from "../lib/fetchadapter";
 import { Typography } from "@mui/material";
-import { PhotoInfo } from "../photo/PhotoInfo";
+import { PhotoInfo } from "./PhotoInfo";
 import { addOnFoldersChanged, addOnListChanged, removeOnFoldersChanged, setCurrentList } from "./NavigationState";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;

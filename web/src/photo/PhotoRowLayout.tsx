@@ -16,8 +16,12 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
     });
   }
 
+  let style: CSSProperties = { ...props.style, height: props.row.height };
+  if (props.row.height === 34) {
+    console.log("hello");
+  }
   return (
-    <div style={props.style} className="PhotoRow" >
+    <div style={style} className="PhotoRow" >
       {renderRow(props.row)}
     </div>
   );

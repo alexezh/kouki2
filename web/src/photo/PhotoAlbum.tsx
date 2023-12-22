@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
 import { DayRowLayout, PhotoRowLayout } from "./PhotoRowLayout";
@@ -6,6 +6,7 @@ import { selectionManager } from "../commands/SelectionManager";
 import { PhotoLayout } from "./PhotoLayout";
 import { Measure } from "../Measure";
 import { isEqualDay, toDayStart } from "../lib/date";
+import React from "react";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -76,14 +77,23 @@ function handlePhotoSelected(
   selectionManager.lastIndex = index;
 }
 
+type RowsDef = {
+  rows: AlbumRow[];
+  rowHeight: (idx: number) => number
+}
+
 export function PhotoAlbum(props: PhotoAlbumProps) {
-  const [rows, setRows] = useState([] as AlbumRow[]);
+  // react-window has a bug with updates
+  // it caches height of items for variable height based on function object
+  // so we have to give it different function when photos change
+  const [source, setSource] = useState<RowsDef>({ rows: [], rowHeight: (idx: number): number => { return 0; } });
   const [viewMode, setViewMode] = useState(ViewMode.measure);
   const [currentPhoto, setCurrentPhoto] = useState<AlbumPhoto | null>(null);
   const [dateRowHeight, setDateRowHeight] = useState(0);
+  const listRef = useRef(null);
 
   useEffect(() => {
-    setRows(makeRows(props.photos, {
+    let rows = makeRows(props.photos, {
       optimalHeight: 200,
       targetWidth: props.width,
       padding: 5,
@@ -102,22 +112,31 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           }
         }
       }
-    }));
+    });
+
+    setSource({
+      rows: rows,
+      rowHeight: (idx: number): number => {
+        let row = rows[idx];
+        if (row.dt) {
+          return dateRowHeight + 10;
+        } else {
+          return rows[idx].height;
+        }
+      }
+    });
+
+    // update layout
+    if (listRef.current) {
+      // @ts-ignore
+      listRef.current.resetAfterIndex(0);
+    }
 
     // reset to grid mode
     if (viewMode !== ViewMode.measure) {
       setViewMode(ViewMode.grid);
     }
   }, [props.photos, props.width]);
-
-  function getItemHeight(idx: number): number {
-    let row = rows[idx];
-    if (row.dt) {
-      return dateRowHeight + 10;
-    } else {
-      return rows[idx].height;
-    }
-  }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
@@ -177,7 +196,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
 
   let albumProps = props;
   function renderRow(props: ListChildComponentProps) {
-    let row = rows[props.index];
+    let row = source.rows[props.index];
     if (row.dt) {
       return (
         <DayRowLayout
@@ -225,10 +244,11 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     return (
       <div className="Container" tabIndex={0} onKeyDown={handleKeyDown}>
         <List
+          ref={listRef}
           style={listStyle}
           height={props.height}
-          itemCount={rows.length}
-          itemSize={getItemHeight}
+          itemCount={source.rows.length}
+          itemSize={source.rowHeight}
           width={props.width}
         >
           {renderRow}

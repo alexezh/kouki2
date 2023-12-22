@@ -100,14 +100,6 @@ public class PhotoLibraryController : Controller
     // for now we only accept * pattern
     return PhotoFs.Instance.GetThumbnailFile(id);
   }
-
-  /// <summary>
-  /// ensures that source folder is in sync with DB
-  /// </summary>
-  public void SyncSourceFolder()
-  {
-
-  }
 }
 
 // public class ListFiles : Controller

@@ -1,3 +1,4 @@
+using ImageMagick;
 using Microsoft.AspNetCore.Mvc;
 
 public class SourceFileName
@@ -92,9 +93,36 @@ public class PhotoFs
     }
 
     var folder = _photoDb.folders.GetFolder(infos[0].folderId);
-    var fileName = Path.Combine(folder.Path, $"{infos[0].fileName}{infos[0].fileExt}");
-    var file = File.OpenRead(fileName);
-    return new FileStreamResult(file, "image/jpeg");
+
+    var filePath = Path.Combine(folder.Path, $"{infos[0].fileName}{infos[0].fileExt}");
+    if (infos[0].format == (int)MagickFormat.Jpeg || infos[0].format == (int)MagickFormat.Jpg)
+    {
+      var file = File.OpenRead(filePath);
+      return new FileStreamResult(file, "image/jpeg");
+    }
+    else
+    {
+      using (var stm = File.OpenRead(filePath))
+      {
+        try
+        {
+          using (var image = new MagickImage(stm))
+          {
+            image.Format = MagickFormat.Jpeg;
+
+            var jpegStm = new MemoryStream();
+            image.Write(jpegStm);
+            jpegStm.Position = 0;
+            return new FileStreamResult(jpegStm, "image/jpeg");
+          }
+        }
+        catch (Exception e)
+        {
+          Console.WriteLine("Cannot convert");
+          return null;
+        }
+      }
+    }
   }
 
   public FileStreamResult GetThumbnailFile(string key)
