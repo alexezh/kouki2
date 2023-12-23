@@ -9,7 +9,7 @@ import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../lib/sleep";
-import { triggerRefreshFolders } from "./NavigationState";
+import { triggerRefreshFolders } from "../photo/FolderStore";
 
 export function AddFolderDialog(props: { onClose: () => void }) {
   const [value, setValue] = useState("");

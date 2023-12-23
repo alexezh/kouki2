@@ -3,14 +3,8 @@
 
 import { CSSProperties, useEffect, useLayoutEffect, useState } from 'react';
 import './App.css';
-import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
-import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
-import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import Lightbox from "yet-another-react-lightbox";
-import { AlbumPhoto, loadCollection, loadFolders, loadFolder } from './photo/PhotoStore';
+import { AlbumPhoto } from './photo/PhotoStore';
 import "yet-another-react-lightbox/styles.css";
-import { WireFolder, WirePhotoEntry } from './lib/fetchadapter';
 import AutoSizer from "react-virtualized-auto-sizer";
 import { PhotoAlbum } from './photo/PhotoAlbum';
 import { CommandBar } from './commands/CommandBar';

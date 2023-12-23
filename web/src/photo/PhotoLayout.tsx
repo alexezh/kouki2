@@ -9,7 +9,9 @@ export type PhotoPropTypes = {
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
-  margin: number;
+  padding: number;
+  visibility?: string;
+  left?: number;
   // if set, specify size of div
   // in which case picture is set to 100%
   width?: number;
@@ -48,28 +50,32 @@ export function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
-  let divStyleBase = props.style ?? {};
+  // @ts-ignore
   let divStyle: CSSProperties = (!props.width) ? {
-    ...divStyleBase,
-    width: props.photo.width * props.photo.scale,
-    height: props.photo.height * props.photo.scale,
+    left: props.left,
+    backgroundColor: (selected) ? "var(--photo-selectedcolor)" : undefined,
+    width: props.photo.width * props.photo.scale + props.padding * 2,
+    height: props.photo.height * props.photo.scale + props.padding * 2,
     display: 'block',
-    position: 'relative'
+    visibility: props.visibility,
+    position: 'absolute'
   } : {
-    ...divStyleBase,
+    left: props.left,
     width: props.width,
     height: props.height,
     display: 'block',
-    position: 'relative'
+    visibility: props.visibility,
+    position: 'absolute'
   }
 
   let imgStyle: CSSProperties;
-
   let src: string;
 
   if (!props.width) {
     imgStyle = {
       margin: 0,
+      left: props.padding,
+      top: props.padding,
       width: Math.round(props.photo.width * props.photo.scale),
       height: Math.round(props.photo.height * props.photo.scale),
       display: 'block',
@@ -102,23 +108,23 @@ export function PhotoLayout(props: PhotoPropTypes) {
     src = props.photo.getPhotoUrl();
   }
 
-  let checkStyle: CSSProperties = {
-    position: 'absolute',
-    left: 5,
-    top: 5,
-    zIndex: 1
-  }
+  // let checkStyle: CSSProperties = {
+  //   position: 'absolute',
+  //   left: 5,
+  //   top: 5,
+  //   zIndex: 1
+  // }
+  //   <img
+  //   style={checkStyle}
+  //   width={20}
+  //   height={20}
+  //   src={(selected) ? './assets/checkbox-check.svg' : './assets/checkbox-unchecked.svg'
+  //   }
+  //   onClick={handleSelect}
+  // />
 
   return (
     <div style={divStyle} className={props.className}>
-      <img
-        style={checkStyle}
-        width={20}
-        height={20}
-        src={(selected) ? './assets/checkbox-check.svg' : './assets/checkbox-unchecked.svg'
-        }
-        onClick={handleSelect}
-      />
       <img
         style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
         width={props.photo.width * props.photo.scale}

@@ -17,8 +17,9 @@
   --header-height: 40px;
   --sidebar-width: 200px;
   --zoom-list-height: 200px;
-  --sidebar-itemfont-size: 0.8em;
-  --sidebar-areafont-size: 15em
+  --sidebar-itemfont-size: 12px;
+  --sidebar-areafont-size: 15em;
+  --photo-selectedcolor: #b6ecfa;
 }
 
 .App-header {
@@ -80,6 +81,14 @@
 }
 
 .FolderItem {
+  font-size: var(--sidebar-itemfont-size);
+  text-wrap: nowrap;
+  direction: rtl
+}
+
+.CollectionItem {
+  font-size: var(--sidebar-itemfont-size);
+  text-wrap: nowrap;
   direction: rtl
 }
 
@@ -89,7 +98,7 @@
 }
 
 .PhotoRow {
-  display: flex;
+  display: block;
   flex-wrap: wrap;
   flex-direction: row
 }

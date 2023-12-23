@@ -6,11 +6,12 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, CatalogId, FolderId, loadCollection, loadFolder, loadFolders } from "../photo/PhotoStore";
+import { AlbumPhoto, CatalogId, FolderId, loadCollection, loadFolder } from "../photo/PhotoStore";
 import { WireFolder } from "../lib/fetchadapter";
 import { Typography } from "@mui/material";
 import { PhotoInfo } from "./PhotoInfo";
-import { addOnFoldersChanged, addOnListChanged, removeOnFoldersChanged, setCurrentList } from "./NavigationState";
+import { setCurrentList } from "./NavigationState";
+import { AlbumFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -59,17 +60,34 @@ export function collapsablePane(
   </Collapse>)]
 }
 
-function FolderItem(props: { folder: WireFolder }) {
+function FolderItem(props: { folder: AlbumFolder }) {
+  let [openFolders, setOpenFolders] = useState(false);
+
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    let photos = await loadFolder(props.folder.id);
+    let photos = await loadFolder(props.folder.wire!.id);
     //props.setPhotos(photos);
-    setCurrentList(props.folder.id as FolderId, photos);
+    setCurrentList(props.folder.wire!.id as FolderId, photos);
   }
 
-  return (
-    <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
-      <Typography noWrap>{props.folder.path}</Typography>
-    </ListItemButton>);
+  if (props.folder.children.length > 0) {
+    return (
+      <div>
+        <ListItemButton onClick={() => setOpenFolders(!openFolders)} key={'cat_' + props.folder.path} >
+          <div className="FolderItem">{props.folder.relname}</div>
+          {openFolders ? <ExpandLess /> : <ExpandMore />}
+        </ListItemButton >
+        <Collapse in={openFolders} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {props.folder.children.map((x) => { return (<FolderItem folder={x} />) })}
+          </List>
+        </Collapse>
+      </div>)
+  } else {
+    return (
+      <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.wire!.id}>
+        <div className="FolderItem">{props.folder.relname}</div>
+      </ListItemButton>);
+  }
 }
 
 function CollectionItem(props: { text: string, id: CatalogId }) {
@@ -80,7 +98,7 @@ function CollectionItem(props: { text: string, id: CatalogId }) {
 
   return (
     <ListItemButton sx={{ pl: 4 }} onClick={handleClick} key={'coll_' + props.id}>
-      <Typography noWrap>{props.text}</Typography>
+      <div className="CollectionItem">{props.text}</div>
     </ListItemButton>);
 }
 //export function NavigationBar() {
@@ -90,7 +108,7 @@ export function NavigationBar() {
   let [openFolders, setOpenFolders] = useState(false);
   let [openInfo, setOpenInfo] = useState(true);
 
-  const [folders, setFolders] = useState([] as WireFolder[]);
+  const [folders, setFolders] = useState([] as AlbumFolder[]);
   useEffect(() => {
     // reload folder list when folders change
     let idFolders = addOnFoldersChanged(async () => {

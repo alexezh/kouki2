@@ -1,19 +1,6 @@
 import { AlbumPhoto, CatalogId, FolderId, PhotoListId } from "../photo/PhotoStore";
 import { SimpleEventSource } from "../lib/synceventsource";
 
-export function addOnFoldersChanged(func: () => void): number {
-  return folderChanged.add(func);
-}
-
-export function removeOnFoldersChanged(id: number) {
-  return folderChanged.remove(id);
-}
-
-export function triggerRefreshFolders() {
-  folderChanged.invoke();
-}
-
-let folderChanged = new SimpleEventSource();
 let currentListId: PhotoListId = 'all';
 let currentList: AlbumPhoto[];
 let currentListChanged = new SimpleEventSource();

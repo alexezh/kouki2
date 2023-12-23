@@ -11,15 +11,27 @@ type PhotoRowLayoutProps = {
 export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   function renderRow(row: AlbumRow) {
     let res = [];
-    return row.photos!.map((photo: AlbumPhoto, index: number) => {
-      return (<PhotoLayout photo={photo} onClick={props.onClick} onSelected={props.onSelected} selected={false} margin={0} key={'photo_' + index}></PhotoLayout>)
-    });
+    let left = 0;
+    let index = 0;
+    for (let photo of row.photos!) {
+      res.push((<PhotoLayout
+        photo={photo}
+        onClick={props.onClick}
+        onSelected={props.onSelected}
+        selected={false}
+        padding={props.row.padding}
+        left={left}
+        key={'photo_' + index}></PhotoLayout>));
+
+      index++;
+      left += Math.round(photo.width * photo.scale) + row.padding * 2;
+    }
+
+    return res;
   }
 
-  let style: CSSProperties = { ...props.style, height: props.row.height };
-  if (props.row.height === 34) {
-    console.log("hello");
-  }
+  let style: CSSProperties = { ...props.style, height: props.row.height + props.row.padding * 2 };
+
   return (
     <div style={style} className="PhotoRow" >
       {renderRow(props.row)}

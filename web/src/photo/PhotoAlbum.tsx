@@ -1,12 +1,13 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
-import { AlbumPhoto, AlbumRow, makeRows } from "./PhotoStore";
+import { AlbumPhoto, AlbumRow } from "./PhotoStore";
 import { DayRowLayout, PhotoRowLayout } from "./PhotoRowLayout";
 import { selectionManager } from "../commands/SelectionManager";
 import { PhotoLayout } from "./PhotoLayout";
 import { Measure } from "../Measure";
 import { isEqualDay, toDayStart } from "../lib/date";
 import React from "react";
+import { makeRows } from "./MakeRows";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -96,7 +97,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     let rows = makeRows(props.photos, {
       optimalHeight: 200,
       targetWidth: props.width,
-      padding: 5,
+      padding: 10,
       startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
         if (idx !== 0) {
           let d1 = photos[idx - 1].originalDate;
@@ -108,7 +109,8 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         return {
           headerRow: {
             dt: toDayStart(photo.originalDate),
-            height: 0
+            height: 0,
+            padding: 0
           }
         }
       }
@@ -121,7 +123,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         if (row.dt) {
           return dateRowHeight + 10;
         } else {
-          return rows[idx].height;
+          return rows[idx].height + rows[idx].padding * 2;
         }
       }
     });
@@ -130,6 +132,10 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     if (listRef.current) {
       // @ts-ignore
       listRef.current.resetAfterIndex(0);
+      if (source && source.rows.length > 0) {
+        // @ts-ignore
+        listRef.current.scrollToItem(0);
+      }
     }
 
     // reset to grid mode
@@ -223,12 +229,6 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     width: props.width,
     position: 'absolute',
   }
-  let photoStyle: CSSProperties = {
-    visibility: showList ? "hidden" : "visible",
-    height: props.height,
-    width: props.width,
-    position: 'absolute',
-  }
 
   function onMeasureDayHeader(width: number, height: number) {
     setDateRowHeight(height);
@@ -254,17 +254,18 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           {renderRow}
         </List>
         {
-          (currentPhoto) ? (
-            <PhotoLayout key={currentPhoto!.wire.hash}
+          (!showList) ? (
+            <PhotoLayout
+              key={currentPhoto!.wire.hash}
               className="Photo"
-              style={photoStyle}
+              visibility={showList ? "hidden" : "visible"}
               photo={currentPhoto!}
-              margin={0}
+              padding={0}
               width={props.width}
               height={props.height}
               selected={true}></PhotoLayout>
           ) : null
         }
-      </div>);
+      </div >);
   }
 }
