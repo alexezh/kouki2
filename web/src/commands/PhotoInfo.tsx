@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto } from "../photo/PhotoStore";
+import { AlbumPhoto, AlbumRow } from "../photo/AlbumPhoto";
 
 function getProperties(photo: AlbumPhoto | null): { name: string, value: string }[] {
   if (!photo) {

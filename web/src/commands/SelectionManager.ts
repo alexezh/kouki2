@@ -1,4 +1,4 @@
-import { AlbumPhoto } from "../photo/PhotoStore";
+import { AlbumPhoto, AlbumRow } from "../photo/AlbumPhoto";
 
 export class SelectionManager {
   private _selected = new Map<string, AlbumPhoto>();

@@ -3,10 +3,10 @@
 
 import { CSSProperties, useEffect, useLayoutEffect, useState } from 'react';
 import './App.css';
-import { AlbumPhoto } from './photo/PhotoStore';
+import { AlbumPhoto, AlbumRow } from "./photo/AlbumPhoto";
 import "yet-another-react-lightbox/styles.css";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { PhotoAlbum } from './photo/PhotoAlbum';
+import { PhotoAlbum } from './photo/AlbumLayout';
 import { CommandBar } from './commands/CommandBar';
 import Drawer from '@mui/material/Drawer/Drawer';
 
@@ -15,7 +15,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './commands/NatigationBar';
 import { StatusBar } from './commands/StatusBar';
 import Typography from '@mui/material/Typography/Typography';
-import { addOnListChanged, getCurrentList, removeOnListChanged } from './commands/NavigationState';
+import { addOnStateChanged, getState, removeOnStateChanged } from './commands/AppState';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 
 const darkTheme = createTheme({
   palette: {
@@ -73,12 +75,14 @@ function App() {
   const [photos, setPhotos] = useState([] as AlbumPhoto[]);
 
   useEffect(() => {
-    let id = addOnListChanged(async () => {
-      setPhotos(getCurrentList());
+    let id = addOnStateChanged(async () => {
+      if (photos !== getState().currentList) {
+        setPhotos(getState().currentList);
+      }
     });
 
     return () => {
-      removeOnListChanged(id);
+      removeOnStateChanged(id);
     };
   }, []);
 
@@ -89,47 +93,49 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <div className="App" style={appStyle} >
-        <div className="AppFrame">
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            href="#app-bar-with-responsive-menu"
-            sx={{
-              mr: 2,
-              display: { xs: 'none', md: 'flex' },
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
-              textDecoration: 'none',
-              gridColumn: 1,
-              gridRow: 1
-            }}
-          >
-            Kouki2
-          </Typography>
-          <div className='Sidebar'>
-            <Drawer
-              variant="permanent"
-
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <CssBaseline />
+        <div className="App" style={appStyle} >
+          <div className="AppFrame">
+            <Typography
+              variant="h6"
+              noWrap
+              component="a"
+              href="#app-bar-with-responsive-menu"
               sx={{
-                display: { xs: 'none', sm: 'block' },
-                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "var(--sidebar-width)" },
+                mr: 2,
+                display: { xs: 'none', md: 'flex' },
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                letterSpacing: '.3rem',
+                color: 'inherit',
+                textDecoration: 'none',
+                gridColumn: 1,
+                gridRow: 1
               }}
-              open
             >
-              <NavigationBar />
-            </Drawer>
-          </div>
+              Kouki2
+            </Typography>
+            <div className='Sidebar'>
+              <Drawer
+                variant="permanent"
 
-          {renderWorkarea(photos)}
-          <CommandBar className="CommandBar" photos={photos}></CommandBar>
-          <StatusBar className="StatusBar"></StatusBar>
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "var(--sidebar-width)" },
+                }}
+                open
+              >
+                <NavigationBar />
+              </Drawer>
+            </div>
+
+            {renderWorkarea(photos)}
+            <CommandBar className="CommandBar" photos={photos}></CommandBar>
+            <StatusBar className="StatusBar"></StatusBar>
+          </div>
         </div>
-      </div >
+      </LocalizationProvider>
     </ThemeProvider >
   );
 }

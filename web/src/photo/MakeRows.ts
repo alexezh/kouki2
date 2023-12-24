@@ -1,4 +1,5 @@
-import { AlbumPhoto, AlbumRow } from "./PhotoStore";
+import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
+import { getDuplicateBucket } from "./PhotoStore";
 
 /**
  * split photo array into rows
@@ -24,6 +25,13 @@ export function makeRows(photos: AlbumPhoto[],
     let photo = photos[idx];
     if (photo.height === 0) {
       continue;
+    }
+
+    if (photo.dupCount > 1) {
+      let ids = getDuplicateBucket(photo);
+      if (photo.wire.id !== ids[0]) {
+        continue;
+      }
     }
 
     if (options.startNewRow) {

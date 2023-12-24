@@ -1,5 +1,5 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto } from "./PhotoStore";
+import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 
 export type PhotoPropTypes = {
@@ -132,6 +132,9 @@ export function PhotoLayout(props: PhotoPropTypes) {
         src={src}
         onClick={handleClick}
       />
+      {
+        (props.photo.dupCount > 1) ? (<div className="PhotoDupCounter">{props.photo.dupCount.toString()}</div>) : null
+      }
     </div>
   );
 };

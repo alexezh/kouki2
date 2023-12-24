@@ -28,6 +28,7 @@ export async function fetchResource(url: string): Promise<ArrayBuffer> {
 export type WirePhotoEntry = {
   id: number;
   hash: string;
+  folderId: number;
   fileName: string;
   fileExt: string;
   fileSize: number;

@@ -1,5 +1,5 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto, AlbumRow } from "./PhotoStore";
+import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { PhotoLayout } from "./PhotoLayout";
 
 type PhotoRowLayoutProps = {

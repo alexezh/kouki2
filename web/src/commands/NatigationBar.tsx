@@ -6,12 +6,13 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, CatalogId, FolderId, loadCollection, loadFolder } from "../photo/PhotoStore";
+import { AlbumPhoto, AlbumRow, CatalogId, FolderId } from "../photo/AlbumPhoto";
+import { loadCollection, loadFolder } from "../photo/PhotoStore";
 import { WireFolder } from "../lib/fetchadapter";
 import { Typography } from "@mui/material";
 import { PhotoInfo } from "./PhotoInfo";
-import { setCurrentList } from "./NavigationState";
 import { AlbumFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { updateState } from "./AppState";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -66,7 +67,7 @@ function FolderItem(props: { folder: AlbumFolder }) {
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     let photos = await loadFolder(props.folder.wire!.id);
     //props.setPhotos(photos);
-    setCurrentList(props.folder.wire!.id as FolderId, photos);
+    updateState({ currentListId: props.folder.wire!.id as FolderId, currentList: photos });
   }
 
   if (props.folder.children.length > 0) {
@@ -93,7 +94,7 @@ function FolderItem(props: { folder: AlbumFolder }) {
 function CollectionItem(props: { text: string, id: CatalogId }) {
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     let photos = await loadCollection(props.id);
-    setCurrentList(props.id, photos);
+    updateState({ currentListId: props.id, currentList: photos });
   }
 
   return (
@@ -122,7 +123,7 @@ export function NavigationBar() {
       setFolders(folders);
 
       let photos = await loadCollection('all');
-      setCurrentList('all', photos)
+      updateState({ currentListId: 'all', currentList: photos });
     });
     return () => {
       removeOnFoldersChanged(idFolders);

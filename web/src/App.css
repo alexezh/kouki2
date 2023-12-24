@@ -54,6 +54,7 @@
 
 .PhotoInfo {
   font-size: var(--sidebar-itemfont-size);
+  margin-left: 10px;
 }
 
 .Workarea {
@@ -83,7 +84,6 @@
 .FolderItem {
   font-size: var(--sidebar-itemfont-size);
   text-wrap: nowrap;
-  direction: rtl
 }
 
 .CollectionItem {
@@ -101,6 +101,12 @@
   display: block;
   flex-wrap: wrap;
   flex-direction: row
+}
+
+.PhotoDupCounter {
+  position: absolute;
+  right: 10px;
+  top: 3px;
 }
 
 .HeaderRow {

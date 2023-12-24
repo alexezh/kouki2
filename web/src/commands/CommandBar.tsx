@@ -1,14 +1,16 @@
 import AppBar from '@mui/material/AppBar/AppBar';
 import Toolbar from '@mui/material/Toolbar/Toolbar';
 import Button from '@mui/material/Button/Button';
-import { AlbumPhoto } from '../photo/PhotoStore';
+import { AlbumPhoto } from '../photo/AlbumPhoto';
 import { useState } from 'react';
 import Menu from '@mui/material/Menu/Menu';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
 import Box from '@mui/material/Box/Box';
 import { selectionManager } from './SelectionManager';
 import { AddFolderDialog, RescanFolderDialog } from './AddFolderDialog';
-import { getCurrentListId } from './NavigationState';
+import { DatePicker } from '@mui/x-date-pickers';
+import { Divider } from '@mui/material';
+import { getState } from './AppState';
 
 export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) {
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
@@ -61,7 +63,7 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
 
   function handleRescanFolder() {
     handleCloseLibraryMenu();
-    let listId = getCurrentListId();
+    let listId = getState().currentListId;
     if (typeof listId === "number") {
       setOpenRescanFolder(true);
     }
@@ -125,10 +127,16 @@ export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) 
             (openAddFolder) ? (<AddFolderDialog onClose={() => setOpenAddFolder(false)} />) : null
           }
           {
-            (openRescanFolder) ? (<RescanFolderDialog onClose={() => setOpenRescanFolder(false)} folderId={getCurrentListId() as number} />) : null
+            (openRescanFolder) ? (<RescanFolderDialog onClose={() => setOpenRescanFolder(false)} folderId={getState().currentListId as number} />) : null
           }
 
         </Box>
       </Toolbar>
     </AppBar>)
 };
+
+{/* <Divider />
+<DatePicker
+  label=""
+  views={['year', 'month', 'day']}
+  slotProps={{ textField: { size: 'small' } }} /> */}

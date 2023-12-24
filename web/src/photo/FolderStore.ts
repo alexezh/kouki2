@@ -77,6 +77,12 @@ function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
     }
   }
 
+  for (let [key, af] of folderMap) {
+    if (af.children.length > 1) {
+      af.children.sort((x: AlbumFolder, y: AlbumFolder) => { return x.relname.localeCompare(y.relname); })
+    }
+  }
+
   return [...topFolders.values()];
 }
 
