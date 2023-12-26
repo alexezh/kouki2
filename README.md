@@ -7,16 +7,17 @@ My typical scenario is
 - Go through photos on the phone or laptop, rank with favs, colors or stars
 - Publish a subset of selected phones on FB, Google Photo, etc
 - Remove not-so-interesting photos from the phone into an archive
-- Few times a year, print small subset or make a book
+- Few times a year, print small subset of photos or make a book
 
 Key things I am looking for are:
 - work with existing photo archive structure, including albums, export folders etc
 - one click transfer from the phone
 - one click archive of duplicate photos from the phone to hard drive while removing them from the phone
-- flexible photo management on a computer (and a phone)
+- flexible photo management on a computer (and a phone) including duplicate detection and export
 - no service cost
+- minimal editing (crop/rotation)
 
-On working with existing apps and services. In most cases apps and services can take a folder of photos as input. One of the great features of LR was an ability to export photos into a folder and keep folder in sync.
+At this point, Kouki2 supports import and initial level of photo editing (favorites/rejected/etc). I am planning to add export to folders, phash based duplicate detection and import/export from photo in next few months. 
 
 [<img src="./readme-screen1.jpeg" width="400" />]
 
@@ -27,3 +28,7 @@ Installation:
 - dotnet run
 
 UI is built from web directory. 
+- install nodejs
+- go to web directory and run "npm install"
+- run "npm run build" to produce build
+- copy to web/build to cs/wwwroot directory 
