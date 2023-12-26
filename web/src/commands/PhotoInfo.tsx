@@ -48,7 +48,12 @@ export function PhotoInfo() {
 
   return (
     <div className="PhotoInfo">
-      {getProperties(currentPhoto).map((x) => (<div>{x.name + x.value}</div>))}
+      {getProperties(currentPhoto).map((x) => (
+        <div className="PhotoInfoItem">
+          <div>{x.name}</div>
+          <div className="PhotoInfoValue">{x.value}</div>
+        </div>
+      ))}
     </div>
   );
 };

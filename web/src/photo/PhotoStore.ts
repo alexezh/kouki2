@@ -52,13 +52,22 @@ function buildDuplicateBuckets() {
   }
 }
 
-function filterPhotos(photos: Map<number, AlbumPhoto>, pred: (x: AlbumPhoto) => boolean) {
+function filterPhotos(photos: Map<number, AlbumPhoto> | AlbumPhoto[], pred: (x: AlbumPhoto) => boolean) {
   let filtered: AlbumPhoto[] = [];
-  for (let [key, photo] of photos) {
-    if (pred(photo)) {
-      filtered.push(photo);
+  if (Array.isArray(photos)) {
+    for (let photo of (photos as AlbumPhoto[])) {
+      if (pred(photo)) {
+        filtered.push(photo);
+      }
+    }
+  } else {
+    for (let [key, photo] of (photos as Map<number, AlbumPhoto>)) {
+      if (pred(photo)) {
+        filtered.push(photo);
+      }
     }
   }
+
   return filtered;
 }
 
@@ -85,21 +94,23 @@ export function getDuplicateBucket(photo: AlbumPhoto): number[] {
  * it is easier for us to keep lists and invalidate them as we go
  */
 export async function loadPhotoList(id: PhotoListId, pred?: (x: AlbumPhoto) => boolean): Promise<AlbumPhoto[]> {
-  let cachedList = photoLists.get(id);
-  if (cachedList) {
-    return cachedList;
-  }
-
   await loadLibrary();
 
-  let list = makeList(id, pred);
-  photoLists.set(id, list);
-  return list;
+  let cachedList = photoLists.get(id);
+  if (!cachedList) {
+    cachedList = makeList(id);
+    photoLists.set(id, cachedList);
+  }
+
+  if (pred) {
+    cachedList = filterPhotos(cachedList, pred);
+  }
+  return cachedList;
 }
 
-function makeList(id: PhotoListId, pred?: (x: AlbumPhoto) => boolean): AlbumPhoto[] {
+function makeList(id: PhotoListId): AlbumPhoto[] {
   if (typeof (id) === "number") {
-    let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.wire.folderId === id && ((pred) ? pred(x) : true) })
+    let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.wire.folderId === id })
     sortByDate(folderPhotos);
 
     return folderPhotos;
@@ -121,12 +132,12 @@ function makeList(id: PhotoListId, pred?: (x: AlbumPhoto) => boolean): AlbumPhot
           }
         }
 
-        return (pred) ? pred(x) : true;
+        return true;
       });
       sortByDate(allPhotos);
       return allPhotos;
     } else if (id === 'dups') {
-      let dupPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.dupCount > 1 && ((pred) ? pred(x) : true); })
+      let dupPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.dupCount > 1 })
       sortByDate(dupPhotos);
       return dupPhotos;
     } else {

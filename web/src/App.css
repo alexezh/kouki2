@@ -59,6 +59,18 @@
   margin-left: 10px;
 }
 
+.PhotoInfoItem {
+  display: flex;
+}
+
+.PhotoInfoValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  text-wrap: nowrap;
+  direction: rtl;
+}
+
 .AlbumLayout {
   width: '100%';
   height: '100%';
