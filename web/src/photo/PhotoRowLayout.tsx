@@ -1,6 +1,7 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { PhotoLayout } from "./PhotoLayout";
+import { selectionManager } from "../commands/SelectionManager";
 
 type PhotoRowLayoutProps = {
   style: CSSProperties,
@@ -18,7 +19,7 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
         photo={photo}
         onClick={props.onClick}
         onSelected={props.onSelected}
-        selected={false}
+        selected={selectionManager.isSelected(photo)}
         padding={props.row.padding}
         left={left}
         key={'photo_' + index}></PhotoLayout>));

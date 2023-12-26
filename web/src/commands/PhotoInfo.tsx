@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto, AlbumRow } from "../photo/AlbumPhoto";
+import { AlbumPhoto, AlbumRow, FolderId } from "../photo/AlbumPhoto";
+import { getDuplicateBucket, getPhotoById } from "../photo/PhotoStore";
+import { getFolder } from "../photo/FolderStore";
 
 function getProperties(photo: AlbumPhoto | null): { name: string, value: string }[] {
   if (!photo) {
@@ -16,6 +18,17 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   props.push({ name: 'Date:', value: photo.wire.originalDateTime });
   if (photo.wire.imageId) {
     props.push({ name: 'ImageId:', value: photo.wire.imageId });
+  }
+
+  if (photo.dupCount > 1) {
+    let ids = getDuplicateBucket(photo);
+    for (let id of ids) {
+      let dupPhoto = getPhotoById(id);
+      let folder = getFolder(dupPhoto!.wire.folderId as FolderId)
+      if (folder) {
+        props.push({ name: 'Folder:', value: folder.path });
+      }
+    }
   }
 
   return props;

@@ -1,9 +1,10 @@
-import { AlbumPhoto, CatalogId } from "./AlbumPhoto";
+import { AlbumPhoto, CatalogId, PhotoListId } from "./AlbumPhoto";
 import { WirePhotoEntry, wireGetCollection, wireGetFolder } from "../lib/fetchadapter";
 
 let photoMap = new Map<number, AlbumPhoto>();
 let duplicateByHashBuckets = new Map<string, number[]>();
 let loaded = false;
+let photoLists = new Map<PhotoListId, AlbumPhoto[]>();
 
 async function loadLibrary() {
   if (loaded) {
@@ -80,27 +81,57 @@ export function getDuplicateBucket(photo: AlbumPhoto): number[] {
   return ids ?? [photo.wire.id];
 }
 
-export async function loadFolder(folderId: number): Promise<AlbumPhoto[]> {
-  await loadLibrary();
-  let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.wire.folderId === folderId })
-  sortByDate(folderPhotos);
+/**
+ * it is easier for us to keep lists and invalidate them as we go
+ */
+export async function loadPhotoList(id: PhotoListId, pred?: (x: AlbumPhoto) => boolean): Promise<AlbumPhoto[]> {
+  let cachedList = photoLists.get(id);
+  if (cachedList) {
+    return cachedList;
+  }
 
-  return folderPhotos;
+  await loadLibrary();
+
+  let list = makeList(id, pred);
+  photoLists.set(id, list);
+  return list;
 }
 
-export async function loadCollection(id: CatalogId): Promise<AlbumPhoto[]> {
-  await loadLibrary();
+function makeList(id: PhotoListId, pred?: (x: AlbumPhoto) => boolean): AlbumPhoto[] {
+  if (typeof (id) === "number") {
+    let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.wire.folderId === id && ((pred) ? pred(x) : true) })
+    sortByDate(folderPhotos);
 
-  if (id === 'all') {
-    let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return true })
-    sortByDate(folderPhotos);
-    return folderPhotos;
-  } else if (id === 'dups') {
-    let folderPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.dupCount > 1 })
-    sortByDate(folderPhotos);
     return folderPhotos;
   } else {
-    return [];
+    if (id === 'all') {
+      let dupPhotos = new Map<number, boolean>();
+      let allPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => {
+
+        // ensure that we only have one photo in collection
+        if (x.dupCount > 1) {
+          let isDup = dupPhotos.get(x.wire.id);
+          if (isDup) {
+            return false;
+          }
+
+          let ids = getDuplicateBucket(x);
+          for (let id of ids) {
+            dupPhotos.set(id, true);
+          }
+        }
+
+        return (pred) ? pred(x) : true;
+      });
+      sortByDate(allPhotos);
+      return allPhotos;
+    } else if (id === 'dups') {
+      let dupPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.dupCount > 1 && ((pred) ? pred(x) : true); })
+      sortByDate(dupPhotos);
+      return dupPhotos;
+    } else {
+      return [];
+    }
   }
 }
 
@@ -108,3 +139,7 @@ export function getPhotoById(id: number): AlbumPhoto | undefined {
   return photoMap.get(id);
 }
 
+export async function getPhotoListSize(id: PhotoListId): Promise<number> {
+  let list = await loadPhotoList(id);
+  return list.length;
+}

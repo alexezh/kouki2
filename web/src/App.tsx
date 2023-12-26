@@ -61,7 +61,7 @@ function renderWorkarea(photos: AlbumPhoto[]) {
 
   // UI
   return (
-    <div className="Workarea">
+    <div className="AlbumLayout">
       <AutoSizer>
         {({ width, height }: { width: number, height: number }) => {
           return (<PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)

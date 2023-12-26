@@ -27,12 +27,12 @@ export function makeRows(photos: AlbumPhoto[],
       continue;
     }
 
-    if (photo.dupCount > 1) {
-      let ids = getDuplicateBucket(photo);
-      if (photo.wire.id !== ids[0]) {
-        continue;
-      }
-    }
+    // if (photo.dupCount > 1) {
+    //   let ids = getDuplicateBucket(photo);
+    //   if (photo.wire.id !== ids[0]) {
+    //     continue;
+    //   }
+    // }
 
     if (options.startNewRow) {
       let startRow = options.startNewRow(photo, idx, photos);

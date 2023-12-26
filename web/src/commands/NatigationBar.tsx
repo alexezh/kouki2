@@ -7,12 +7,10 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, AlbumRow, CatalogId, FolderId } from "../photo/AlbumPhoto";
-import { loadCollection, loadFolder } from "../photo/PhotoStore";
-import { WireFolder } from "../lib/fetchadapter";
-import { Typography } from "@mui/material";
 import { PhotoInfo } from "./PhotoInfo";
 import { AlbumFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
+import { getPhotoListSize } from "../photo/PhotoStore";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -62,12 +60,19 @@ export function collapsablePane(
 }
 
 function FolderItem(props: { folder: AlbumFolder }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    setTimeout(async () => {
+      if (props.folder.wire) {
+        setCount(await getPhotoListSize(props.folder.wire.id as FolderId));
+      }
+    })
+  });
   let [openFolders, setOpenFolders] = useState(false);
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    let photos = await loadFolder(props.folder.wire!.id);
     //props.setPhotos(photos);
-    updateState({ currentListId: props.folder.wire!.id as FolderId, currentList: photos });
+    updateState({ currentListId: props.folder.wire!.id as FolderId });
   }
 
   if (props.folder.children.length > 0) {
@@ -86,20 +91,35 @@ function FolderItem(props: { folder: AlbumFolder }) {
   } else {
     return (
       <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.wire!.id}>
-        <div className="FolderItem">{props.folder.relname}</div>
+        <div className="FolderItem">
+          <div>
+            {props.folder.relname}
+          </div>
+          <div className="FolderItem-Count">
+            {count}
+          </div>
+        </div>
       </ListItemButton>);
   }
 }
 
-function CollectionItem(props: { text: string, id: CatalogId }) {
+function CatalogItem(props: { text: string, id: CatalogId }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    setTimeout(async () => {
+      setCount(await getPhotoListSize(props.id));
+    })
+  });
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    let photos = await loadCollection(props.id);
-    updateState({ currentListId: props.id, currentList: photos });
+    updateState({ currentListId: props.id });
   }
 
   return (
     <ListItemButton sx={{ pl: 4 }} onClick={handleClick} key={'coll_' + props.id}>
-      <div className="CollectionItem">{props.text}</div>
+      <div className="CatalogItem">
+        <div>{props.text}</div>
+        <div className="CatalogItem-Count">{count}</div>
+      </div>
     </ListItemButton>);
 }
 //export function NavigationBar() {
@@ -122,8 +142,7 @@ export function NavigationBar() {
       let folders = await loadFolders();
       setFolders(folders);
 
-      let photos = await loadCollection('all');
-      updateState({ currentListId: 'all', currentList: photos });
+      updateState({ currentListId: 'all' });
     });
     return () => {
       removeOnFoldersChanged(idFolders);
@@ -135,7 +154,7 @@ export function NavigationBar() {
   return (
     <div>
       {collapsableList("Catalogs", openCollections, setOpenCollections,
-        catalogs.map((x) => { return (<CollectionItem text={x.name} id={x.id} />) }))}
+        catalogs.map((x) => { return (<CatalogItem text={x.name} id={x.id} />) }))}
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
         folders.map((x) => { return (<FolderItem folder={x} />) }))}

@@ -2,6 +2,16 @@ import { CSSProperties, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 
+function getFavIcon(favorite: number): string {
+  if (favorite > 0) {
+    return "./assets/heart-full.svg";
+  } else if (favorite < 0) {
+    return "./assets/heart-broken.svg";
+  } else {
+    return "./assets/heart.svg";
+  }
+}
+
 export type PhotoPropTypes = {
   key: string;
   className?: string;
@@ -23,6 +33,7 @@ const imgWithClick = { cursor: 'pointer' };
 
 export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
+  let [fav, setFav] = useState(getFavIcon(props.photo.favorite));
 
   useEffect(() => {
     let idSelected = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
@@ -30,7 +41,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
     })
 
     let idChanged = props.photo.addOnChanged((photo: AlbumPhoto) => {
-
+      setFav(getFavIcon(photo.favorite));
     });
     return () => {
       selectionManager.removeOnSelected(props.photo, idSelected);
@@ -54,6 +65,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
   let divStyle: CSSProperties = (!props.width) ? {
     left: props.left,
     backgroundColor: (selected) ? "var(--photo-selectedcolor)" : undefined,
+    border: 'solid',
+    borderColor: "var(--photo-bordercolor)",
     width: props.photo.width * props.photo.scale + props.padding * 2,
     height: props.photo.height * props.photo.scale + props.padding * 2,
     display: 'block',
@@ -108,23 +121,15 @@ export function PhotoLayout(props: PhotoPropTypes) {
     src = props.photo.getPhotoUrl();
   }
 
-  // let checkStyle: CSSProperties = {
-  //   position: 'absolute',
-  //   left: 5,
-  //   top: 5,
-  //   zIndex: 1
-  // }
-  //   <img
-  //   style={checkStyle}
-  //   width={20}
-  //   height={20}
-  //   src={(selected) ? './assets/checkbox-check.svg' : './assets/checkbox-unchecked.svg'
-  //   }
-  //   onClick={handleSelect}
-  // />
-
   return (
     <div style={divStyle} className={props.className}>
+      <img
+        className="PhotoFavIcon"
+        width={17}
+        height={17}
+        src={fav}
+      />
+
       <img
         style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
         width={props.photo.width * props.photo.scale}

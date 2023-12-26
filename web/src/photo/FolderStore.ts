@@ -1,5 +1,6 @@
 import { WireFolder, wireGetFolders } from "../lib/fetchadapter";
 import { SimpleEventSource } from "../lib/synceventsource";
+import { FolderId } from "./AlbumPhoto";
 
 export function addOnFoldersChanged(func: () => void): number {
   return folderChanged.add(func);
@@ -33,10 +34,14 @@ export class AlbumFolder {
 }
 
 let albumFolders: AlbumFolder[] = [];
+let folderIdMap = new Map<FolderId, AlbumFolder>();
 
 function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
   let folderMap = new Map<string, AlbumFolder>();
   let topFolders = new Map<string, AlbumFolder>();
+
+  folderIdMap.clear();
+
   for (let wf of wireFolders) {
     let parts = wf.path.split(/[/\\]/);
     let path: string[] = [];
@@ -59,6 +64,10 @@ function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
         folderMap.set(pathStr, af);
         if (parent) {
           parent.children.push(af);
+        }
+
+        if (wf) {
+          folderIdMap.set(wf.id as FolderId, af);
         }
 
         if (path.length === 1) {
@@ -98,6 +107,10 @@ function pruneFolderChain(folders: AlbumFolder[]): AlbumFolder[] {
 
     return folders;
   }
+}
+
+export function getFolder(id: FolderId): AlbumFolder | undefined {
+  return folderIdMap.get(id);
 }
 
 export async function loadFolders(): Promise<AlbumFolder[]> {
