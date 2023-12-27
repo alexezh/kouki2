@@ -28,6 +28,8 @@ Second is quick collection. In LR, quick collection provides a convenient way to
 - at this point user can run operation on a selection, or add selection to quick collection
 - in the latter case, user can later go to quick collection, select photos added recently and run an operation
 
+Kouki2 is implemented as DotNet local service providing storage and access to file system with UI built in React. By default the service only accepts connections from localhost; but can be extended to bind to public IPs. There is no authentication or HTTPS; so if you decide to expose it on the network, it is better to put it under Ngix or similar frontend service. Kouki2 stores metadata in two sqlite databases: photo and thumbnails.
+
 Installation:
 - install DotNet Core
 - cd kouki2/cs
