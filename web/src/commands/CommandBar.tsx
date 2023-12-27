@@ -17,6 +17,7 @@ import Radio from '@mui/material/Radio/Radio';
 import RadioGroup from '@mui/material/RadioGroup/RadioGroup';
 import React from 'react';
 import { all } from 'underscore';
+import { ExportSelectionDialog } from './ExportSelectionDialog';
 
 type CommandMenuProps = PropsWithChildren<{
   open: boolean,
@@ -83,6 +84,8 @@ export function FilterMenu(props: CommandMenuProps) {
 }
 
 export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
+  const [openExport, setExport] = useState(false);
+
   function handleSelectAll() {
     selectionManager.add(props.photos);
     props.onMenuClose();
@@ -105,12 +108,25 @@ export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
     props.onMenuClose();
   }
 
+  function handleExportSelection() {
+    props.onMenuClose();
+  }
+
+  function renderDialogs() {
+    return (<div>
+      {
+        (openExport) ? (<ExportSelectionDialog onClose={() => setExport(false)} />) : null
+      }
+    </div>)
+  }
 
   return (
-    <CommandMenu {...props} >
+    <CommandMenu {...props} extra={renderDialogs}>
       <MenuItem key="edit_all" onClick={handleSelectAll}>Select All</MenuItem>
       <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
+      <Divider />
+      <MenuItem key="export_selection" onClick={handleExportSelection}>Export Selection</MenuItem>
     </CommandMenu>
   )
 }

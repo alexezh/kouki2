@@ -185,11 +185,20 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       if (!(event.shiftKey || event.ctrlKey)) {
         selectionManager.clear();
       }
-      if (event.ctrlKey) {
-        selectionManager.add([photo]);
+      if (event.shiftKey) {
+        let idxCurrent = (currentPhoto) ? props.photos.findIndex((x) => x === currentPhoto) : -1;
+        let idxPhoto = props.photos.findIndex((x) => x === photo);
+
+        if (idxCurrent !== -1 && idxPhoto !== -1) {
+          let range = (idxCurrent > idxPhoto) ? props.photos.slice(idxPhoto, idxCurrent) : props.photos.slice(idxCurrent, idxPhoto + 1);
+          selectionManager.add(range);
+        } else {
+          selectionManager.add([photo]);
+        }
       } else {
         selectionManager.add([photo]);
       }
+      setCurrentPhoto(photo);
       event.preventDefault();
     }
   }

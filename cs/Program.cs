@@ -83,6 +83,10 @@ app.MapControllerRoute(
     name: "GetJobStatus",
     pattern: "/api/{controller=Job}/{action=GetJobStatus}/{id}");
 
+app.MapControllerRoute(
+    name: "ExportPhotos",
+    pattern: "/api/{controller=Export}/{action=ExportPhotos}");
+
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");
 
