@@ -14,16 +14,17 @@ public class ExportController : Controller
 
   // get string as resource
   [HttpPost]
-  public async Task<UpdatePhotoResponse> ExportPhotos(string id)
+  public async Task<ExportPhotosResponse> ExportPhotos()
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<UpdatePhotoRequest[]>(content);
+      var request = JsonSerializer.Deserialize<ExportPhotosRequest>(content);
 
-      PhotoFs.Instance.UpdatePhotos(request);
+      //PhotoFs.Instance.ExportPhotos(request);
+      var id = JobRunner.Instance.RunJob(new ExportJob(request));
 
-      return new UpdatePhotoResponse() { Error = "ok" };
+      return new ExportPhotosResponse() { result = "ok", jobId = id };
     }
   }
 }

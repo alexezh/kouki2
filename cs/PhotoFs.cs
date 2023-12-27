@@ -44,22 +44,27 @@ public class PhotoFs
   private PhotoDb _photoDb;
   private ThumbnailDb _thumbnailDb;
   private static PhotoFs _instance;
+  private string _exportPath;
   public static PhotoFs Instance => _instance;
 
-  private PhotoFs(string path)
+  private PhotoFs(string dbPath, string exportPath)
   {
-    PhotoDbStatics.CreatePhotoDb(path + "photo.sqlite");
-    PhotoDbStatics.CreateThumbnailDb(path + "thumbnail.sqlite");
-    _photoDb = new PhotoDb(path + "photo.sqlite");
-    _thumbnailDb = new ThumbnailDb(path + "thumbnail.sqlite");
+    _exportPath = exportPath;
+    var photoPath = Path.GetFullPath("photo.sqlite", dbPath);
+    var thumbnailPath = Path.GetFullPath("thumbnail.sqlite", dbPath);
+    PhotoDbStatics.CreatePhotoDb(photoPath);
+    PhotoDbStatics.CreateThumbnailDb(thumbnailPath);
+    _photoDb = new PhotoDb(photoPath);
+    _thumbnailDb = new ThumbnailDb(thumbnailPath);
   }
 
   public PhotoDb PhotoDb => _photoDb;
   public ThumbnailDb ThumbnailDb => _thumbnailDb;
+  public string ExportPath => _exportPath;
 
-  public static void Open(string path)
+  public static void Open(string dbPath, string exportPath)
   {
-    _instance = new PhotoFs(path);
+    _instance = new PhotoFs(dbPath, exportPath);
   }
 
   public bool CheckSourceFolder(FolderName folder)
@@ -178,6 +183,7 @@ public class PhotoFs
       File.Move(file, dest.Path);
     }
   }
+
 
   // move duplicates
 }

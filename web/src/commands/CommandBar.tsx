@@ -84,7 +84,7 @@ export function FilterMenu(props: CommandMenuProps) {
 }
 
 export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
-  const [openExport, setExport] = useState(false);
+  const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
     selectionManager.add(props.photos);
@@ -109,13 +109,14 @@ export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
   }
 
   function handleExportSelection() {
+    setOpenExport(true);
     props.onMenuClose();
   }
 
   function renderDialogs() {
     return (<div>
       {
-        (openExport) ? (<ExportSelectionDialog onClose={() => setExport(false)} />) : null
+        (openExport) ? (<ExportSelectionDialog onClose={() => setOpenExport(false)} />) : null
       }
     </div>)
   }

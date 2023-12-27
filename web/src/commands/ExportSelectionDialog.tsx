@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { wireAddFolder, wireGetJobStatus, wireRescanFolder } from "../lib/fetchadapter";
+import { wireAddFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/fetchadapter";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -10,9 +10,11 @@ import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
+import { selectionManager } from "./SelectionManager";
+import { AlbumPhoto } from "../photo/AlbumPhoto";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
-  const [value, setValue] = useState("");
+  const [path, setPath] = useState("");
   const [processing, setProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState(0);
 
@@ -24,14 +26,15 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
     setProcessing(true);
 
     try {
-      let addResponse = await wireAddFolder(value);
-      if (addResponse.result !== 'Ok') {
+      let photos = selectionManager.map((x: AlbumPhoto) => x.wire.id);
+      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos });
+      if (exportResponse.result !== 'Ok') {
         props.onClose();
         return;
       }
 
       while (true) {
-        let jobInfo = await wireGetJobStatus(addResponse.jobId);
+        let jobInfo = await wireGetJobStatus(exportResponse.jobId);
         if (jobInfo.result !== 'Processing') {
           break;
         } else {
@@ -39,6 +42,9 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
         }
         await sleep(1);
       }
+    }
+    catch (e: any) {
+      console.log(e.toString());
     }
     finally {
       triggerRefreshFolders();
@@ -48,7 +54,7 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
 
   async function handleChanged(event: React.ChangeEvent) {
     // @ts-ignore
-    setValue(event.target.value);
+    setPath(event.target.value);
   }
 
   return (
@@ -66,7 +72,7 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
           type="text"
           fullWidth
           variant="standard"
-          value={value}
+          value={path}
           onChange={handleChanged}
         />) : (<Typography variant="body1">{'Exported: ' + processedFiles + ' files'}</Typography>)}
       </DialogContent>

@@ -10,7 +10,10 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/bin/Debug/net7.0/koukisrv.dll",
-      "args": [],
+      "args": [
+        "/Users/alexezh/Pictures/kouki2",
+        "/Users/alexezh/Pictures/kouki2/export"
+      ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "serverReadyAction": {

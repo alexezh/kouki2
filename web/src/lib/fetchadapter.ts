@@ -146,6 +146,7 @@ export async function wireGetJobStatus(name: string): Promise<GetJobInfoResponse
 
 export type ExportPhotosRequest = {
   path: string;
+  format: string;
   photos: number[];
 }
 
@@ -155,6 +156,6 @@ export type ExportPhotosResponse = {
 }
 
 export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<ExportPhotosResponse> {
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/exportphotos`, JSON.stringify(wire))).json();
+  let response = await (await fetchAdapter!.post(`/api/export/exportphotos`, JSON.stringify(wire))).json();
   return response;
 }

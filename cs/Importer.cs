@@ -4,16 +4,16 @@ using ImageMagick;
 
 public class ImportJobResponse
 {
-  public int AddedFiles { get; set; }
-  public int UpdatedFiles { get; set; }
-  public string Result { get; set; }
+  public int addedFiles { get; set; }
+  public int updatedFiles { get; set; }
+  public string result { get; set; }
 }
 
 public class ImportJob : IJob
 {
   public void Run()
   {
-    _status.Result = "Processing";
+    _status.result = "Processing";
 
     Importer.ScanFiles(
       PhotoFs.Instance.PhotoDb,
@@ -21,11 +21,11 @@ public class ImportJob : IJob
       new FolderName(_path),
       (ScanStatus status) =>
       {
-        _status.AddedFiles = status.Added;
-        _status.UpdatedFiles = status.Updated;
+        _status.addedFiles = status.Added;
+        _status.updatedFiles = status.Updated;
       });
 
-    _status.Result = "Done";
+    _status.result = "Done";
     _completed = true;
   }
 
@@ -47,7 +47,7 @@ public class RescanJob : IJob
 {
   public void Run()
   {
-    _status.Result = "Processing";
+    _status.result = "Processing";
 
     Importer.RescanFolder(
       PhotoFs.Instance.PhotoDb,
@@ -55,11 +55,11 @@ public class RescanJob : IJob
       _folderId,
       (ScanStatus status) =>
       {
-        _status.AddedFiles = status.Added;
-        _status.UpdatedFiles = status.Updated;
+        _status.addedFiles = status.Added;
+        _status.updatedFiles = status.Updated;
       });
 
-    _status.Result = "Done";
+    _status.result = "Done";
     _completed = true;
   }
 

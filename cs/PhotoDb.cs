@@ -32,20 +32,24 @@ public class UpdateString
   string val;
 }
 
-public class AddFolderRequest
-{
-  public string folder { get; set; }
-}
-
 public class ResultResponse
 {
   public string result { get; set; }
 }
 
-public class AddFolderResponse
+public class BackgroundJobResponse
 {
   public string jobId { get; set; }
   public string result { get; set; }
+}
+
+public class AddFolderRequest
+{
+  public string folder { get; set; }
+}
+
+public class AddFolderResponse : BackgroundJobResponse
+{
 }
 
 public class RescanFolderRequest
@@ -53,10 +57,22 @@ public class RescanFolderRequest
   public Int64 folderId { get; set; }
 }
 
-public class RescanFolderResponse
+public class RescanFolderResponse : BackgroundJobResponse
 {
-  public string jobId { get; set; }
-  public string result { get; set; }
+}
+
+public class ExportPhotosRequest
+{
+  public string path { get; set; }
+  /// <summary>
+  /// original or jpeg
+  /// </summary>
+  public string format { get; set; }
+  public Int64[] photos { get; set; }
+}
+
+public class ExportPhotosResponse : BackgroundJobResponse
+{
 }
 
 public class UpdatePhotoRequest
@@ -341,6 +357,15 @@ public class PhotoDb
     {
       command.CommandText = "SELECT * FROM Photos WHERE hash == $hash";
       command.Parameters.AddWithValue("$hash", hash);
+    });
+  }
+
+  public List<PhotoEntry> GetPhotosById(Int64 id)
+  {
+    return SelectPhotos((command) =>
+    {
+      command.CommandText = "SELECT * FROM Photos WHERE id == $id";
+      command.Parameters.AddWithValue("$id", id);
     });
   }
 

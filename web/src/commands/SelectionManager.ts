@@ -40,7 +40,15 @@ export class SelectionManager {
   }
 
   public forEach(func: (x: AlbumPhoto) => void) {
-    this.items.forEach(func);
+    this._selected.forEach(func);
+  }
+
+  public map<T>(func: (x: AlbumPhoto) => T): T[] {
+    let ret: T[] = [];
+    for (let x of this._selected.values()) {
+      ret.push(func(x));
+    }
+    return ret;
   }
 
   public get items(): ReadonlyMap<string, AlbumPhoto> { return this._selected }

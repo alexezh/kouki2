@@ -10,14 +10,14 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-var dbPath = "../";
-if (args.Length > 0)
+if (args.Length < 2)
 {
-    dbPath = args[0];
+    Console.Error.WriteLine("use koukisrc <path_to_db> <path_to_export_dir>");
+    return;
 }
 
 // initialize storage
-PhotoFs.Open(dbPath);
+PhotoFs.Open(args[0], args[1]);
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
 
