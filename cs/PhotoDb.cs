@@ -39,15 +39,15 @@ public class UpdatePhotoRequest
 
 public class UpdatePhotoResponse
 {
-  public string Error { get; set; }
+  public string error { get; set; }
 }
 
 public class ThumbnailEntry
 {
-  public string Hash { get; set; }
-  public int Width { get; set; }
-  public int Height { get; set; }
-  public byte[] Data { get; set; }
+  public string hash { get; set; }
+  public int width { get; set; }
+  public int height { get; set; }
+  public byte[] data { get; set; }
 }
 
 public static class ReaderExt
@@ -328,8 +328,16 @@ public class PhotoDb
 
 public class FolderEntry
 {
-  public Int64 Id { get; set; }
-  public string Path { get; set; }
+  public Int64 id { get; set; }
+  public string path { get; set; }
+  public string kind { get; set; }
+}
+
+public class CollectionEntry
+{
+  public Int64 id { get; set; }
+  public string name { get; set; }
+  public string kind { get; set; }
 }
 
 public static class FolderQueriesExt
@@ -361,8 +369,8 @@ public static class FolderQueriesExt
       {
         return new FolderEntry()
         {
-          Id = id,
-          Path = (string)reader["path"]
+          id = id,
+          path = (string)reader["path"]
         };
       }
     }
@@ -382,8 +390,8 @@ public static class FolderQueriesExt
       {
         folders.Add(new FolderEntry()
         {
-          Id = (Int64)reader["id"],
-          Path = (string)reader["path"]
+          id = (Int64)reader["id"],
+          path = (string)reader["path"]
         });
       }
     }
@@ -391,21 +399,10 @@ public static class FolderQueriesExt
     return folders;
   }
 
-  public static Int64 AddSourceFolder(this PhotoDb self, string path)
+  public static Int64? AddSourceFolder(this PhotoDb self, string path, string kind = "user")
   {
-    var command = self.Connection.CreateCommand();
-    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
-    command.Parameters.AddWithValue("$path", path);
-
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return (Int64)reader["id"];
-      }
-    }
-
-    return 0;
+    (string, object)[] values = { ("path", path), ("kind", kind) };
+    return self.InsertWithId("SourceFolders", values);
   }
 }
 public static class CollectionsQueriesExt
@@ -419,9 +416,9 @@ public static class CollectionsQueriesExt
     });
   }
 
-  public static Int64? AddCollection(this PhotoDb self, string name)
+  public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user")
   {
-    (string, object)[] values = { ("name", name) };
+    (string, object)[] values = { ("name", name), ("kind", kind) };
     return self.InsertWithId("Collections", values);
   }
 
@@ -429,6 +426,28 @@ public static class CollectionsQueriesExt
   {
     (string, object)[] values = { ("id", collectionId), ("photoId", photoId), ("updateDt", dt) };
     return self.InsertWithId("CollectionItems", values);
+  }
+
+  public static List<CollectionEntry> GetCollections(this PhotoDb self)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Collections";
+
+    var collections = new List<CollectionEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        collections.Add(new CollectionEntry()
+        {
+          id = (Int64)reader["id"],
+          name = (string)reader["name"],
+          kind = (string)reader["kind"]
+        });
+      }
+    }
+
+    return collections;
   }
 }
 
@@ -438,6 +457,37 @@ public static class DeviceQueriesExt
   {
     (string, object)[] values = { ("name", name), ("archiveFolderId", folderId), ("deviceCollectionId", collId) };
     return self.InsertWithId("Devices", values);
+  }
+  public static List<DeviceEntry> GetDevices(this PhotoDb self, string deviceName = null)
+  {
+    var command = self.Connection.CreateCommand();
+
+    if (deviceName != null)
+    {
+      command.CommandText = "SELECT * FROM Devices WHERE name==$name";
+      command.Parameters.AddWithValue("$name", deviceName);
+    }
+    else
+    {
+      command.CommandText = "SELECT * FROM Devices";
+    }
+
+    var devices = new List<DeviceEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        devices.Add(new DeviceEntry()
+        {
+          id = (Int64)reader["id"],
+          name = (string)reader["name"],
+          deviceCollectionId = (Int64)reader["deviceCollectionId"],
+          archiveFolderId = (Int64)reader["archiveFolderId"],
+        });
+      }
+    }
+
+    return devices;
   }
 }
 
@@ -488,10 +538,10 @@ public class ThumbnailDb
   {
     var en = new ThumbnailEntry()
     {
-      Hash = (string)reader["hash"],
-      Width = unchecked((int)(Int64)reader["width"]),
-      Height = unchecked((int)(Int64)reader["height"]),
-      Data = (byte[])reader["data"],
+      hash = (string)reader["hash"],
+      width = unchecked((int)(Int64)reader["width"]),
+      height = unchecked((int)(Int64)reader["height"]),
+      data = (byte[])reader["data"],
     };
 
     return en;

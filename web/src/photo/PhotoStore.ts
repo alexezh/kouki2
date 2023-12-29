@@ -6,7 +6,7 @@ let duplicateByHashBuckets = new Map<string, number[]>();
 let loaded = false;
 let photoLists = new Map<PhotoListId, AlbumPhoto[]>();
 
-async function loadLibrary() {
+export async function loadLibrary() {
   if (loaded) {
     return;
   }

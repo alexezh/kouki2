@@ -52,6 +52,10 @@ app.MapControllerRoute(
     pattern: "/api/{controller=PhotoLibrary}/{action=GetCollection}/{id}");
 
 app.MapControllerRoute(
+    name: "GetCollections",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollections}");
+
+app.MapControllerRoute(
     name: "GetSourceFolders",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetSourceFolders}");
 
@@ -98,6 +102,10 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "AddDevice",
     pattern: "/api/{controller=MobileSync}/{action=AddDevice}");
+
+app.MapControllerRoute(
+    name: "GetDevices",
+    pattern: "/api/{controller=MobileSync}/{action=GetDevices}");
 
 app.MapControllerRoute(
     name: "UploadFile",

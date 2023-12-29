@@ -5,6 +5,8 @@ import { ExportSelectionDialog } from "./ExportSelectionDialog";
 import { selectionManager } from "./SelectionManager";
 import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { useState } from "react";
+import { wireAddFile, wireConnectDevice, wireGetFile, wireGetSyncList, wireUploadFile } from "../lib/fetchadapter";
+import { getPhotoById, loadPhotoList } from "../photo/PhotoStore";
 
 export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
   const [openExport, setOpenExport] = useState(false);
@@ -36,6 +38,21 @@ export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
     props.onMenuClose();
   }
 
+  async function handleAddPhone() {
+    let device = await wireConnectDevice("Ezh14");
+    let listResp = await wireGetSyncList({ deviceFolderId: device.archiveFolderId, files: ["hello"] });
+    let photos = await loadPhotoList('all');
+    let blob = await wireGetFile(photos[0].getPhotoUrl());
+    let uploadResp = await wireUploadFile(blob);
+    await wireAddFile({
+      hash: uploadResp.hash,
+      fileName: "hello.jpg",
+      favorite: false,
+      archiveFolderId: device.archiveFolderId,
+      deviceCollectionId: device.deviceCollectionId
+    })
+  }
+
   function renderDialogs() {
     return (<div>
       {
@@ -51,6 +68,7 @@ export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
       <MenuItem key="export_selection" onClick={handleExportSelection}>Export Selection</MenuItem>
+      <MenuItem key="addphone" onClick={handleAddPhone}>Add Phone</MenuItem>
     </CommandMenu>
   )
 }

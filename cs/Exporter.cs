@@ -114,8 +114,8 @@ public class Exporter
           if (!folderNames.TryGetValue(photo.folderId, out var folderPath))
           {
             var folder = photoDb.GetFolder(photo.folderId);
-            folderPath = folder.Path;
-            folderNames.Add(folder.Id, folder.Path);
+            folderPath = folder.path;
+            folderNames.Add(folder.id, folder.path);
           }
 
           var targetPath = Path.GetFullPath(photo.fileName + photo.fileExt, folderPath);

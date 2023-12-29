@@ -102,7 +102,7 @@ public class PhotoFs
 
     var folder = _photoDb.GetFolder(infos[0].folderId);
 
-    var filePath = Path.Combine(folder.Path, $"{infos[0].fileName}{infos[0].fileExt}");
+    var filePath = Path.Combine(folder.path, $"{infos[0].fileName}{infos[0].fileExt}");
     if (infos[0].format == (int)MagickFormat.Jpeg || infos[0].format == (int)MagickFormat.Jpg)
     {
       var file = File.OpenRead(filePath);
@@ -141,7 +141,7 @@ public class PhotoFs
       return null;
     }
 
-    return new FileStreamResult(new MemoryStream(infos[0].Data), "image/jpeg");
+    return new FileStreamResult(new MemoryStream(infos[0].data), "image/jpeg");
   }
 
   public static void CreateLink(SourceFileName nm, OutputFileName on)
@@ -177,6 +177,11 @@ public class PhotoFs
       return new PhotoEntry[0];
     }
     //return _photoDb.GetCollection(name);
+  }
+
+  public List<CollectionEntry> GetCollections()
+  {
+    return _photoDb.GetCollections();
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)

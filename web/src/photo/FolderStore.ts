@@ -2,20 +2,6 @@ import { WireFolder, wireGetFolders } from "../lib/fetchadapter";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { FolderId } from "./AlbumPhoto";
 
-export function addOnFoldersChanged(func: () => void): number {
-  return folderChanged.add(func);
-}
-
-export function removeOnFoldersChanged(id: number) {
-  return folderChanged.remove(id);
-}
-
-export function triggerRefreshFolders() {
-  folderChanged.invoke();
-}
-
-let folderChanged = new SimpleEventSource();
-
 export class PhotoFolder {
   public wire: WireFolder | null;
 
@@ -35,6 +21,22 @@ export class PhotoFolder {
 
 let photoFolders: PhotoFolder[] = [];
 let folderIdMap = new Map<FolderId, PhotoFolder>();
+
+export function addOnFoldersChanged(func: () => void): number {
+  return folderChanged.add(func);
+}
+
+export function removeOnFoldersChanged(id: number) {
+  return folderChanged.remove(id);
+}
+
+export function triggerRefreshFolders() {
+  setTimeout(async () => {
+    await loadFolders();
+  });
+}
+
+let folderChanged = new SimpleEventSource();
 
 function generatePhotoFolders(wireFolders: WireFolder[]): PhotoFolder[] {
   let folderMap = new Map<string, PhotoFolder>();
@@ -113,9 +115,15 @@ export function getFolder(id: FolderId): PhotoFolder | undefined {
   return folderIdMap.get(id);
 }
 
+export function getFolders(): PhotoFolder[] {
+  return photoFolders;
+}
+
 export async function loadFolders(): Promise<PhotoFolder[]> {
   let wireFolders = await wireGetFolders();
 
   photoFolders = generatePhotoFolders(wireFolders);
+  folderChanged.invoke();
+
   return photoFolders;
 }

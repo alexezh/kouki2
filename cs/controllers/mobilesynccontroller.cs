@@ -24,16 +24,19 @@ public class MobileSyncController : Controller
   [HttpPost]
   public async Task<ConnectDeviceResponse> ConnectDevice()
   {
-    string result;
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<ConnectDeviceRequest>(content);
 
-      result = MobileSync.ConnectDevice(PhotoFs.Instance, request) ? "ok" : "failed";
+      return MobileSync.ConnectDevice(PhotoFs.Instance, request);
     }
+  }
 
-    return new ConnectDeviceResponse() { };
+  [HttpGet]
+  public IEnumerable<DeviceEntry> GetDevices()
+  {
+    return MobileSync.GetDevices(PhotoFs.Instance);
   }
 
   [HttpPost]
@@ -53,8 +56,19 @@ public class MobileSyncController : Controller
   [HttpPost]
   public async Task<UploadFileResponse> UploadFile()
   {
-    var hash = MobileSync.UploadFile(Request.Body);
+    return await MobileSync.UploadFile(Request.Body);
+  }
 
-    return new UploadFileResponse() { hash = hash };
+  [HttpPost]
+  public async Task<ResultResponse> AddFile()
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<AddFileRequest>(content);
+
+      var resp = MobileSync.AddFile(PhotoFs.Instance, request);
+      return resp;
+    }
   }
 }

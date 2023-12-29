@@ -18,6 +18,9 @@ import Typography from '@mui/material/Typography/Typography';
 import { addOnStateChanged, getState, removeOnStateChanged } from './commands/AppState';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { loadFolders } from './photo/FolderStore';
+import { loadDevices } from './photo/Device';
+import { loadLibrary } from './photo/PhotoStore';
 
 const darkTheme = createTheme({
   palette: {
@@ -30,13 +33,6 @@ enum CanvasViewKind {
   Album,
   Collection,
   Device
-}
-
-class ViewDesc {
-  public kind: CanvasViewKind;
-  public constructor(kind: CanvasViewKind) {
-    this.kind = kind;
-  }
 }
 
 function useWindowSize() {

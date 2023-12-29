@@ -71,6 +71,12 @@ public class PhotoLibraryController : Controller
     return PhotoFs.Instance.GetCollection(id);
   }
 
+  [HttpGet]
+  public IEnumerable<CollectionEntry> GetCollections()
+  {
+    return PhotoFs.Instance.GetCollections();
+  }
+
   // get string as resource
   [HttpGet]
   public IActionResult GetImage(string id)
@@ -90,7 +96,7 @@ public class PhotoLibraryController : Controller
 
       PhotoFs.Instance.UpdatePhotos(request);
 
-      return new UpdatePhotoResponse() { Error = "ok" };
+      return new UpdatePhotoResponse() { error = "ok" };
     }
   }
 

@@ -99,7 +99,7 @@ public class Importer
   {
     var status = new ScanStatus();
     var folder = db.GetFolder(folderId);
-    ScanFolder(db, thumbnailDb, new FolderName(folder.Path), folderId, onProgress, status);
+    ScanFolder(db, thumbnailDb, new FolderName(folder.path), folderId, onProgress, status);
   }
 
   public static void ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Action<ScanStatus> onProgress, ScanStatus status = null)
@@ -123,7 +123,12 @@ public class Importer
         folderId = db.GetFolderId(folder.Path);
         if (folderId == null)
         {
-          folderId = db.AddSourceFolder(folder.Path);
+          var temp = db.AddSourceFolder(folder.Path);
+          if (temp == null)
+          {
+            throw new ArgumentException("Cannot create folder");
+          }
+          folderId = temp.Value;
         }
       }
 

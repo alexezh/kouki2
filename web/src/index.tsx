@@ -13,9 +13,20 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { setFetchAdapter, setSessionId } from './lib/fetchadapter';
 import { FetchAdapterWeb } from './lib/fetchadapterweb';
+import { loadFolders } from './photo/FolderStore';
+import { loadLibrary } from './photo/PhotoStore';
+import { loadDevices } from './photo/Device';
 
 setFetchAdapter(new FetchAdapterWeb());
 setSessionId('42')
+
+// start load of library
+setTimeout(async () => {
+  await loadLibrary();
+  await loadFolders();
+  await loadDevices();
+});
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

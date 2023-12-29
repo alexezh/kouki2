@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, AlbumRow, CatalogId, FolderId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
-import { PhotoFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { PhotoFolder, addOnFoldersChanged, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
 import { getPhotoListSize } from "../photo/PhotoStore";
+import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -59,7 +60,7 @@ export function collapsablePane(
   </Collapse>)]
 }
 
-function FolderItem(props: { folder: PhotoFolder }) {
+function FolderLayout(props: { folder: PhotoFolder }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     setTimeout(async () => {
@@ -84,7 +85,7 @@ function FolderItem(props: { folder: PhotoFolder }) {
         </ListItemButton >
         <Collapse in={openFolders} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            {props.folder.children.map((x) => { return (<FolderItem folder={x} />) })}
+            {props.folder.children.map((x) => { return (<FolderLayout folder={x} />) })}
           </List>
         </Collapse>
       </div>)
@@ -103,7 +104,7 @@ function FolderItem(props: { folder: PhotoFolder }) {
   }
 }
 
-function CatalogItem(props: { text: string, id: CatalogId }) {
+function CatalogLayout(props: { text: string, id: CatalogId }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     setTimeout(async () => {
@@ -122,6 +123,19 @@ function CatalogItem(props: { text: string, id: CatalogId }) {
       </div>
     </ListItemButton>);
 }
+
+function DeviceLayout(props: { device: Device }) {
+  return (
+    <ListItemButton sx={{ pl: 4 }} key={'device_' + props.device.wire.id}>
+      <div className="CatalogItem">
+        <div>{props.device.name}</div>
+      </div>
+      <List component="div" disablePadding>
+        <FolderLayout folder={props.device.archiveFolder} />
+      </List>
+    </ListItemButton>);
+}
+
 //export function NavigationBar() {
 //  return (
 export function NavigationBar() {
@@ -131,23 +145,26 @@ export function NavigationBar() {
   let [openInfo, setOpenInfo] = useState(true);
 
   const [folders, setFolders] = useState([] as PhotoFolder[]);
-  const [devices, setDevices] = useState([] as PhotoFolder[]);
+  const [devices, setDevices] = useState([] as Device[]);
   useEffect(() => {
     // reload folder list when folders change
-    let idFolders = addOnFoldersChanged(async () => {
-      let folders = await loadFolders();
-      setFolders(folders);
+    let idFolders = addOnFoldersChanged(() => {
+      setFolders(getFolders());
+    });
+
+    // reload folder list when folders change
+    let idDevives = addOnDeviceChanged(() => {
+      setDevices(getDevices());
     });
 
     // initially, open "All collection"
-    setTimeout(async () => {
-      let folders = await loadFolders();
-      setFolders(folders);
+    setFolders(getFolders());
+    setDevices(getDevices());
+    updateState({ currentListId: 'all' });
 
-      updateState({ currentListId: 'all' });
-    });
     return () => {
       removeOnFoldersChanged(idFolders);
+      removeOnDeviceChanged(idDevives);
     };
   }, []);
 
@@ -156,13 +173,13 @@ export function NavigationBar() {
   return (
     <div>
       {collapsableList("Catalogs", openCollections, setOpenCollections,
-        catalogs.map((x) => { return (<CatalogItem text={x.name} id={x.id} />) }))}
+        catalogs.map((x) => { return (<CatalogLayout text={x.name} id={x.id} />) }))}
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
-        folders.map((x) => { return (<FolderItem folder={x} />) }))}
+        folders.map((x) => { return (<FolderLayout folder={x} />) }))}
       <Divider />
       {collapsableList("Devices", openDevices, setOpenDevices,
-        folders.map((x) => { return (<FolderItem folder={x} />) }))}
+        devices.map((x) => { return (<DeviceLayout device={x} />) }))}
       <Divider />
       {collapsablePane("Photo Info", openInfo, setOpenInfo,
         () => (<PhotoInfo />))

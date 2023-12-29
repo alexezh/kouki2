@@ -13,7 +13,7 @@ public class ConnectDeviceRequest
   public string name { get; set; }
 }
 
-public class ConnectDeviceResponse
+public class ConnectDeviceResponse : ResultResponse
 {
   public Int64 archiveFolderId { get; set; }
   public Int64 deviceCollectionId { get; set; }
@@ -30,7 +30,7 @@ public class GetSyncListResponse : ResultResponse
   public string[] files { get; set; }
 }
 
-public class UploadFileResponse
+public class UploadFileResponse : ResultResponse
 {
   public string hash { get; set; }
 }
@@ -38,17 +38,18 @@ public class UploadFileResponse
 public class AddFileRequest
 {
   public Int64 archiveFolderId { get; set; }
-  public Int64 deviceCollection { get; set; }
+  public Int64 deviceCollectionId { get; set; }
   public string hash { get; set; }
   public string fileName { get; set; }
   public bool favorite { get; set; }
 }
 
-public class DeviceMetadata
+public class DeviceEntry
 {
+  public Int64 id;
   public string name;
-  public string archivePath { get; set; }
-  public Int64 phoneCollection { get; set; }
+  public Int64 archiveFolderId { get; set; }
+  public Int64 deviceCollectionId { get; set; }
 }
 
 /// <summary>
@@ -80,7 +81,11 @@ public class MobileSync
     {
       var archivePath = Path.GetFullPath(request.name, fs.DevicePath);
       Directory.CreateDirectory(archivePath);
-      var folderId = fs.PhotoDb.AddSourceFolder(archivePath);
+      var folderId = fs.PhotoDb.AddSourceFolder(archivePath, "device");
+      if (folderId == null)
+      {
+        throw new ArgumentException("Cannot create folder");
+      }
 
       var collId = fs.PhotoDb.AddCollection(request.name);
       if (collId == null)
@@ -88,7 +93,7 @@ public class MobileSync
         throw new ArgumentException("Cannot create collection");
       }
 
-      fs.PhotoDb.AddDevice(request.name, folderId, collId.Value);
+      fs.PhotoDb.AddDevice(request.name, folderId.Value, collId.Value);
 
       return true;
     }
@@ -99,31 +104,62 @@ public class MobileSync
     }
   }
 
-  public static bool ConnectDevice(PhotoFs fs, ConnectDeviceRequest request)
+  public static ConnectDeviceResponse ConnectDevice(PhotoFs fs, ConnectDeviceRequest request)
   {
     try
     {
-      var archivePath = Path.GetFullPath(request.name, fs.DevicePath);
-      Directory.CreateDirectory(archivePath);
-      var folderId = fs.PhotoDb.AddSourceFolder(archivePath);
+      var devices = fs.PhotoDb.GetDevices(request.name);
+      if (devices.Count != 1)
+      {
+        throw new ArgumentException("Device not found");
+      }
 
-      fs.PhotoDb.AddCollection(request.name);
-
-      return true;
+      return new ConnectDeviceResponse()
+      {
+        result = "ok",
+        archiveFolderId = devices[0].archiveFolderId,
+        deviceCollectionId = devices[0].deviceCollectionId
+      };
     }
     catch (Exception e)
     {
-      Console.Error.WriteLine("AddDevice failed: " + e.Message);
-      return false;
+      Console.Error.WriteLine("ConnectDevice failed: " + e.Message);
+      return new ConnectDeviceResponse()
+      {
+        result = "failed"
+      };
     }
   }
 
-  public static string UploadFile(Stream stm)
+  public static List<DeviceEntry> GetDevices(PhotoFs fs)
   {
-    stm.Position = 0;
-    var hash = ComputeHash(stm);
-    _pendingImages[hash] = stm;
-    return hash;
+    return fs.PhotoDb.GetDevices();
+  }
+
+  public static async Task<UploadFileResponse> UploadFile(Stream stm)
+  {
+    try
+    {
+      var memStm = new MemoryStream();
+      await stm.CopyToAsync(memStm);
+
+      memStm.Position = 0;
+      var hash = ComputeHash(memStm);
+      _pendingImages[hash] = memStm;
+      return new UploadFileResponse()
+      {
+        hash = hash,
+        result = "ok"
+      };
+    }
+    catch (Exception e)
+    {
+      Console.Error.WriteLine("UploadFile: " + e.ToString());
+      return new UploadFileResponse()
+      {
+        result = "failed"
+      };
+    }
   }
 
   public static ResultResponse AddFile(PhotoFs fs, AddFileRequest request)
@@ -137,7 +173,7 @@ public class MobileSync
 
       // save file to folder
       var folder = fs.PhotoDb.GetFolder(request.archiveFolderId);
-      var destPath = Path.GetFullPath(request.fileName, folder.Path);
+      var destPath = Path.GetFullPath(request.fileName, folder.path);
 
       stream.Position = 0;
 
@@ -147,7 +183,7 @@ public class MobileSync
       }
 
       // add file to archive folder
-      var photoId = Importer.AddFile(folder.Id, destPath, request.favorite, fs.PhotoDb, fs.ThumbnailDb);
+      var photoId = Importer.AddFile(folder.id, destPath, request.favorite, fs.PhotoDb, fs.ThumbnailDb);
       if (!photoId.HasValue)
       {
         return new ResultResponse() { result = "cannot_add_photo" };
@@ -155,7 +191,7 @@ public class MobileSync
 
       var dt = DateTime.UtcNow;
       // and now add to collection
-      fs.PhotoDb.AddCollectionItem(request.deviceCollection, photoId.Value, dt.ToBinary());
+      fs.PhotoDb.AddCollectionItem(request.deviceCollectionId, photoId.Value, dt.ToBinary());
 
       return new ResultResponse() { result = "ok" };
     }

@@ -9,6 +9,7 @@ import { isEqualDay, toDayStart } from "../lib/date";
 import React from "react";
 import { makeRows } from "./MakeRows";
 import { addQuickCollection } from "./PhotoStore";
+import { getState, updateState } from "../commands/AppState";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -97,36 +98,40 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const listRef = useRef(null);
 
   useEffect(() => {
-    let rows = makeRows(props.photos, {
-      optimalHeight: 200,
-      targetWidth: props.width,
-      padding: photoPadding,
-      startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
-        if (idx !== 0) {
-          let d1 = photos[idx - 1].originalDate;
-          let d2 = photo.originalDate;
-          if (isEqualDay(d1, d2)) {
-            return null;
+    let rows = getState().rows;
+    if (!rows) {
+      rows = makeRows(props.photos, {
+        optimalHeight: 200,
+        targetWidth: props.width,
+        padding: photoPadding,
+        startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
+          if (idx !== 0) {
+            let d1 = photos[idx - 1].originalDate;
+            let d2 = photo.originalDate;
+            if (isEqualDay(d1, d2)) {
+              return null;
+            }
+          }
+          return {
+            headerRow: {
+              dt: toDayStart(photo.originalDate),
+              height: 0,
+              padding: 0
+            }
           }
         }
-        return {
-          headerRow: {
-            dt: toDayStart(photo.originalDate),
-            height: 0,
-            padding: 0
-          }
-        }
-      }
-    });
+      });
+      updateState({ rows: rows });
+    }
 
     setSource({
       rows: rows,
       rowHeight: (idx: number): number => {
-        let row = rows[idx];
+        let row = rows![idx];
         if (row.dt) {
           return dateRowHeight + 10;
         } else {
-          return rows[idx].height + rows[idx].padding * 2;
+          return rows![idx].height + rows![idx].padding * 2;
         }
       }
     });

@@ -9,19 +9,22 @@ export interface AppState {
   readonly currentList: AlbumPhoto[];
   readonly filterFavorite: FilterFavorite;
   readonly filterStars: number;
+  readonly rows: AlbumRow[] | null;
 }
 
 export type AppStateUpdate = {
   currentListId?: PhotoListId;
   filterFavorite?: FilterFavorite;
   filterStars?: number;
+  rows?: AlbumRow[];
 }
 
 let state: AppState = {
   currentListId: 'all',
   currentList: [],
   filterFavorite: "all",
-  filterStars: 0
+  filterStars: 0,
+  rows: null
 }
 
 let initialized = false;
@@ -75,6 +78,8 @@ export function updateState(update: AppStateUpdate) {
 
       // @ts-ignore
       state.currentList = photos;
+      // @ts-ignore
+      state.rows = null;
       stateChanged.invoke();
     })
   } else {

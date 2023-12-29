@@ -11,6 +11,13 @@ export class FetchAdapterWeb implements IFetchAdapter {
     }
     return fetch(uri, { method: "POST", headers: { "accept": "application/json", "x-session": sessionId }, body: body });
   }
+  postBuffer(uri: string, body: ArrayBuffer): Promise<any> {
+    let sessionId = getSessionId();
+    if (sessionId === undefined) {
+      throw new Error('Not logged in');
+    }
+    return fetch(uri, { method: "POST", headers: { "accept": "application/json", "x-session": sessionId }, body: body });
+  }
 }
 
 /*
