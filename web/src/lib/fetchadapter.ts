@@ -25,6 +25,10 @@ export async function fetchResource(url: string): Promise<ArrayBuffer> {
   return await (await (await fetchAdapter!.get(url)).blob()).arrayBuffer();
 }
 
+export type ResultResponse = {
+  result: string;
+}
+
 export type WirePhotoEntry = {
   id: number;
   hash: string;
@@ -58,6 +62,13 @@ export type WireFolder = {
   path: string;
 }
 
+export type WireCollection = {
+  id: number;
+  name: string;
+  // quick, device, user
+  kind: string;
+}
+
 export type UpdateString = {
   val: string;
 }
@@ -79,6 +90,11 @@ export async function wireGetFolders(): Promise<WireFolder[]> {
 
 export async function wireGetFolder(id: number): Promise<WirePhotoEntry[]> {
   let response = await (await fetchAdapter!.get(`/api/photolibrary/getfolder/${id}`)).json();
+  return response;
+}
+
+export async function wireGetCollections(): Promise<WireCollection[]> {
+  let response = await (await fetchAdapter!.get(`/api/photolibrary/getcollections`)).json();
   return response;
 }
 
@@ -157,5 +173,26 @@ export type ExportPhotosResponse = {
 
 export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<ExportPhotosResponse> {
   let response = await (await fetchAdapter!.post(`/api/export/exportphotos`, JSON.stringify(wire))).json();
+  return response;
+}
+
+type AddDeviceRequest = {
+  name: string
+}
+
+type WireDevice = {
+  name: string;
+  archiveFolderId: number;
+  deviceCollectionId: number;
+}
+
+export async function wireAddDevice(name: string): Promise<ResultResponse> {
+  let request: AddDeviceRequest = { name: name };
+  let response = await (await fetchAdapter!.post(`/api/mobilesync/adddevice`, JSON.stringify(request))).json();
+  return response;
+}
+
+export async function wireGetDevices(name: string): Promise<WireDevice[]> {
+  let response = await (await fetchAdapter!.post(`/api/mobilesync/getdevices`)).json();
   return response;
 }

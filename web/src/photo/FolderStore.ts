@@ -16,7 +16,7 @@ export function triggerRefreshFolders() {
 
 let folderChanged = new SimpleEventSource();
 
-export class AlbumFolder {
+export class PhotoFolder {
   public wire: WireFolder | null;
 
   /**
@@ -24,7 +24,7 @@ export class AlbumFolder {
    */
   public relname: string;
   public path: string;
-  public children: AlbumFolder[] = [];
+  public children: PhotoFolder[] = [];
 
   public constructor(wire: WireFolder | null, relname: string, path: string) {
     this.wire = wire;
@@ -33,19 +33,19 @@ export class AlbumFolder {
   }
 }
 
-let albumFolders: AlbumFolder[] = [];
-let folderIdMap = new Map<FolderId, AlbumFolder>();
+let photoFolders: PhotoFolder[] = [];
+let folderIdMap = new Map<FolderId, PhotoFolder>();
 
-function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
-  let folderMap = new Map<string, AlbumFolder>();
-  let topFolders = new Map<string, AlbumFolder>();
+function generatePhotoFolders(wireFolders: WireFolder[]): PhotoFolder[] {
+  let folderMap = new Map<string, PhotoFolder>();
+  let topFolders = new Map<string, PhotoFolder>();
 
   folderIdMap.clear();
 
   for (let wf of wireFolders) {
     let parts = wf.path.split(/[/\\]/);
     let path: string[] = [];
-    let parent: AlbumFolder | null = null;
+    let parent: PhotoFolder | null = null;
 
     // first build complete tree and then remove unnecessary nodes
     for (let idx = 0; idx < parts.length; idx++) {
@@ -60,7 +60,7 @@ function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
       let pathStr = path.join('/');
       let af = folderMap.get(pathStr);
       if (!af) {
-        af = new AlbumFolder((idx === parts.length - 1) ? wf : null, part, pathStr);
+        af = new PhotoFolder((idx === parts.length - 1) ? wf : null, part, pathStr);
         folderMap.set(pathStr, af);
         if (parent) {
           parent.children.push(af);
@@ -88,14 +88,14 @@ function generateAlbumFolders(wireFolders: WireFolder[]): AlbumFolder[] {
 
   for (let [key, af] of folderMap) {
     if (af.children.length > 1) {
-      af.children.sort((x: AlbumFolder, y: AlbumFolder) => { return x.relname.localeCompare(y.relname); })
+      af.children.sort((x: PhotoFolder, y: PhotoFolder) => { return x.relname.localeCompare(y.relname); })
     }
   }
 
   return [...topFolders.values()];
 }
 
-function pruneFolderChain(folders: AlbumFolder[]): AlbumFolder[] {
+function pruneFolderChain(folders: PhotoFolder[]): PhotoFolder[] {
   // if we have one item and it does not have wire, skip it
   if (folders.length === 1 && !folders[0].wire) {
     return pruneFolderChain(folders[0].children);
@@ -109,13 +109,13 @@ function pruneFolderChain(folders: AlbumFolder[]): AlbumFolder[] {
   }
 }
 
-export function getFolder(id: FolderId): AlbumFolder | undefined {
+export function getFolder(id: FolderId): PhotoFolder | undefined {
   return folderIdMap.get(id);
 }
 
-export async function loadFolders(): Promise<AlbumFolder[]> {
+export async function loadFolders(): Promise<PhotoFolder[]> {
   let wireFolders = await wireGetFolders();
 
-  albumFolders = generateAlbumFolders(wireFolders);
-  return albumFolders;
+  photoFolders = generatePhotoFolders(wireFolders);
+  return photoFolders;
 }

@@ -10,6 +10,7 @@ import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
+import { catchAll, catchAllAsync } from "../lib/error";
 
 export function AddFolderDialog(props: { onClose: () => void }) {
   const [value, setValue] = useState("");
@@ -23,27 +24,29 @@ export function AddFolderDialog(props: { onClose: () => void }) {
   async function handleAdd() {
     setProcessing(true);
 
-    try {
-      let addResponse = await wireAddFolder(value);
-      if (addResponse.result !== 'Ok') {
-        props.onClose();
-        return;
-      }
-
-      while (true) {
-        let jobInfo = await wireGetJobStatus(addResponse.jobId);
-        if (jobInfo.result !== 'Processing') {
-          break;
-        } else {
-          setProcessedFiles(jobInfo.addedFiles);
+    catchAllAsync(async () => {
+      try {
+        let addResponse = await wireAddFolder(value);
+        if (addResponse.result !== 'Ok') {
+          props.onClose();
+          return;
         }
-        await sleep(1);
+
+        while (true) {
+          let jobInfo = await wireGetJobStatus(addResponse.jobId);
+          if (jobInfo.result !== 'Processing') {
+            break;
+          } else {
+            setProcessedFiles(jobInfo.addedFiles);
+          }
+          await sleep(1);
+        }
       }
-    }
-    finally {
-      triggerRefreshFolders();
-      props.onClose();
-    }
+      finally {
+        triggerRefreshFolders();
+        props.onClose();
+      }
+    });
   };
 
   async function handleChanged(event: React.ChangeEvent) {
@@ -88,28 +91,30 @@ export function RescanFolderDialog(props: { onClose: () => void, folderId: numbe
     setTimeout(async () => {
       setProcessing(true);
 
-      try {
-        let addResponse = await wireRescanFolder(props.folderId);
-        if (addResponse.result !== 'Ok') {
-          props.onClose();
-          return;
-        }
-
-        while (true) {
-          let jobInfo = await wireGetJobStatus(addResponse.jobId);
-          if (jobInfo.result !== 'Processing') {
-            break;
-          } else {
-            setAddedFiles(jobInfo.addedFiles);
-            setUpdatedFiles(jobInfo.updatedFiles);
+      catchAllAsync(async () => {
+        try {
+          let addResponse = await wireRescanFolder(props.folderId);
+          if (addResponse.result !== 'Ok') {
+            props.onClose();
+            return;
           }
-          await sleep(1);
+
+          while (true) {
+            let jobInfo = await wireGetJobStatus(addResponse.jobId);
+            if (jobInfo.result !== 'Processing') {
+              break;
+            } else {
+              setAddedFiles(jobInfo.addedFiles);
+              setUpdatedFiles(jobInfo.updatedFiles);
+            }
+            await sleep(1);
+          }
         }
-      }
-      finally {
-        triggerRefreshFolders();
-        props.onClose();
-      }
+        finally {
+          triggerRefreshFolders();
+          props.onClose();
+        }
+      });
     });
   }, [props.folderId]);
 

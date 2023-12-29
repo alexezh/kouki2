@@ -98,7 +98,7 @@ public class Importer
   public static void RescanFolder(PhotoDb db, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
   {
     var status = new ScanStatus();
-    var folder = db.folders.GetFolder(folderId);
+    var folder = db.GetFolder(folderId);
     ScanFolder(db, thumbnailDb, new FolderName(folder.Path), folderId, onProgress, status);
   }
 
@@ -120,10 +120,10 @@ public class Importer
     {
       if (folderId == null)
       {
-        folderId = db.folders.GetFolderId(folder.Path);
+        folderId = db.GetFolderId(folder.Path);
         if (folderId == null)
         {
-          folderId = db.folders.AddSourceFolder(folder.Path);
+          folderId = db.AddSourceFolder(folder.Path);
         }
       }
 
@@ -154,14 +154,30 @@ public class Importer
     }
   }
 
+  public static Int64? AddFile(Int64 folderId, string filePath, bool favorite, PhotoDb db, ThumbnailDb thumbnailDb)
+  {
+    var fileName = Path.GetFileNameWithoutExtension(filePath);
+    var fileExt = Path.GetExtension(filePath);
+
+    PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt, thumbnailDb);
+    if (entry == null)
+    {
+      return null;
+    }
+
+    entry.favorite = (favorite) ? 1 : 0;
+
+    return db.AddPhoto(entry);
+  }
+
   private static PhotoEntry BuildEntryFromFile(
     Int64? folderId,
-    string file,
+    string filePath,
     string fileName,
     string fileExt,
     ThumbnailDb thumbnailDb)
   {
-    using (var stm = File.OpenRead(file))
+    using (var stm = File.OpenRead(filePath))
     {
       // get hash of actual content
       stm.Position = 0;

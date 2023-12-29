@@ -8,6 +8,7 @@ import { Measure } from "../Measure";
 import { isEqualDay, toDayStart } from "../lib/date";
 import React from "react";
 import { makeRows } from "./MakeRows";
+import { addQuickCollection } from "./PhotoStore";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -169,6 +170,8 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         selectionManager.forEach((x) => { x.favorite = 1; });
       } else if (event.key === 'x') {
         selectionManager.forEach((x) => { x.favorite = -1; });
+      } else if (event.key === 'b') {
+        addQuickCollection(selectionManager.items.values());
       }
     }
   }

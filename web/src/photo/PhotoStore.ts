@@ -154,3 +154,7 @@ export async function getPhotoListSize(id: PhotoListId): Promise<number> {
   let list = await loadPhotoList(id);
   return list.length;
 }
+
+export function addQuickCollection(photos: IterableIterator<AlbumPhoto>) {
+
+}

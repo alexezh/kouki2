@@ -27,54 +27,6 @@ public class PhotoEntry
   public string imageId { get; set; }
 }
 
-public class UpdateString
-{
-  string val;
-}
-
-public class ResultResponse
-{
-  public string result { get; set; }
-}
-
-public class BackgroundJobResponse
-{
-  public string jobId { get; set; }
-  public string result { get; set; }
-}
-
-public class AddFolderRequest
-{
-  public string folder { get; set; }
-}
-
-public class AddFolderResponse : BackgroundJobResponse
-{
-}
-
-public class RescanFolderRequest
-{
-  public Int64 folderId { get; set; }
-}
-
-public class RescanFolderResponse : BackgroundJobResponse
-{
-}
-
-public class ExportPhotosRequest
-{
-  public string path { get; set; }
-  /// <summary>
-  /// original or jpeg
-  /// </summary>
-  public string format { get; set; }
-  public Int64[] photos { get; set; }
-}
-
-public class ExportPhotosResponse : BackgroundJobResponse
-{
-}
-
 public class UpdatePhotoRequest
 {
   public string hash { get; set; }
@@ -96,96 +48,6 @@ public class ThumbnailEntry
   public int Width { get; set; }
   public int Height { get; set; }
   public byte[] Data { get; set; }
-}
-
-public class FolderEntry
-{
-  public Int64 Id { get; set; }
-  public string Path { get; set; }
-}
-
-public class FolderQueries
-{
-  private SqliteConnection _connection;
-
-  public FolderQueries(SqliteConnection connection)
-  {
-    _connection = connection;
-  }
-
-  public Int64? GetFolderId(string path)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM SourceFolders WHERE path == $path";
-    command.Parameters.AddWithValue("$path", path);
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return (Int64)reader["id"];
-      }
-    }
-
-    return null;
-  }
-
-  public FolderEntry GetFolder(Int64 id)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM SourceFolders WHERE id == $id";
-    command.Parameters.AddWithValue("$id", id);
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return new FolderEntry()
-        {
-          Id = id,
-          Path = (string)reader["path"]
-        };
-      }
-    }
-
-    return null;
-  }
-
-  public List<FolderEntry> GetSourceFolders()
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM SourceFolders";
-
-    var folders = new List<FolderEntry>();
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        folders.Add(new FolderEntry()
-        {
-          Id = (Int64)reader["id"],
-          Path = (string)reader["path"]
-        });
-      }
-    }
-
-    return folders;
-  }
-
-  public Int64 AddSourceFolder(string path)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
-    command.Parameters.AddWithValue("$path", path);
-
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return (Int64)reader["id"];
-      }
-    }
-
-    return 0;
-  }
 }
 
 public static class ReaderExt
@@ -230,18 +92,18 @@ public static class ReaderExt
 public class PhotoDb
 {
   private SqliteConnection _connection;
-  public readonly FolderQueries folders;
   private string _path;
+
+  public SqliteConnection Connection => _connection;
 
   public PhotoDb(string path)
   {
     _path = path;
     _connection = PhotoDbStatics.CreateConnection(path);
     _connection.Open();
-    folders = new FolderQueries(_connection);
   }
 
-  public void AddPhoto(PhotoEntry entry)
+  public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
     command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt, imageId) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt, $imageId)";
@@ -262,6 +124,21 @@ public class PhotoDb
     {
       throw new ArgumentException("Cannot insert");
     }
+
+    /*
+    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
+    command.Parameters.AddWithValue("$path", path);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader["id"];
+      }
+    }
+    */
+
+    return 0;
   }
 
   private void AddStringValue(SqliteCommand command, string name, string val)
@@ -342,7 +219,7 @@ public class PhotoDb
       width = unchecked((int)(Int64)reader["width"]),
       height = unchecked((int)(Int64)reader["height"]),
       format = unchecked((int)(Int64)reader["format"]),
-      originalDateTime = dt?.ToString(),
+      originalDateTime = dt?.ToString("o"),
       originalHash = reader.ReadString("originalHash"),
       stackHash = reader.ReadString("stackHash"),
       imageId = reader.ReadString("imageId"),
@@ -378,15 +255,6 @@ public class PhotoDb
     });
   }
 
-  public List<PhotoEntry> GetCollection(Int64 collectionId)
-  {
-    return SelectPhotos((command) =>
-    {
-      command.CommandText = "SELECT * FROM Collection INNER JOIN Photos ON Collection.hash == Photos.hash  WHERE id == $id";
-      command.Parameters.AddWithValue("$id", collectionId);
-    });
-  }
-
   public List<PhotoEntry> SelectPhotos(Action<SqliteCommand> func)
   {
     var command = _connection.CreateCommand();
@@ -402,6 +270,27 @@ public class PhotoDb
     }
 
     return entries;
+  }
+
+  public Int64? InsertWithId(string table, (string, object val)[] values)
+  {
+    var command = _connection.CreateCommand();
+    command.CommandText = $"INSERT INTO {table}({String.Join(",", values.Select(x => x.Item1))}) VALUES({String.Join(",", values.Select(x => "$" + x.Item1))}) RETURNING id";
+    foreach (var val in values)
+    {
+      command.Parameters.AddWithValue("$" + val.Item1, val.Item2);
+    }
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader["id"];
+      }
+    }
+
+    return null;
+
   }
 
   public bool UpdatePhoto(UpdatePhotoRequest updateReqest)
@@ -433,6 +322,122 @@ public class PhotoDb
     }
 
     return true;
+  }
+
+}
+
+public class FolderEntry
+{
+  public Int64 Id { get; set; }
+  public string Path { get; set; }
+}
+
+public static class FolderQueriesExt
+{
+  public static Int64? GetFolderId(this PhotoDb self, string path)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM SourceFolders WHERE path == $path";
+    command.Parameters.AddWithValue("$path", path);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader["id"];
+      }
+    }
+
+    return null;
+  }
+
+  public static FolderEntry GetFolder(this PhotoDb self, Int64 id)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM SourceFolders WHERE id == $id";
+    command.Parameters.AddWithValue("$id", id);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return new FolderEntry()
+        {
+          Id = id,
+          Path = (string)reader["path"]
+        };
+      }
+    }
+
+    return null;
+  }
+
+  public static List<FolderEntry> GetSourceFolders(this PhotoDb self)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM SourceFolders";
+
+    var folders = new List<FolderEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        folders.Add(new FolderEntry()
+        {
+          Id = (Int64)reader["id"],
+          Path = (string)reader["path"]
+        });
+      }
+    }
+
+    return folders;
+  }
+
+  public static Int64 AddSourceFolder(this PhotoDb self, string path)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
+    command.Parameters.AddWithValue("$path", path);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader["id"];
+      }
+    }
+
+    return 0;
+  }
+}
+public static class CollectionsQueriesExt
+{
+  public static List<PhotoEntry> GetCollectionItems(this PhotoDb self, Int64 collectionId)
+  {
+    return self.SelectPhotos((command) =>
+    {
+      command.CommandText = "SELECT * FROM CollectionItems INNER JOIN Photos ON CollectionItems.id == Photos.id  WHERE id == $id";
+      command.Parameters.AddWithValue("$id", collectionId);
+    });
+  }
+
+  public static Int64? AddCollection(this PhotoDb self, string name)
+  {
+    (string, object)[] values = { ("name", name) };
+    return self.InsertWithId("Collections", values);
+  }
+
+  public static Int64? AddCollectionItem(this PhotoDb self, Int64 collectionId, Int64 photoId, Int64 dt)
+  {
+    (string, object)[] values = { ("id", collectionId), ("photoId", photoId), ("updateDt", dt) };
+    return self.InsertWithId("CollectionItems", values);
+  }
+}
+
+public static class DeviceQueriesExt
+{
+  public static Int64? AddDevice(this PhotoDb self, string name, Int64 folderId, Int64 collId)
+  {
+    (string, object)[] values = { ("name", name), ("archiveFolderId", folderId), ("deviceCollectionId", collId) };
+    return self.InsertWithId("Devices", values);
   }
 }
 

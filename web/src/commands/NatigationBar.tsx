@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, AlbumRow, CatalogId, FolderId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
-import { AlbumFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { PhotoFolder, addOnFoldersChanged, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
 import { getPhotoListSize } from "../photo/PhotoStore";
 
@@ -59,7 +59,7 @@ export function collapsablePane(
   </Collapse>)]
 }
 
-function FolderItem(props: { folder: AlbumFolder }) {
+function FolderItem(props: { folder: PhotoFolder }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     setTimeout(async () => {
@@ -127,9 +127,11 @@ function CatalogItem(props: { text: string, id: CatalogId }) {
 export function NavigationBar() {
   let [openCollections, setOpenCollections] = useState(true);
   let [openFolders, setOpenFolders] = useState(false);
+  let [openDevices, setOpenDevices] = useState(false);
   let [openInfo, setOpenInfo] = useState(true);
 
-  const [folders, setFolders] = useState([] as AlbumFolder[]);
+  const [folders, setFolders] = useState([] as PhotoFolder[]);
+  const [devices, setDevices] = useState([] as PhotoFolder[]);
   useEffect(() => {
     // reload folder list when folders change
     let idFolders = addOnFoldersChanged(async () => {
@@ -157,6 +159,9 @@ export function NavigationBar() {
         catalogs.map((x) => { return (<CatalogItem text={x.name} id={x.id} />) }))}
       <Divider />
       {collapsableList("Folders", openFolders, setOpenFolders,
+        folders.map((x) => { return (<FolderItem folder={x} />) }))}
+      <Divider />
+      {collapsableList("Devices", openDevices, setOpenDevices,
         folders.map((x) => { return (<FolderItem folder={x} />) }))}
       <Divider />
       {collapsablePane("Photo Info", openInfo, setOpenInfo,

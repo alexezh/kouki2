@@ -19,35 +19,16 @@ public class PhotoDbStatics
     {
       connection.Open();
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS Devices (id integer primary key, name TEXT, archiveFolderId INTEGER, deviceCollectionId INTEGER, metadata TEXT)");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `DeviceName` ON `Devices` (`name` ASC);");
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT)");
+      CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);");
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)");
 
-      {
-        string[] fields = new string[] {
+
+      string[] fields = new string[] {
           "id integer primary key",
           "hash TEXT",
           "originalHash TEXT", // hash of original picture
@@ -63,103 +44,44 @@ public class PhotoDbStatics
           "color TEXT",
           "width NUMBER",
           "height NUMBER",
-          "format NUMBER" };
-        var command = connection.CreateCommand();
-        command.CommandText = $"CREATE TABLE IF NOT EXISTS Photos ({String.Join(',', fields)})";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+          "format NUMBER",
+          // imageId from EXIF
+          "imageId TEXT" };
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "ALTER TABLE Photos ADD COLUMN imageId TEXT";
+      CreateTable(connection, $"CREATE TABLE IF NOT EXISTS Photos ({String.Join(',', fields)})");
 
-        try
-        {
-          using (var reader = command.ExecuteReader())
-          {
-            // TODO: check error
-          }
-        }
-        catch (Microsoft.Data.Sqlite.SqliteException e)
-        {
-          Console.WriteLine("uniqueId column already exists");
-        }
-      }
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoHash` ON `Photos` (`hash` ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoFolder` ON `Photos` (`folder` ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` ('filename' ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoPath` ON `Photos` (`folder` ASC, 'filename' ASC, 'fileext' ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoOriginal` ON `Photos` (`originalHash` ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackHash` ASC);");
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoHash` ON `Photos` (`hash` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS Collections (id INTEGER PRIMARY KEY, name TEXT, metadata TEXT)");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `CollectionName` ON `Collections` (`name` ASC);");
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoFolder` ON `Photos` (`folder` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS CollectionItems (id INTEGER, photoId INTEGER, updateDt INTEGER, metadata TEXT)");
+      CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `CollectionItems_PhotoId` ON `CollectionItems` (`id` ASC, 'photoId' ASC);");
+    }
+  }
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` ('filename' ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+  private static void CreateTable(SqliteConnection connection, string commandText)
+  {
+    var command = connection.CreateCommand();
+    command.CommandText = commandText;
+    using (var reader = command.ExecuteReader())
+    {
+      // TODO: check error
+    }
+  }
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoPath` ON `Photos` (`folder` ASC, 'filename' ASC, 'fileext' ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoOriginal` ON `Photos` (`originalHash` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackHash` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Collections (id INTEGER, photo TEXT)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `CollectionId` ON `Collections` (`id` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+  private static void CreateIndex(SqliteConnection connection, string commandText)
+  {
+    var command = connection.CreateCommand();
+    command.CommandText = commandText;
+    using (var reader = command.ExecuteReader())
+    {
+      // TODO: check error
     }
   }
 
@@ -169,23 +91,8 @@ public class PhotoDbStatics
     {
       connection.Open();
 
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE TABLE IF NOT EXISTS Thumbnails (hash TEXT, width NUMBER, height NUMBER, data BLOB)";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
-
-      {
-        var command = connection.CreateCommand();
-        command.CommandText = "CREATE INDEX IF NOT EXISTS `ByHash` ON `Thumbnails` (`hash` ASC);";
-        using (var reader = command.ExecuteReader())
-        {
-          // TODO: check error
-        }
-      }
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS Thumbnails (hash TEXT, width NUMBER, height NUMBER, data BLOB)");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `ByHash` ON `Thumbnails` (`hash` ASC);");
     }
   }
 

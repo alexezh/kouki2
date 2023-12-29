@@ -1,5 +1,21 @@
 using System.Collections.Concurrent;
 
+public class UpdateString
+{
+  string val;
+}
+
+public class ResultResponse
+{
+  public string result { get; set; }
+}
+
+public class BackgroundJobResponse
+{
+  public string jobId { get; set; }
+  public string result { get; set; }
+}
+
 
 public interface IJob
 {

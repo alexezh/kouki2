@@ -45,11 +45,13 @@ public class PhotoFs
   private ThumbnailDb _thumbnailDb;
   private static PhotoFs _instance;
   private string _exportPath;
+  private string _devicePath;
   public static PhotoFs Instance => _instance;
 
-  private PhotoFs(string dbPath, string exportPath)
+  private PhotoFs(string dbPath, string exportPath, string devicePath)
   {
     _exportPath = exportPath;
+    _devicePath = devicePath;
     var photoPath = Path.GetFullPath("photo.sqlite", dbPath);
     var thumbnailPath = Path.GetFullPath("thumbnail.sqlite", dbPath);
     PhotoDbStatics.CreatePhotoDb(photoPath);
@@ -61,10 +63,11 @@ public class PhotoFs
   public PhotoDb PhotoDb => _photoDb;
   public ThumbnailDb ThumbnailDb => _thumbnailDb;
   public string ExportPath => _exportPath;
+  public string DevicePath => _devicePath;
 
-  public static void Open(string dbPath, string exportPath)
+  public static void Open(string dbPath, string exportPath, string devicePath)
   {
-    _instance = new PhotoFs(dbPath, exportPath);
+    _instance = new PhotoFs(dbPath, exportPath, devicePath);
   }
 
   public bool CheckSourceFolder(FolderName folder)
@@ -97,7 +100,7 @@ public class PhotoFs
       return null;
     }
 
-    var folder = _photoDb.folders.GetFolder(infos[0].folderId);
+    var folder = _photoDb.GetFolder(infos[0].folderId);
 
     var filePath = Path.Combine(folder.Path, $"{infos[0].fileName}{infos[0].fileExt}");
     if (infos[0].format == (int)MagickFormat.Jpeg || infos[0].format == (int)MagickFormat.Jpg)
@@ -148,7 +151,7 @@ public class PhotoFs
 
   public IEnumerable<FolderEntry> GetSourceFolders()
   {
-    return _photoDb.folders.GetSourceFolders();
+    return _photoDb.GetSourceFolders();
   }
 
   public IEnumerable<PhotoEntry> GetFolder(Int64 folderId)

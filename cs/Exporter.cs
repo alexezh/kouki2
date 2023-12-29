@@ -2,6 +2,38 @@
 using System.Drawing;
 using ImageMagick;
 
+public class AddFolderRequest
+{
+  public string folder { get; set; }
+}
+
+public class AddFolderResponse : BackgroundJobResponse
+{
+}
+
+public class RescanFolderRequest
+{
+  public Int64 folderId { get; set; }
+}
+
+public class RescanFolderResponse : BackgroundJobResponse
+{
+}
+
+public class ExportPhotosRequest
+{
+  public string path { get; set; }
+  /// <summary>
+  /// original or jpeg
+  /// </summary>
+  public string format { get; set; }
+  public Int64[] photos { get; set; }
+}
+
+public class ExportPhotosResponse : BackgroundJobResponse
+{
+}
+
 public class ExportJobResponse
 {
   public int exportedFiles { get; set; }
@@ -81,7 +113,7 @@ public class Exporter
 
           if (!folderNames.TryGetValue(photo.folderId, out var folderPath))
           {
-            var folder = photoDb.folders.GetFolder(photo.folderId);
+            var folder = photoDb.GetFolder(photo.folderId);
             folderPath = folder.Path;
             folderNames.Add(folder.Id, folder.Path);
           }

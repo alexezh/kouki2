@@ -10,14 +10,14 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-if (args.Length < 2)
+if (args.Length < 3)
 {
-    Console.Error.WriteLine("use koukisrc <path_to_db> <path_to_export_dir>");
+    Console.Error.WriteLine("use koukisrc <path_to_db> <path_to_export_dir> <path_to_device_dir>");
     return;
 }
 
 // initialize storage
-PhotoFs.Open(args[0], args[1]);
+PhotoFs.Open(args[0], args[1], args[2]);
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
 //PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
 
@@ -86,6 +86,26 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "ExportPhotos",
     pattern: "/api/{controller=Export}/{action=ExportPhotos}");
+
+app.MapControllerRoute(
+    name: "GetSyncList",
+    pattern: "/api/{controller=MobileSync}/{action=GetSyncList}");
+
+app.MapControllerRoute(
+    name: "ConnectDevice",
+    pattern: "/api/{controller=MobileSync}/{action=ConnectDevice}");
+
+app.MapControllerRoute(
+    name: "AddDevice",
+    pattern: "/api/{controller=MobileSync}/{action=AddDevice}");
+
+app.MapControllerRoute(
+    name: "UploadFile",
+    pattern: "/api/{controller=MobileSync}/{action=UploadFile}");
+
+app.MapControllerRoute(
+    name: "AddFile",
+    pattern: "/api/{controller=MobileSync}/{action=AddFile}");
 
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");
