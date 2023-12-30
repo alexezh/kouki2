@@ -5,7 +5,7 @@ import { ExportSelectionDialog } from "./ExportSelectionDialog";
 import { selectionManager } from "./SelectionManager";
 import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { useState } from "react";
-import { wireAddFile, wireConnectDevice, wireGetFile, wireGetSyncList, wireUploadFile } from "../lib/fetchadapter";
+import { wireAddFile, wireConnectDevice, wireGetFile, wireGetSyncList, wireUploadFile } from "../lib/mobileclient";
 import { getPhotoById, loadPhotoList } from "../photo/PhotoStore";
 
 export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {

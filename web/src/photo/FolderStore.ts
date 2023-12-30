@@ -1,4 +1,4 @@
-import { WireFolder, wireGetFolders } from "../lib/fetchadapter";
+import { WireFolder, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { FolderId } from "./AlbumPhoto";
 

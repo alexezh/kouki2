@@ -8,18 +8,43 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 //builder.Services.AddSignalR();
 
-var app = builder.Build();
+string koukiPath;
+string exportPath = null;
+string devicesPath = null;
 
-if (args.Length < 3)
+if (args.Length > 0)
 {
-    Console.Error.WriteLine("use koukisrc <path_to_db> <path_to_export_dir> <path_to_device_dir>");
-    return;
+    koukiPath = args[0];
+    if (args.Length >= 2)
+    {
+        exportPath = args[1];
+    }
+    if (args.Length >= 3)
+    {
+        devicesPath = args[2];
+    }
+}
+else
+{
+    var picturesPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+    koukiPath = Path.GetFullPath("kouki2", picturesPath);
 }
 
+if (exportPath == null)
+{
+    exportPath = Path.GetFullPath("export", koukiPath);
+}
+if (devicesPath == null)
+{
+    devicesPath = Path.GetFullPath("devices", koukiPath);
+}
+
+Console.WriteLine($"Using {koukiPath} for Kouki database and directories");
+Console.WriteLine($"You can change it by running 'kouki2 <path_to_db> <path_to_export_dir> <path_to_device_dir>'");
+var app = builder.Build();
+
 // initialize storage
-PhotoFs.Open(args[0], args[1], args[2]);
-//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2018"));
-//PhotoFs.Instance.AddSourceFolder(new FolderName("/Users/alexezh/Pictures/stream/2019"));
+PhotoFs.Open(koukiPath, exportPath, devicesPath);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

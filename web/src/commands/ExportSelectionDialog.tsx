@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { wireAddFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/fetchadapter";
+import { wireAddFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";

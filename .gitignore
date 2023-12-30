@@ -5,6 +5,7 @@ photo.sqlite
 thumbnail.sqlite
 
 # Build
+web/.cert/*
 web/node_modules/*
 mobile/kouki2/node_module/*
 bin

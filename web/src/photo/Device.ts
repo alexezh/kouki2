@@ -1,5 +1,5 @@
 import { catchAllAsync } from "../lib/error";
-import { WireDevice, wireGetDevices } from "../lib/fetchadapter";
+import { WireDevice, wireGetDevices } from "../lib/mobileclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, FolderId } from "./AlbumPhoto";
 import { PhotoFolder, getFolder } from "./FolderStore";

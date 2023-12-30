@@ -2,7 +2,7 @@
   "name": "kouki2",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5054",
+  "proxy": "https://localhost:5054",
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
@@ -31,7 +31,7 @@
     "yet-another-react-lightbox": "^3.15.2"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "HTTPS=true SSL_CRT_FILE=./.cert/cert.pem SSL_KEY_FILE=./.cert/key.pem react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

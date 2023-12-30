@@ -3,7 +3,7 @@ import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import { AddFolderDialog, RescanFolderDialog } from "./AddFolderDialog";
 import { getState } from "./AppState";
 import { useState } from "react";
-import { wireAddDevice } from "../lib/fetchadapter";
+import { wireAddDevice } from "../lib/mobileclient";
 import { catchAll } from "../lib/error";
 
 export function LibraryMenu(props: CommandMenuProps) {

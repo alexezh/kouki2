@@ -1,4 +1,4 @@
-import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/fetchadapter";
+import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
 export type CatalogId = 'quick' | 'all' | 'starred' | 'dups';
 export type FolderId = number & {

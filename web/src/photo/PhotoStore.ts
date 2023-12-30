@@ -1,5 +1,5 @@
-import { AlbumPhoto, CatalogId, PhotoListId } from "./AlbumPhoto";
-import { WirePhotoEntry, wireGetCollection, wireGetFolder } from "../lib/fetchadapter";
+import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
+import { wireGetCollection } from "../lib/photoclient";
 
 let photoMap = new Map<number, AlbumPhoto>();
 let duplicateByHashBuckets = new Map<string, number[]>();
