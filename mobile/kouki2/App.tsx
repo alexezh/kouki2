@@ -30,7 +30,7 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-import { uploadPhotos } from './CameraRoll';
+import { ProgressStatus, uploadPhotos } from './CameraRoll';
 import { PhotoIdentifier } from '@react-native-camera-roll/camera-roll';
 
 type SectionProps = PropsWithChildren<{
@@ -65,7 +65,8 @@ type SectionProps = PropsWithChildren<{
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  const [text, setText] = useState("pending 2");
+  const [text, setText] = useState("");
+  const [progress, setProgress] = useState<ProgressStatus | null>(null);
 
   useEffect(() => {
     //setText("Loading");
@@ -93,8 +94,8 @@ function App(): React.JSX.Element {
 
   async function handleOnLoad() {
     try {
-      setText("Loading2");
-      let images = await uploadPhotos((x: string) => setText(x));
+      setText("uploading");
+      uploadPhotos((x: ProgressStatus) => setProgress(x));
     }
     catch (e: any) {
       setText(e.toString());
@@ -104,12 +105,20 @@ function App(): React.JSX.Element {
   async function handleOnConnect() {
     try {
       let device = await wireConnectDevice("Ezh14");
-      setText("Id " + device.archiveFolderId);
     }
     catch (e: any) {
       console.log("connect failed: " + e.toString());
-      setText("Failed " + e.toString());
     }
+  }
+
+  function renderProgress() {
+    return (
+      <View>
+        <Text style={styles.baseText}>{"Uploaded: " + progress!.uploadedCount}</Text>
+        <Text style={styles.baseText}>{"Skipped: " + progress!.skippedCount}</Text>
+        <Text style={styles.baseText}>{"Failed: " + progress!.failedCount}</Text>
+      </View>
+    )
   }
 
   return (
@@ -127,7 +136,10 @@ function App(): React.JSX.Element {
           }}>
           <Button onPress={handleOnConnect} title="Connect" />
           <Button onPress={handleOnLoad} title="Load" />
-          <Text style={styles.baseText}>{text}</Text>
+          <Text style={styles.baseText}>{"Status: " + text}</Text>
+          {
+            (progress) ? renderProgress() : null
+          }
         </View>
       </ScrollView>
     </SafeAreaView>

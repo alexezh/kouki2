@@ -26,13 +26,23 @@ export class FetchAdapterNative implements IFetchAdapter {
 
   async putFile(url: string, fileName: string, contentType: string): Promise<{ status: number, responseText: string | null }> {
     return new Promise((resolver, rejecter) => {
-      const xhr = new XMLHttpRequest();
+      let xhr: XMLHttpRequest = new XMLHttpRequest();
 
       xhr.onload = () => {
-        resolver({ status: xhr.status, responseText: xhr.responseText });
+        xhr.onerror = null;
+        xhr.onload = null;
+        let result = { status: xhr.status, responseText: xhr.responseText };
+        // @ts-ignore
+        xhr = null;
+        resolver(result);
       };
       xhr.onerror = (error) => {
-        rejecter({ status: -1 })
+        xhr.onerror = null;
+        xhr.onload = null;
+        let result = { status: -1 };
+        // @ts-ignore
+        xhr = null;
+        rejecter(result);
       };
 
       xhr.open('POST', this.baseUrl + url);

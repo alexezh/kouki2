@@ -3,6 +3,7 @@ export interface IFetchAdapter {
   get(uri: string): Promise<Response>;
   post(uri: string, body?: string): Promise<any>
   postBuffer(uri: string, body?: ArrayBuffer): Promise<any>
+  putFile(url: string, fileName: string, contentType: string): Promise<{ status: number, responseText: string | null }>;
 }
 
 export let fetchAdapter: IFetchAdapter | undefined = undefined;
