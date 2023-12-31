@@ -171,6 +171,19 @@ public class MobileSync
         return new ResultResponse() { result = "no_stream" };
       }
 
+      var fileName = Path.GetFileNameWithoutExtension(request.fileName);
+      var fileExt = Path.GetExtension(request.fileName);
+
+      var entries = fs.PhotoDb.GetPhotoByName(request.archiveFolderId, fileName, fileExt);
+      if (entries.Count > 0)
+      {
+        if (entries[0].hash == request.hash)
+        {
+          Console.WriteLine("Duplicate hash");
+          return new ResultResponse() { result = "ok" };
+        }
+      }
+
       // save file to folder
       var folder = fs.PhotoDb.GetFolder(request.archiveFolderId);
       var destPath = Path.GetFullPath(request.fileName, folder.path);

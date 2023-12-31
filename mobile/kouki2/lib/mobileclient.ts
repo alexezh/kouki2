@@ -59,6 +59,8 @@ export async function wireGetFile(url: string): Promise<ArrayBuffer> {
   return await (await (await fetchAdapter!.get(url)).blob()).arrayBuffer();
 }
 
+export const uploadFileUrl = '/api/mobilesync/uploadfile';
+
 export async function wireUploadFile(buffer: ArrayBuffer): Promise<UploadFileResponse> {
   let response = await (await fetchAdapter!.postBuffer('/api/mobilesync/uploadfile', buffer)).json();
   return response;

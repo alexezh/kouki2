@@ -1,85 +1,162 @@
-import { StatusBar } from 'expo-status-bar';
-import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ */
+
+import React from 'react';
+import type { PropsWithChildren } from 'react';
+import {
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
+import { Button } from 'react-native';
 import { useEffect, useState } from 'react';
 import { wireConnectDevice } from './lib/mobileclient';
 import { setFetchAdapter } from './lib/fetchadapter';
 import { FetchAdapterNative } from './lib/fetchadapternative';
 
-function Button2(props: { label: string, onClick: () => void }) {
-  return (
-    <View style={styles.buttonContainer}>
-      <Pressable style={styles.button} onPress={props.onClick}>
-        <Text style={styles.buttonLabel}>{props.label}</Text>
-      </Pressable>
-    </View>
-  );
-}
+import {
+  Colors,
+  DebugInstructions,
+  Header,
+  LearnMoreLinks,
+  ReloadInstructions,
+} from 'react-native/Libraries/NewAppScreen';
+import { uploadPhotos } from './CameraRoll';
+import { PhotoIdentifier } from '@react-native-camera-roll/camera-roll';
 
-export default function App() {
-  const [text, setText] = useState("");
+type SectionProps = PropsWithChildren<{
+  title: string;
+}>;
+
+// function Section({ children, title }: SectionProps): React.JSX.Element {
+//   const isDarkMode = useColorScheme() === 'dark';
+//   return (
+//     <View style={styles.sectionContainer}>
+//       <Text
+//         style={[
+//           styles.sectionTitle,
+//           {
+//             color: isDarkMode ? Colors.white : Colors.black,
+//           },
+//         ]}>
+//         {title}
+//       </Text>
+//       <Text
+//         style={[
+//           styles.sectionDescription,
+//           {
+//             color: isDarkMode ? Colors.light : Colors.dark,
+//           },
+//         ]}>
+//         {children}
+//       </Text>
+//     </View>
+//   );
+// }
+
+function App(): React.JSX.Element {
+  const isDarkMode = useColorScheme() === 'dark';
+  const [text, setText] = useState("pending 2");
 
   useEffect(() => {
+    //setText("Loading");
+
     setTimeout(async () => {
-      await MediaLibrary.requestPermissionsAsync(false);
+      // setText("Loading2");
+      // let images = await uploadPictures();
+      // setImages(images);
+      // setText(images.length.toString());
+      // await MediaLibrary.requestPermissionsAsync(false);
 
-      let total = 0;
-      let endCursor: string | undefined;
+      // let total = 0;
+      // let endCursor: string | undefined;
 
-      let page = await MediaLibrary.getAssetsAsync({ after: endCursor });
-      if (page.assets.length !== 0) {
-      }
+      // let page = await MediaLibrary.getAssetsAsync({ after: endCursor });
+      // if (page.assets.length !== 0) {
+      // }
       //setCount(albums?.length);
     })
-  });
+  }, []);
+
+  const backgroundStyle = {
+    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
+
+  async function handleOnLoad() {
+    try {
+      setText("Loading2");
+      let images = await uploadPhotos((x: string) => setText(x));
+    }
+    catch (e: any) {
+      setText(e.toString());
+    }
+  }
 
   async function handleOnConnect() {
     try {
-      setFetchAdapter(new FetchAdapterNative());
       let device = await wireConnectDevice("Ezh14");
+      setText("Id " + device.archiveFolderId);
     }
     catch (e: any) {
       console.log("connect failed: " + e.toString());
+      setText("Failed " + e.toString());
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Button onPress={handleOnConnect} title="Connect" />
-      <Text>Hello</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaView style={backgroundStyle}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={backgroundStyle.backgroundColor}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={backgroundStyle}>
+        <View
+          style={{
+            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+          }}>
+          <Button onPress={handleOnConnect} title="Connect" />
+          <Button onPress={handleOnLoad} title="Load" />
+          <Text style={styles.baseText}>{text}</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  sectionContainer: {
+    marginTop: 32,
+    paddingHorizontal: 24,
   },
-  buttonContainer: {
-    width: 320,
-    height: 68,
-    marginHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 3,
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
   },
-  button: {
-    borderRadius: 10,
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+  sectionDescription: {
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '400',
   },
-  buttonIcon: {
-    paddingRight: 8,
+  highlight: {
+    fontWeight: '700',
   },
-  buttonLabel: {
-    color: '#fff',
-    fontSize: 16,
+  baseText: {
+    fontFamily: 'Cochin',
+    fontSize: 18,
+    color: 'black',
   },
 });
+
+export default App;
+setFetchAdapter(new FetchAdapterNative());

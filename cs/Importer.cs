@@ -200,21 +200,36 @@ public class Importer
       try
       {
         stm.Position = 0;
-        var info = new MagickImageInfo(stm);
-
-        // generate thumbnail
-        stm.Position = 0;
-
-        using (var image = new MagickImage(stm))
+        try
         {
-          // save image and orientation
-          var imageSize = GetImageSize(image);
-          entry.width = imageSize.Width;
-          entry.height = imageSize.Height;
-          entry.format = (int)info.Format;
+          var info = new MagickImageInfo(stm);
 
-          ReadExif(image, entry);
-          GenerateThumbnail(image, thumbnailDb, hash);
+          // generate thumbnail
+          stm.Position = 0;
+
+          using (var image = new MagickImage(stm))
+          {
+            // save image and orientation
+            var imageSize = GetImageSize(image);
+            entry.width = imageSize.Width;
+            entry.height = imageSize.Height;
+            entry.format = (int)info.Format;
+
+            ReadExif(image, entry);
+            try
+            {
+              GenerateThumbnail(image, thumbnailDb, hash);
+            }
+            catch (Exception e)
+            {
+              Console.WriteLine("Cannot generate thumbnail: " + e.Message);
+            }
+          }
+        }
+        catch (Exception e)
+        {
+          // log and continue
+          Console.WriteLine("Cannot read image: " + fileName + fileExt);
         }
 
         return entry;
