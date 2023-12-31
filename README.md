@@ -16,16 +16,18 @@ Key scenarios which I would like to cover with Kouki are:
 - no service cost
 - minimal editing (crop/rotation)
 
+At this point, Kouki2 supports some basic functionality including import, basic library management and so on
+
 [<img src="./readme-screen1.jpeg" width="400" />]
 
-At this point, Kouki2 supports import, export and initial level of photo editing (favorites/rejected/etc). I am planning to add phash based duplicate detection and import/export from my phone in the next few months. 
+From the high level, library management UI looks similar to LR, however there are some big differences.
 
-There are several areas where I am looking to diverge from LR. First is publishing services. LR supports publishing services as a way to export photos to either cloud services or storage. I mostly used publishing to get a folder of photos which I then upload to some cloud service as an album. LR provides a good support for updating publishing directory based on changes in LR catalog. However, figuring out which photos need uploading was always a bit painful as there is no way to list which files have changed. Also, publishing services require non-trivial setup and are designed as long-term concepts. For Kouki, I am planning to implement "export" as a feature of selection. A user can take any selection and export it to a folder. If a folder is existing, a user will get an option to either append to the folder or replace it. 
+**First** is publishing services. LR supports publishing services as a way to export photos to either cloud services or storage. I mostly used publishing to get a folder of photos which I then upload to some cloud service as an album. LR provides a good support for updating publishing directory based on changes in LR catalog. However, figuring out which photos need uploading was always a bit painful as there is no way to list which files have changed. Also, publishing services require non-trivial setup and are designed as long-term concepts. For Kouki, I am planning to implement "export" as a feature of selection. A user can take any selection and export it to a folder. If a folder is existing, a user will get an option to either append to the folder or replace it. 
 
-Second is quick collection. In LR, quick collection provides a convenient way to create a list of photos for further processing which is more persistent than selection. The problem is that there is only one collection and many times I had to think if photos in the current quick collection need to be preserved. One option is to add a way to make additional collections, but this would require a user to invent and manage collection names which is non-trivial overhead. Another option is to make a quick collection infinite and provide a way to sort any collection by change time. When we combine the idea of infinite collection with export idea above, we get to the following workflow.
+**Second** is quick collection. In LR, quick collection provides a convenient way to create a list of photos for further processing which is more persistent than selection. The problem is that there is only one collection and many times I had to think if photos in the current quick collection need to be preserved. One option is to add a way to make additional collections, but this would require a user to invent and manage collection names which is non-trivial overhead. Another option is to make a quick collection infinite and provide a way to sort any collection by change time. When we combine the idea of infinite collection with export idea above, we get to the following workflow.
 
 - user selects a set of photos
 - at this point user can run operation on a selection, or add selection to quick collection
 - in the latter case, user can later go to quick collection, select photos added recently and run an operation
 
-[https://github.com/alexezh/kouki2/wiki/Installation]
+Installation instructions can be found [here](https://github.com/alexezh/kouki2/wiki/Installation)
