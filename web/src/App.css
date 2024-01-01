@@ -14,8 +14,11 @@
 }
 
 :root {
+  --total-height: 600px;
   --header-height: 40px;
   --sidebar-width: 200px;
+  --calendarbar-width: 70px;
+  --middlerow-height: calc(var(--total-height) - 2*var(--header-height));
   --zoom-list-height: 200px;
   --sidebar-itemfont-size: 12px;
   --sidebar-areafont-size: 15em;
@@ -42,8 +45,8 @@
 .AppFrame {
   text-align: left;
   display: grid;
-  grid-template-columns: var(--sidebar-width) auto;
-  grid-template-rows: var(--header-height) auto var(--header-height);
+  grid-template-columns: var(--sidebar-width) auto var(--calendarbar-width);
+  grid-template-rows: var(--header-height) var(--middlerow-height) var(--header-height);
   width: 100%;
   height: 100%;
 }
@@ -91,9 +94,39 @@
 .CommandBar {
   width: '100%';
   height: var(--header-height);
-  grid-column: 2;
+  grid-column: 2/3;
   grid-row: 1;
   z-index: 3;
+}
+
+.CalendarBar {
+  width: var(--calendarbar-width);
+  margin-left: 5px;
+  height: var(--middlerow-height);
+  overflow: auto;
+  max-height: var(--middlerow-height);
+  grid-column: 3;
+  grid-row: 2/3;
+  z-index: 3;
+}
+
+.CalendarBarYear {
+  text-align: left;
+  font-size: larger;
+}
+
+.CalendarBarYear:hover {
+  background-color: #828181;
+}
+
+.CalendarBarMonth {
+  margin-left: 4px;
+  text-align: left;
+  font-size: medium;
+}
+
+.CalendarBarMonth:hover {
+  background-color: #828181;
 }
 
 .FolderItem {
@@ -158,23 +191,6 @@
   z-index: 1;
   fill: rgb(244, 247, 244);
   filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
-}
-
-.AlbumZoomView {
-  display: grid;
-  grid-template-rows: auto var(--zoom-list-height);
-}
-
-.AlbumZoomView-Container {
-  display: block;
-}
-
-.AlbumZoomView-Photo {
-  grid-row: 1;
-}
-
-.AlbumZoomView-List {
-  grid-row: 2;
 }
 
 @keyframes App-logo-spin {

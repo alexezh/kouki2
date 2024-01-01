@@ -9,7 +9,7 @@ import { isEqualDay, toDayStart } from "../lib/date";
 import React from "react";
 import { makeRows } from "./MakeRows";
 import { addQuickCollection } from "./PhotoStore";
-import { getState, updateState } from "../commands/AppState";
+import { Command, addCommandHandler, getState, removeCommandHandler, updateState } from "../commands/AppState";
 
 type PhotoAlbumProps = {
   photos: AlbumPhoto[],
@@ -98,6 +98,22 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const listRef = useRef(null);
 
   useEffect(() => {
+    let cmdId = addCommandHandler((cmd: Command, ...args: any[]) => {
+      if (cmd != Command.ScrollAlbum) {
+        return;
+      }
+
+      if (listRef.current) {
+        if (source) {
+          let idx = source.rows.findIndex((row: AlbumRow) => row.dt && (args[0] as Date).valueOf() > row.dt!.valueOf())
+          if (idx > 0) {
+            // @ts-ignore
+            listRef.current.scrollToItem(idx);
+          }
+        }
+      }
+    });
+
     let rows = getState().rows;
     if (!rows) {
       rows = makeRows(props.photos, {
@@ -121,8 +137,8 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           }
         }
       });
-      updateState({ rows: rows });
     }
+    updateState({ rows: rows });
 
     setSource({
       rows: rows,
@@ -149,6 +165,10 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     // reset to grid mode
     if (viewMode !== ViewMode.measure) {
       setViewMode(ViewMode.grid);
+    }
+
+    return () => {
+      removeCommandHandler(cmdId);
     }
   }, [props.photos, props.width]);
 
