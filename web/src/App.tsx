@@ -32,23 +32,62 @@ enum CanvasViewKind {
   Device
 }
 
-function updateVars(width: number, height: number) {
+type LayoutVars = {
+  totalWidth: number;
+  totalHeight: number;
+  albumWidth: number;
+  albumHeight: number;
+}
+
+function updateVars(width: number, height: number): LayoutVars {
   let root = document.documentElement;
   root.style.setProperty('--total-height', height.toString());
+  root.style.setProperty('--total-width', width.toString());
+
+  return {
+    totalWidth: width,
+    totalHeight: height,
+    albumWidth: parseInt(root.style.getPropertyValue('--album-width')),
+    albumHeight: parseInt(root.style.getPropertyValue('--album-height')),
+  }
 }
 
 function useWindowSize() {
-  const [size, setSize] = useState([0, 0]);
+  const [size, setSize] = useState<LayoutVars>({ totalWidth: 800, totalHeight: 400, albumWidth: 600, albumHeight: 300 });
   useLayoutEffect(() => {
     function updateSize() {
-      updateVars(window.innerWidth, window.innerWidth);
-      setSize([window.innerWidth, window.innerHeight]);
+      let vars = updateVars(window.innerWidth, window.innerHeight);
+      setSize(vars);
     }
     window.addEventListener('resize', updateSize);
     updateSize();
     return () => window.removeEventListener('resize', updateSize);
   }, []);
   return size;
+}
+
+export type Size = {
+  width: number,
+  height: number
+}
+
+function MyAutoSizer(props: { className: string, render: (size: Size) => JSX.Element }) {
+  const ref = useRef(null);
+  const [size, setSize] = useState<Size | null>(null);
+  useLayoutEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+    // @ts-ignore
+    let newSize = { width: ref.current.offsetWidth, height: ref.current.offsetHeight }
+    if (size === null || newSize.width !== size.width || newSize.height !== size.height) {
+      setSize(newSize);
+    }
+  });
+
+  return (
+    <div className={props.className} ref={ref}>{(size) ? props.render(size) : null}</div>
+  )
 }
 
 function App() {
@@ -68,7 +107,7 @@ function App() {
   }, []);
 
   let appStyle = {
-    'width': size[0], 'height': size[1]
+    'width': size.totalWidth, 'height': size.totalHeight
   } as CSSProperties;
 
   // .AppFrame {
@@ -129,12 +168,10 @@ function App() {
               </Drawer>
             </div>
 
-            <div className="AlbumLayout">
-              <AutoSizer>
-                {({ width, height }: { width: number, height: number }) => (
-                  <PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)}
-              </AutoSizer>
-            </div>
+            <MyAutoSizer className='AlbumContainer' render={(size: Size) => (
+              <PhotoAlbum photos={photos}
+                width={size.width}
+                height={size.height} />)} />
             <CommandBar className="CommandBar" photos={photos}></CommandBar>
             <StatusBar className="StatusBar"></StatusBar>
             <CalendarBar className="CalendarBar"></CalendarBar>

@@ -19,6 +19,9 @@
   --sidebar-width: 200px;
   --calendarbar-width: 70px;
   --middlerow-height: calc(var(--total-height) - 2*var(--header-height));
+  --album-height: var(--middlerow-height);
+  --album-width: calc(var(--total-width) - var(--sidebar-width) - var(--calendarbar-width));
+  --middlerow-height: calc(var(--total-height) - 2*var(--header-height));
   --zoom-list-height: 200px;
   --sidebar-itemfont-size: 12px;
   --sidebar-areafont-size: 15em;
@@ -46,7 +49,7 @@
   text-align: left;
   display: grid;
   grid-template-columns: var(--sidebar-width) auto var(--calendarbar-width);
-  grid-template-rows: var(--header-height) var(--middlerow-height) var(--header-height);
+  grid-template-rows: var(--header-height) auto var(--header-height);
   width: 100%;
   height: 100%;
 }
@@ -74,13 +77,22 @@
   direction: rtl;
 }
 
-.AlbumLayout {
-  width: '100%';
-  height: '100%';
+.AlbumContainer {
+  width: var(--album-width);
+  height: var(--album-height);
+  min-height: var(--album-height);
+  max-height: var(--album-height);
   grid-column: 2;
   grid-row: 2;
   z-index: 1;
   background-color: var(--album-backcolor);
+}
+
+.AlbumLayout {
+  width: var(--album-width);
+  height: var(--album-height);
+  min-height: var(--album-height);
+  max-height: var(--album-height);
 }
 
 .StatusBar {
@@ -105,6 +117,7 @@
   height: var(--middlerow-height);
   overflow: auto;
   max-height: var(--middlerow-height);
+  min-height: var(--middlerow-height);
   grid-column: 3;
   grid-row: 2/3;
   z-index: 3;

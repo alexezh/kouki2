@@ -271,6 +271,11 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     position: 'absolute',
   }
 
+  let albumStyle: CSSProperties = {
+    height: props.height,
+    width: props.width,
+  }
+
   function onMeasureDayHeader(width: number, height: number) {
     setDateRowHeight(height);
     setViewMode(ViewMode.grid);
@@ -283,14 +288,14 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       </Measure>)
   } else {
     return (
-      <div className="AlbumLayout" tabIndex={0} onKeyDown={handleKeyDown}>
+      <div className='AlbumLayout' tabIndex={0} onKeyDown={handleKeyDown}>
         <List
           ref={listRef}
           style={listStyle}
           height={props.height}
+          width={props.width}
           itemCount={source.rows.length}
           itemSize={source.rowHeight}
-          width={props.width}
         >
           {renderRow}
         </List>
