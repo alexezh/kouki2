@@ -15,6 +15,7 @@
 
 :root {
   --total-height: 600px;
+  --total-width: 400px;
   --header-height: 40px;
   --sidebar-width: 200px;
   --calendarbar-width: 70px;
@@ -79,6 +80,8 @@
 
 .AlbumContainer {
   width: var(--album-width);
+  min-width: var(--album-width);
+  max-width: var(--album-width);
   height: var(--album-height);
   min-height: var(--album-height);
   max-height: var(--album-height);

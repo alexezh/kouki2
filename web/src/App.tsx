@@ -39,21 +39,19 @@ type LayoutVars = {
   albumHeight: number;
 }
 
-function updateVars(width: number, height: number): LayoutVars {
+function updateVars(width: number, height: number): Size {
   let root = document.documentElement;
   root.style.setProperty('--total-height', height.toString());
   root.style.setProperty('--total-width', width.toString());
 
   return {
-    totalWidth: width,
-    totalHeight: height,
-    albumWidth: parseInt(root.style.getPropertyValue('--album-width')),
-    albumHeight: parseInt(root.style.getPropertyValue('--album-height')),
+    width: width,
+    height: height,
   }
 }
 
 function useWindowSize() {
-  const [size, setSize] = useState<LayoutVars>({ totalWidth: 800, totalHeight: 400, albumWidth: 600, albumHeight: 300 });
+  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   useLayoutEffect(() => {
     function updateSize() {
       let vars = updateVars(window.innerWidth, window.innerHeight);
@@ -107,7 +105,7 @@ function App() {
   }, []);
 
   let appStyle = {
-    'width': size.totalWidth, 'height': size.totalHeight
+    'width': size.width, 'height': size.height
   } as CSSProperties;
 
   // .AppFrame {
@@ -168,10 +166,16 @@ function App() {
               </Drawer>
             </div>
 
-            <MyAutoSizer className='AlbumContainer' render={(size: Size) => (
-              <PhotoAlbum photos={photos}
-                width={size.width}
-                height={size.height} />)} />
+            { /**
+             * ATT: sizer has weird behavior when it comes to grid. It is better to shield
+             * logic by having wrapper div
+             */}
+            <div className='AlbumContainer'>
+              <AutoSizer>
+                {({ width, height }: { width: number, height: number }) => (
+                  <PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)}
+              </AutoSizer>
+            </div>
             <CommandBar className="CommandBar" photos={photos}></CommandBar>
             <StatusBar className="StatusBar"></StatusBar>
             <CalendarBar className="CalendarBar"></CalendarBar>
