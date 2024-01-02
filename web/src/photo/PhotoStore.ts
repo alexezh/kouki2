@@ -136,10 +136,6 @@ function makeList(id: PhotoListId): AlbumPhoto[] {
       });
       sortByDate(allPhotos);
       return allPhotos;
-    } else if (id === 'dups') {
-      let dupPhotos = filterPhotos(photoMap, (x: AlbumPhoto) => { return x.dupCount > 1 })
-      sortByDate(dupPhotos);
-      return dupPhotos;
     } else {
       return [];
     }

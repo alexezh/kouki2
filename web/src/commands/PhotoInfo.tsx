@@ -16,20 +16,21 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   props.push({ name: 'Height:', value: photo.wire.height.toString() });
   props.push({ name: 'Size:', value: photo.wire.fileSize.toString() });
   props.push({ name: 'Date:', value: photo.wire.originalDateTime });
+  props.push({ name: 'DupCount:', value: photo.dupCount.toString() });
   if (photo.wire.imageId) {
     props.push({ name: 'ImageId:', value: photo.wire.imageId });
   }
 
-  if (photo.dupCount > 1) {
-    let ids = getDuplicateBucket(photo);
-    for (let id of ids) {
-      let dupPhoto = getPhotoById(id);
-      let folder = getFolder(dupPhoto!.wire.folderId as FolderId)
-      if (folder) {
-        props.push({ name: 'Folder:', value: folder.path });
-      }
+  //if (photo.dupCount > 1) {
+  let ids = getDuplicateBucket(photo);
+  for (let id of ids) {
+    let dupPhoto = getPhotoById(id);
+    let folder = getFolder(dupPhoto!.wire.folderId as FolderId)
+    if (folder) {
+      props.push({ name: 'Folder:', value: folder.path });
     }
   }
+  //}
 
   return props;
 }
@@ -38,11 +39,13 @@ export function PhotoInfo() {
   let [currentPhoto, setCurrentPhoto] = useState<AlbumPhoto | null>(null);
 
   useEffect(() => {
-    let idSelected = selectionManager.addOnAnySelected((x: AlbumPhoto, selected: boolean) => {
-      setCurrentPhoto(x);
+    let idSelected = selectionManager.addOnSelectionChanged(() => {
+      if (selectionManager.lastSelectedPhoto) {
+        setCurrentPhoto(selectionManager.lastSelectedPhoto);
+      }
     })
     return () => {
-      selectionManager.removeOnAnySelected(idSelected);
+      selectionManager.removeOnSelectionChanged(idSelected);
     }
   })
 

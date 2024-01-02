@@ -28,7 +28,6 @@ let catalogs: { name: string, id: CatalogId }[] =
     { name: 'Quick collection', id: 'quick' },
     { name: 'All Photos', id: 'all' },
     { name: 'Starred', id: 'starred' },
-    { name: 'Dups', id: 'dups' },
   ];
 
 export function collapsableList(text: string, open: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>, items: any) {

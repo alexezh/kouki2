@@ -2,13 +2,23 @@ import { CSSProperties, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 
-function getFavIcon(favorite: number): string {
+// function getFavIcon(favorite: number): string {
+//   if (favorite > 0) {
+//     return "./assets/heart-full.svg";
+//   } else if (favorite < 0) {
+//     return "./assets/heart-broken.svg";
+//   } else {
+//     return "./assets/heart.svg";
+//   }
+// }
+
+function getFavIcon(favorite: number): string | null {
   if (favorite > 0) {
-    return "./assets/heart-full.svg";
+    return "./assets/smiley.svg";
   } else if (favorite < 0) {
-    return "./assets/heart-broken.svg";
+    return "./assets/smiley-sad.svg";
   } else {
-    return "./assets/heart.svg";
+    return null;
   }
 }
 
@@ -123,12 +133,13 @@ export function PhotoLayout(props: PhotoPropTypes) {
 
   return (
     <div style={divStyle} className={props.className}>
-      <img
-        className="PhotoFavIcon"
-        width={17}
-        height={17}
-        src={fav}
-      />
+      {(fav) ?
+        (<img
+          className="PhotoLayoutFavIcon"
+          width={20}
+          height={20}
+          src={fav}
+        />) : null}
 
       <img
         style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}

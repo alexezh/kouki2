@@ -7,82 +7,22 @@ import { PhotoLayout } from "./PhotoLayout";
 import { Measure } from "../Measure";
 import { isEqualDay, toDayStart } from "../lib/date";
 import React from "react";
-import { makeRows } from "./MakeRows";
+import { makeByMonthRows, makeRows } from "./MakeRows";
 import { addQuickCollection } from "./PhotoStore";
-import { Command, addCommandHandler, getState, removeCommandHandler, updateState } from "../commands/AppState";
+import { Command, ViewMode, addCommandHandler, addOnStateChanged, getState, removeCommandHandler, removeOnStateChanged, updateState } from "../commands/AppState";
+import { handleKeyDown, handlePhotoClick, handlePhotoSelected } from "./AlbumInput";
 
 type PhotoAlbumProps = {
-  photos: AlbumPhoto[],
   width: number,
   height: number
 }
 
-enum ViewMode {
-  measure,
-  grid,
-  zoom
-}
-
 const photoPadding = 20;
 
-class MouseController {
-  private lastClick: number = -1;
 
-  /**
-   * return true if double click
-   */
-  public onClick(event: React.MouseEvent<HTMLImageElement>): boolean {
-    if (this.lastClick + 300 > event.timeStamp) {
-      this.lastClick = -1;
-      return true;
-    } else {
-      this.lastClick = event.timeStamp;
-      return false;
-    }
-  }
-}
-
-let mouseController = new MouseController();
-
-function handlePhotoSelected(
-  event: React.MouseEvent<HTMLImageElement>,
-  photo: AlbumPhoto,
-  photos: AlbumPhoto[]) {
-  let selected = selectionManager.isSelected(photo);
-  let index = photos.findIndex((x) => x === photo);
-  if (index === -1) {
-    return;
-  }
-
-  if (event.shiftKey && selectionManager.lastIndex !== -1) {
-    let batch: AlbumPhoto[] = [];
-    if (selectionManager.lastIndex > index) {
-      for (let i = index; i < selectionManager.lastIndex; i++) {
-        batch.push(photos[i])
-      }
-    } else {
-      for (let i = index; i > selectionManager.lastIndex; i--) {
-        batch.push(photos[i])
-      }
-    }
-    if (!selected) {
-      selectionManager.add(batch);
-    } else {
-      selectionManager.remove(batch);
-    }
-  } else {
-    if (!selected) {
-      selectionManager.clear();
-      selectionManager.add([photo]);
-    } else {
-      selectionManager.remove([photo]);
-    }
-  }
-
-  selectionManager.lastIndex = index;
-}
 
 type RowsDef = {
+  photos: AlbumPhoto[];
   rows: AlbumRow[];
   rowHeight: (idx: number) => number
 }
@@ -91,13 +31,21 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   // react-window has a bug with updates
   // it caches height of items for variable height based on function object
   // so we have to give it different function when photos change
-  const [source, setSource] = useState<RowsDef>({ rows: [], rowHeight: (idx: number): number => { return 0; } });
+  const [source, setSource] = useState<RowsDef>({ photos: [], rows: [], rowHeight: (idx: number): number => { return 0; } });
   const [viewMode, setViewMode] = useState(ViewMode.measure);
   const [currentPhoto, setCurrentPhoto] = useState<AlbumPhoto | null>(null);
   const [dateRowHeight, setDateRowHeight] = useState(0);
   const listRef = useRef(null);
 
   useEffect(() => {
+    // add listener to selection manager to track current
+    let selectId = selectionManager.addOnSelectionChanged(() => {
+      if (selectionManager.lastSelectedPhoto !== currentPhoto) {
+        setCurrentPhoto(selectionManager.lastSelectedPhoto);
+      }
+    });
+
+    // add listener to commands
     let cmdId = addCommandHandler((cmd: Command, ...args: any[]) => {
       if (cmd != Command.ScrollAlbum) {
         return;
@@ -114,43 +62,24 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       }
     });
 
-    let rows = getState().rows;
-    if (!rows) {
-      rows = makeRows(props.photos, {
-        optimalHeight: 200,
-        targetWidth: props.width,
-        padding: photoPadding,
-        startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
-          if (idx !== 0) {
-            let d1 = photos[idx - 1].originalDate;
-            let d2 = photo.originalDate;
-            if (isEqualDay(d1, d2)) {
-              return null;
-            }
-          }
-          return {
-            headerRow: {
-              dt: toDayStart(photo.originalDate),
-              height: 0,
-              padding: 0
-            }
-          }
-        }
-      });
-    }
-    updateState({ rows: rows });
+    // add listener for state changes
+    let stateId = addOnStateChanged(() => {
+      updateSource();
 
-    setSource({
-      rows: rows,
-      rowHeight: (idx: number): number => {
-        let row = rows![idx];
-        if (row.dt) {
-          return dateRowHeight + 10;
-        } else {
-          return rows![idx].height + rows![idx].padding * 2;
-        }
+      if (viewMode !== getState().viewMode) {
+        setViewMode(getState().viewMode);
       }
     });
+
+    updateSource();
+
+    if (viewMode !== getState().viewMode) {
+      setViewMode(getState().viewMode);
+    }
+
+    if (currentPhoto !== selectionManager.lastSelectedPhoto) {
+      setCurrentPhoto(currentPhoto);
+    }
 
     // update layout
     if (listRef.current) {
@@ -168,71 +97,39 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     }
 
     return () => {
+      selectionManager.removeOnSelectionChanged(selectId);
       removeCommandHandler(cmdId);
+      removeOnStateChanged(stateId);
     }
-  }, [props.photos, props.width]);
+  }, [props.width]);
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Escape') {
-      if (viewMode !== ViewMode.grid) {
-        setViewMode(ViewMode.grid);
-      }
-      event.preventDefault();
-    } else {
-      if (viewMode === ViewMode.zoom && event.key === 'ArrowLeft') {
-        let idx = props.photos.findIndex((x) => x === currentPhoto);
-        if (idx !== -1) {
-          idx = Math.max(0, idx - 1);
-          setCurrentPhoto(props.photos[idx]);
-        }
-      } else if (viewMode === ViewMode.zoom && event.key === 'ArrowRight') {
-        let idx = props.photos.findIndex((x) => x === currentPhoto);
-        if (idx !== -1) {
-          idx = Math.min(props.photos.length - 1, idx + 1);
-          setCurrentPhoto(props.photos[idx]);
-        }
-      } else if (event.key === 'p') {
-        selectionManager.forEach((x) => { x.favorite = 1; });
-      } else if (event.key === 'x') {
-        selectionManager.forEach((x) => { x.favorite = -1; });
-      } else if (event.key === 'b') {
-        addQuickCollection(selectionManager.items.values());
-      }
+  function updateSource() {
+    if (source.photos === getState().currentList) {
+      return;
     }
-  }
 
-  function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
-    if (mouseController.onClick(event)) {
-      selectionManager.clear();
-      selectionManager.add([photo]);
+    let rows = getState().rows;
+    if (!getState().rows) {
+      rows = makeByMonthRows(getState().currentList, props.width, photoPadding);
+      updateState({ rows: rows });
+    }
 
-      setViewMode(ViewMode.zoom);
-      setCurrentPhoto(photo);
-      event.preventDefault();
-    } else {
-      if (!(event.shiftKey || event.ctrlKey)) {
-        selectionManager.clear();
-      }
-      if (event.shiftKey) {
-        let idxCurrent = (currentPhoto) ? props.photos.findIndex((x) => x === currentPhoto) : -1;
-        let idxPhoto = props.photos.findIndex((x) => x === photo);
-
-        if (idxCurrent !== -1 && idxPhoto !== -1) {
-          let range = (idxCurrent > idxPhoto) ? props.photos.slice(idxPhoto, idxCurrent) : props.photos.slice(idxCurrent, idxPhoto + 1);
-          selectionManager.add(range);
+    setSource({
+      photos: getState().currentList,
+      rows: rows!,
+      rowHeight: (idx: number): number => {
+        let row = rows![idx];
+        if (row.dt) {
+          return dateRowHeight + 10;
         } else {
-          selectionManager.add([photo]);
+          return rows![idx].height + rows![idx].padding * 2;
         }
-      } else {
-        selectionManager.add([photo]);
       }
-      setCurrentPhoto(photo);
-      event.preventDefault();
-    }
+    });
   }
 
   function handleDateSelected(val: boolean, dt: Date) {
-    let filtered = props.photos.filter((x: AlbumPhoto) => {
+    let filtered = getState().currentList.filter((x: AlbumPhoto) => {
       return isEqualDay(x.originalDate, dt);
     });
     selectionManager.clear();
@@ -258,7 +155,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           style={props.style}
           row={row}
           onClick={handlePhotoClick}
-          onSelected={(e, photo) => handlePhotoSelected(e, photo, albumProps.photos)}></PhotoRowLayout >
+          onSelected={handlePhotoSelected}></PhotoRowLayout >
       )
     }
   }
@@ -269,11 +166,6 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     height: props.height,
     width: props.width,
     position: 'absolute',
-  }
-
-  let albumStyle: CSSProperties = {
-    height: props.height,
-    width: props.width,
   }
 
   function onMeasureDayHeader(width: number, height: number) {
@@ -288,7 +180,8 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       </Measure>)
   } else {
     return (
-      <div className='AlbumLayout' tabIndex={0} onKeyDown={handleKeyDown}>
+      <div className='AlbumLayout' tabIndex={0}
+        onKeyDown={handleKeyDown}>
         <List
           ref={listRef}
           style={listStyle}

@@ -8,39 +8,39 @@ import { useEffect, useState } from 'react';
 import { computeAggregatedFavs, selectionManager } from './SelectionManager';
 import { AlbumPhoto } from '../photo/AlbumPhoto';
 
-const thumbsUp = (
+const acceptedActive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/thumbs-up.svg" width='100%' height='100%' />
+    <img className='StatusBarIcon' src="./assets/smiley.svg" />
   </Icon >);
 
-const thumbsUpFill = (
+const acceptedInactive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/thumbs-up-fill.svg" width='100%' height='100%' />
+    <img className='StatusBarIcon' src="./assets/smiley-inactive.svg" />
   </Icon >);
 
-const thumbsDown = (
+const rejectedActive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/thumbs-down.svg" />
+    <img className='StatusBarIcon' src="./assets/smiley-sad.svg" />
   </Icon >);
 
-const thumbsDownFill = (
+const rejectedInactive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/thumbs-down-fill.svg" width='100%' height='100%' />
+    <img className='StatusBarIcon' src="./assets/smiley-sad-inactive.svg" />
   </Icon >);
 
 export function StatusBar(props: { className?: string }) {
   let [favorite, setFavorite] = useState(0);
 
   useEffect(() => {
-    let id = selectionManager.addOnAnySelected((photo: AlbumPhoto, value: boolean) => {
+    let id = selectionManager.addOnSelectionChanged(() => {
       setFavorite(computeAggregatedFavs());
     });
     return () => {
-      selectionManager.removeOnAnySelected(id);
+      selectionManager.removeOnSelectionChanged(id);
     }
   });
 
-  function handleThumbsUp() {
+  function handleAccept() {
     let val = (favorite !== 1) ? 1 : 0;
     for (let x of selectionManager.items) {
       x[1].favorite = val;
@@ -48,7 +48,7 @@ export function StatusBar(props: { className?: string }) {
     setFavorite(computeAggregatedFavs());
   }
 
-  function handleThumbsDown() {
+  function handleReject() {
     let val = (favorite !== -1) ? -1 : 0;
     selectionManager.forEach((x) => { x.favorite = val; });
     setFavorite(computeAggregatedFavs());
@@ -57,8 +57,8 @@ export function StatusBar(props: { className?: string }) {
   return (
     <AppBar position="static" className={props.className}>
       <Toolbar variant="dense">
-        <IconButton color="primary" aria-label="like" onClick={handleThumbsUp}>{(favorite > 0) ? thumbsUpFill : thumbsUp}</IconButton>
-        <IconButton color="primary" aria-label="dislike" onClick={handleThumbsDown}>{(favorite < 0) ? thumbsDownFill : thumbsDown}</IconButton>
+        <IconButton color="primary" aria-label="like" onClick={handleAccept}>{(favorite > 0) ? acceptedActive : acceptedInactive}</IconButton>
+        <IconButton color="primary" aria-label="dislike" onClick={handleReject}>{(favorite < 0) ? rejectedActive : rejectedInactive}</IconButton>
       </Toolbar>
     </AppBar >)
 };

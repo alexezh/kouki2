@@ -1,6 +1,6 @@
 import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
-export type CatalogId = 'quick' | 'all' | 'starred' | 'dups';
+export type CatalogId = 'quick' | 'all' | 'starred';
 export type FolderId = number & {
   __tag_folder: boolean;
 }
@@ -22,6 +22,7 @@ export class AlbumPhoto {
   public get favorite(): number {
     return this.wire.favorite;
   }
+
   public set favorite(val: number) {
     this.wire.favorite = val;
     this.invokeOnChanged();

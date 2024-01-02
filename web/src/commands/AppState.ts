@@ -1,13 +1,18 @@
 import { AlbumPhoto, AlbumRow, PhotoListId } from "../photo/AlbumPhoto";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { loadPhotoList } from "../photo/PhotoStore";
+import { selectionManager } from "./SelectionManager";
+import { isEqualDay, toDayStart } from "../lib/date";
+import { makeRows } from "../photo/MakeRows";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
 export interface AppState {
+  readonly viewMode: ViewMode;
   readonly currentListId: PhotoListId;
   readonly currentList: AlbumPhoto[];
   readonly filterFavorite: FilterFavorite;
+  readonly filterDups: boolean;
   readonly filterStars: number;
   readonly rows: AlbumRow[] | null;
   readonly years: YearEntry[];
@@ -15,8 +20,10 @@ export interface AppState {
 }
 
 export type AppStateUpdate = {
+  viewMode?: ViewMode;
   currentListId?: PhotoListId;
   filterFavorite?: FilterFavorite;
+  filterDups?: boolean;
   filterStars?: number;
   rows?: AlbumRow[];
   viewDate?: { year: number, month: number }
@@ -31,10 +38,18 @@ export type YearEntry = {
   months: number[];
 }
 
+export enum ViewMode {
+  measure,
+  grid,
+  zoom
+}
+
 let state: AppState = {
+  viewMode: ViewMode.measure,
   currentListId: 'all',
   currentList: [],
   filterFavorite: "all",
+  filterDups: false,
   filterStars: 0,
   rows: null,
   years: []
@@ -63,11 +78,18 @@ export function updateState(update: AppStateUpdate) {
     rebuildList = true;
   }
 
+  if (update.currentListId) {
+    console.log("set folder id:" + update.currentListId);
+  }
   if (update.currentListId && state.currentListId !== update.currentListId) {
     rebuildList = true;
   }
 
   if (update.filterFavorite && state.filterFavorite !== update.filterFavorite) {
+    rebuildList = true;
+  }
+
+  if (update.filterDups !== undefined && state.filterDups !== update.filterDups) {
     rebuildList = true;
   }
 
@@ -86,6 +108,10 @@ export function updateState(update: AppStateUpdate) {
           return false;
         }
 
+        if (state.filterDups && x.dupCount < 2) {
+          return false;
+        }
+
         return true;
       });
 
@@ -95,6 +121,7 @@ export function updateState(update: AppStateUpdate) {
       state.years = buildYears(photos);
       // @ts-ignore
       state.rows = null;
+      selectionManager.clear();
       stateChanged.invoke();
     })
   } else {

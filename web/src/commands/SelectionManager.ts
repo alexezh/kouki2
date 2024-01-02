@@ -7,18 +7,43 @@ export class SelectionManager {
     id: number;
     func: (p: AlbumPhoto, value: boolean) => void
   }[]>();
-  private onAnySelected: {
+  private onSelectionChanged: {
     id: number;
-    func: (p: AlbumPhoto, value: boolean) => void
+    func: () => void
   }[] = [];
 
-  public lastIndex: number = -1;
+  private _lastSelectedIndex = -1;
+
+  public getLastSelectedIndex(photos: AlbumPhoto[]): number {
+    if (this._lastSelectedIndex !== -1) {
+      return this._lastSelectedIndex;
+    }
+    if (this._lastSelectedPhoto === null) {
+      return -1;
+    }
+    this._lastSelectedIndex = photos.findIndex((x) => this._lastSelectedPhoto === x);
+    return this._lastSelectedIndex;
+  }
+
+  private _lastSelectedPhoto: AlbumPhoto | null = null;
+  public get lastSelectedPhoto(): AlbumPhoto | null { return this._lastSelectedPhoto }
 
   public clear() {
     for (let x of this._selected) {
       this.invokeOnSelected(x[1], false);
     }
     this._selected.clear();
+    this._lastSelectedPhoto = null;
+    this.invokeOnSelectionChanged();
+  }
+
+  public reset(photos: AlbumPhoto[]) {
+    for (let x of this._selected) {
+      this.invokeOnSelected(x[1], false);
+    }
+    this._selected.clear();
+
+    this.add(photos);
   }
 
   public isSelected(photo: AlbumPhoto): boolean {
@@ -30,6 +55,12 @@ export class SelectionManager {
       this._selected.set(p.wire.hash, p);
       this.invokeOnSelected(p, true);
     }
+    if (photos.length) {
+      this._lastSelectedPhoto = photos[photos.length - 1];
+    } else {
+      this._lastSelectedPhoto = null;
+    }
+    this.invokeOnSelectionChanged();
   }
 
   public remove(photos: AlbumPhoto[]) {
@@ -37,6 +68,7 @@ export class SelectionManager {
       this._selected.delete(p.wire.hash);
       this.invokeOnSelected(p, false);
     }
+    this.invokeOnSelectionChanged();
   }
 
   public forEach(func: (x: AlbumPhoto) => void) {
@@ -62,9 +94,11 @@ export class SelectionManager {
     for (let x of entry) {
       x.func(p, value);
     }
+  }
 
-    for (let x of this.onAnySelected) {
-      x.func(p, value);
+  private invokeOnSelectionChanged() {
+    for (let x of this.onSelectionChanged) {
+      x.func();
     }
   }
 
@@ -93,19 +127,19 @@ export class SelectionManager {
     entry.splice(idx, 1);
   }
 
-  public addOnAnySelected(func: (p: AlbumPhoto, value: boolean) => void): number {
+  public addOnSelectionChanged(func: () => void): number {
     let id = this.nextId++;
-    this.onAnySelected.push({ id: id, func: func });
+    this.onSelectionChanged.push({ id: id, func: func });
     return id;
   }
 
-  public removeOnAnySelected(id: number) {
-    let idx = this.onAnySelected.findIndex((x) => x.id === id);
+  public removeOnSelectionChanged(id: number) {
+    let idx = this.onSelectionChanged.findIndex((x) => x.id === id);
     if (idx === -1) {
       return;
     }
 
-    this.onAnySelected.splice(idx, 1);
+    this.onSelectionChanged.splice(idx, 1);
   }
 }
 
@@ -127,9 +161,9 @@ export function computeAggregatedFavs(): number {
     }
   }
 
-  if (fav > 0 && (unfav == 0 || none == 0)) {
+  if (fav > 0 && (unfav === 0 && none === 0)) {
     return 1;
-  } else if (unfav > 0 && (fav == 0 || none == 0)) {
+  } else if (unfav > 0 && (fav === 0 && none === 0)) {
     return -1;
   } else {
     return 0;

@@ -1,3 +1,4 @@
+import { isEqualDay, toDayStart } from "../lib/date";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { getDuplicateBucket } from "./PhotoStore";
 
@@ -116,4 +117,30 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   }
 
   return height * scale;
+}
+
+export function makeByMonthRows(photos: AlbumPhoto[], targetWidth: number, padding: number): AlbumRow[] {
+  let rows = makeRows(photos, {
+    optimalHeight: 200,
+    targetWidth: targetWidth,
+    padding: padding,
+    startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
+      if (idx !== 0) {
+        let d1 = photos[idx - 1].originalDate;
+        let d2 = photo.originalDate;
+        if (isEqualDay(d1, d2)) {
+          return null;
+        }
+      }
+      return {
+        headerRow: {
+          dt: toDayStart(photo.originalDate),
+          height: 0,
+          padding: 0
+        }
+      }
+    }
+  });
+
+  return rows;
 }

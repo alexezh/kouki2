@@ -173,7 +173,7 @@ function App() {
             <div className='AlbumContainer'>
               <AutoSizer>
                 {({ width, height }: { width: number, height: number }) => (
-                  <PhotoAlbum photos={photos} width={width} height={height}></PhotoAlbum>)}
+                  <PhotoAlbum width={width} height={height}></PhotoAlbum>)}
               </AutoSizer>
             </div>
             <CommandBar className="CommandBar" photos={photos}></CommandBar>
