@@ -31,4 +31,5 @@ From the high level, library management UI looks similar to LR, however there ar
 - in the latter case, user can later go to quick collection, select photos added recently and run an operation
 - quick selection is sorted by add time, a user can always go back to previous set of photos
 
-Installation instructions can be found [here](https://github.com/alexezh/kouki2/wiki/Installation)
+Installation instructions can be found [here](https://github.com/alexezh/kouki2/wiki/Installation). List of pending items is [here]([web](https://github.com/alexezh/kouki2/)https://github.com/alexezh/kouki2/web/todo.md)
+
