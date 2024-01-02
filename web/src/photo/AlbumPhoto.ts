@@ -1,6 +1,6 @@
 import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
-export type CatalogId = 'quick' | 'all' | 'starred';
+export type CatalogId = 'quick' | 'all' | 'starred' | 'unknown';
 export type FolderId = number & {
   __tag_folder: boolean;
 }
@@ -72,7 +72,17 @@ export class AlbumPhoto {
   }
 }
 
+export enum RowKind {
+  photos,
+  day,
+  month,
+  year,
+  time,
+  series
+}
+
 export type AlbumRow = {
+  kind: RowKind,
   photos?: AlbumPhoto[];
   dt?: Date;
   height: number;

@@ -34,6 +34,7 @@ export class SelectionManager {
     }
     this._selected.clear();
     this._lastSelectedPhoto = null;
+    this._lastSelectedIndex = -1;
     this.invokeOnSelectionChanged();
   }
 
@@ -60,6 +61,7 @@ export class SelectionManager {
     } else {
       this._lastSelectedPhoto = null;
     }
+    this._lastSelectedIndex = -1;
     this.invokeOnSelectionChanged();
   }
 

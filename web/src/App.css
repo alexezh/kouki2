@@ -187,8 +187,17 @@
   top: 3px;
 }
 
-.HeaderRow {
+.DayHeaderRow {
   font-size: larger;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: row;
+  height: 24px;
+}
+
+.MonthHeaderRow {
+  font-size: x-large;
   margin-top: 5px;
   margin-bottom: 5px;
   display: flex;

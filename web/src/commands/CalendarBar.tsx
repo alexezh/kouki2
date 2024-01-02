@@ -3,7 +3,7 @@ import List from "@mui/material/List/List";
 import { useEffect, useState } from "react";
 import { YearEntry, addOnStateChanged, getState, removeOnStateChanged, scrollAlbumToDate } from "./AppState";
 
-const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function CalendarBarYear(props: {
   year: YearEntry,
@@ -53,7 +53,7 @@ export function CalendarBar(props: { className: string }) {
     if (openedYear !== year) {
       setOpenedYear(year);
     }
-    scrollAlbumToDate(new Date(year, month))
+    scrollAlbumToDate({ year: year, month: month })
   }
 
   return (

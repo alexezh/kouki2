@@ -1,5 +1,5 @@
-import { isEqualDay, toDayStart } from "../lib/date";
-import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
+import { isEqualDay, isEqualMonth, toDayStart, toMonthStart } from "../lib/date";
+import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { getDuplicateBucket } from "./PhotoStore";
 
 /**
@@ -15,7 +15,7 @@ export function makeRows(photos: AlbumPhoto[],
     optimalHeight: number,
     targetWidth: number,
     padding: number,
-    startNewRow?: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => { headerRow: AlbumRow } | null
+    startNewRow?: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => AlbumRow[] | null
   }): AlbumRow[] {
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
@@ -36,19 +36,18 @@ export function makeRows(photos: AlbumPhoto[],
     // }
 
     if (options.startNewRow) {
-      let startRow = options.startNewRow(photo, idx, photos);
-      if (startRow) {
+      let startRows = options.startNewRow(photo, idx, photos);
+      if (startRows) {
         if (row.length > 0) {
           rows.push(enforceMaxHeight({
+            kind: RowKind.photos,
             height: height,
             padding: options.padding,
             photos: row,
           }, maxHeight));
         }
 
-        if (startRow.headerRow) {
-          rows.push(startRow.headerRow);
-        }
+        rows.push(...startRows);
 
         row = [];
         height = Number.MAX_SAFE_INTEGER;
@@ -61,6 +60,7 @@ export function makeRows(photos: AlbumPhoto[],
     height = computeRowHeight(row, options.targetWidth, options.padding);
     if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
       rows.push(enforceMaxHeight({
+        kind: RowKind.photos,
         height: height,
         padding: options.padding,
         photos: row.slice(0, row.length - 1),
@@ -74,6 +74,7 @@ export function makeRows(photos: AlbumPhoto[],
 
   if (row.length > 0) {
     rows.push(enforceMaxHeight({
+      kind: RowKind.photos,
       height: height,
       padding: options.padding,
       photos: row,
@@ -120,6 +121,8 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
 }
 
 export function makeByMonthRows(photos: AlbumPhoto[], targetWidth: number, padding: number): AlbumRow[] {
+  let currentMonth: Date | null = null;
+
   let rows = makeRows(photos, {
     optimalHeight: 200,
     targetWidth: targetWidth,
@@ -132,13 +135,26 @@ export function makeByMonthRows(photos: AlbumPhoto[], targetWidth: number, paddi
           return null;
         }
       }
-      return {
-        headerRow: {
-          dt: toDayStart(photo.originalDate),
+
+      let rows: AlbumRow[] = [];
+      if (currentMonth === null || !isEqualMonth(currentMonth, photo.originalDate)) {
+        rows.push({
+          kind: RowKind.month,
+          dt: toMonthStart(photo.originalDate),
           height: 0,
           padding: 0
-        }
+        });
+        currentMonth = photo.originalDate;
       }
+
+      rows.push({
+        kind: RowKind.day,
+        dt: toDayStart(photo.originalDate),
+        height: 0,
+        padding: 0
+      });
+
+      return rows;
     }
   });
 

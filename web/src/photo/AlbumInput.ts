@@ -1,6 +1,7 @@
 import { ViewMode, getState, updateState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
-import { AlbumPhoto } from "./AlbumPhoto";
+import { isEqualDay, isEqualMonth } from "../lib/date";
+import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { addQuickCollection } from "./PhotoStore";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -55,9 +56,6 @@ let mouseController = new MouseController();
 
 export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
   if (mouseController.onClick(event)) {
-    selectionManager.clear();
-    selectionManager.add([photo]);
-
     selectionManager.reset([photo]);
     updateState({ viewMode: ViewMode.zoom });
     event.preventDefault();
@@ -119,3 +117,18 @@ export function handlePhotoSelected(
     }
   }
 }
+
+export function handleDateSelected(val: boolean, row: AlbumRow) {
+  let filtered = (row.kind === RowKind.month) ?
+    getState().currentList.filter((x: AlbumPhoto) => {
+      return isEqualMonth(x.originalDate, row.dt!);
+    })
+    : getState().currentList.filter((x: AlbumPhoto) => {
+      return isEqualDay(x.originalDate, row.dt!);
+    });
+  selectionManager.clear();
+  if (val) {
+    selectionManager.add(filtered);
+  }
+}
+

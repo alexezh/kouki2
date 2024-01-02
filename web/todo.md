@@ -1,4 +1,4 @@
-- fix pick for zoom selection, actually select item
+- done: fix pick for zoom selection, actually select item
 - add items to quick collection
 - add imports
 - add month/year/timeslice rows

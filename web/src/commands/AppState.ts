@@ -17,6 +17,9 @@ export interface AppState {
   readonly rows: AlbumRow[] | null;
   readonly years: YearEntry[];
   readonly viewDate?: { year: number, month: number };
+
+  readonly dayRowHeight: number;
+  readonly monthRowHeight: number;
 }
 
 export type AppStateUpdate = {
@@ -27,6 +30,8 @@ export type AppStateUpdate = {
   filterStars?: number;
   rows?: AlbumRow[];
   viewDate?: { year: number, month: number }
+  dayRowHeight?: number;
+  monthRowHeight?: number;
 }
 
 export type MonthEntry = {
@@ -46,13 +51,15 @@ export enum ViewMode {
 
 let state: AppState = {
   viewMode: ViewMode.measure,
-  currentListId: 'all',
+  currentListId: "unknown",
   currentList: [],
   filterFavorite: "all",
   filterDups: false,
   filterStars: 0,
   rows: null,
-  years: []
+  years: [],
+  dayRowHeight: 0,
+  monthRowHeight: 0
 }
 
 let initialized = false;
@@ -164,6 +171,7 @@ function buildYears(photos: AlbumPhoto[]): YearEntry[] {
 
 export enum Command {
   ScrollAlbum = 1,
+  SetFocusAlbum = 2
 }
 
 let commandHandler = new SimpleEventSource();
@@ -179,6 +187,10 @@ export function removeCommandHandler(id: number) {
 /**
  * issues command to scroll
  */
-export function scrollAlbumToDate(dt: Date) {
+export function scrollAlbumToDate(dt: { year: number, month: number }) {
   commandHandler.invoke(Command.ScrollAlbum, dt);
+}
+
+export function setFocusAlbum() {
+  commandHandler.invoke(Command.SetFocusAlbum);
 }

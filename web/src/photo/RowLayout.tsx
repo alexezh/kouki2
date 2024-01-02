@@ -1,7 +1,8 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
+import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { PhotoLayout } from "./PhotoLayout";
 import { selectionManager } from "../commands/SelectionManager";
+import { toDayStart } from "../lib/date";
 
 type PhotoRowLayoutProps = {
   style: CSSProperties,
@@ -40,26 +41,46 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   );
 }
 
-type DeyRowLayoutProps = {
+type DateRowLayoutProps = {
+  /**
+   * used by List to communicate position information
+   */
   style?: CSSProperties,
-  dt: Date,
+  row: AlbumRow,
   selected?: boolean,
-  onSelected?: (val: boolean, dt: Date) => void
+  onSelected?: (val: boolean, row: AlbumRow) => void
 }
-export function DayRowLayout(props: DeyRowLayoutProps) {
+export function DateRowLayout(props: DateRowLayoutProps) {
   let [selected, setSelected] = useState<boolean>(props.selected ?? false);
   function handleSelect() {
     let val = !selected;
     setSelected(val);
     if (props.onSelected) {
-      props.onSelected(val, props.dt);
+      props.onSelected(val, props.row);
     }
   }
+
+  let className: string;
+  let text: string | undefined;
+  if (props.row.kind === RowKind.month) {
+    className = "MonthHeaderRow";
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: undefined,
+      year: 'numeric',
+      month: 'long',
+      day: undefined,
+    };
+
+    text = props.row.dt?.toLocaleDateString(undefined, options);
+  } else {
+    className = "DayHeaderRow";
+    text = props.row.dt?.toLocaleDateString();
+  }
+
   return (
-    <div style={props.style} className="HeaderRow">
-      <div>
-        {props.dt?.toLocaleDateString()}
-      </div>
+    <div style={props.style} className={className}>
+      <div>{text}</div>
       <img
         className="HeaderRow-Check"
         width={20}
