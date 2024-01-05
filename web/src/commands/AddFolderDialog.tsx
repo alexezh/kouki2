@@ -11,6 +11,7 @@ import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
 import { catchAll, catchAllAsync } from "../lib/error";
 import { wireAddFolder, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
+import { PhotoListId } from "../photo/AlbumPhoto";
 
 export function AddFolderDialog(props: { onClose: () => void }) {
   const [value, setValue] = useState("");
@@ -81,7 +82,7 @@ export function AddFolderDialog(props: { onClose: () => void }) {
   );
 }
 
-export function RescanFolderDialog(props: { onClose: () => void, folderId: number }) {
+export function RescanFolderDialog(props: { onClose: () => void, folderId: PhotoListId }) {
   const [value, setValue] = useState("");
   const [processing, setProcessing] = useState(false);
   const [addedFiles, setAddedFiles] = useState(0);
@@ -93,7 +94,7 @@ export function RescanFolderDialog(props: { onClose: () => void, folderId: numbe
 
       catchAllAsync(async () => {
         try {
-          let addResponse = await wireRescanFolder(props.folderId);
+          let addResponse = await wireRescanFolder(props.folderId.id);
           if (addResponse.result !== 'Ok') {
             props.onClose();
             return;

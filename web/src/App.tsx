@@ -3,7 +3,7 @@
 
 import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
-import { AlbumPhoto } from "./photo/AlbumPhoto";
+import { AlbumPhoto, PhotoListId } from "./photo/AlbumPhoto";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { PhotoAlbum } from './photo/AlbumLayout';
 import { CommandBar } from './commands/CommandBar';
@@ -18,6 +18,7 @@ import { addOnStateChanged, getState, removeOnStateChanged } from './commands/Ap
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { CalendarBar } from './commands/CalendarBar';
+import { PhotoList } from './photo/PhotoStore';
 
 const darkTheme = createTheme({
   palette: {
@@ -90,7 +91,7 @@ function MyAutoSizer(props: { className: string, render: (size: Size) => JSX.Ele
 
 function App() {
   const size = useWindowSize();
-  const [photos, setPhotos] = useState([] as AlbumPhoto[]);
+  const [photos, setPhotos] = useState(new PhotoList(new PhotoListId('unknown', 0), []));
 
   useEffect(() => {
     let id = addOnStateChanged(async () => {

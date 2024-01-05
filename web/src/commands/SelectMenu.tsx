@@ -3,27 +3,27 @@ import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import Divider from "@mui/material/Divider/Divider";
 import { ExportSelectionDialog } from "./ExportSelectionDialog";
 import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto } from "../photo/AlbumPhoto";
+import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
 import { useState } from "react";
 import { wireAddFile, wireConnectDevice, wireGetFile, wireGetSyncList, wireUploadFile } from "../lib/mobileclient";
-import { getPhotoById, loadPhotoList } from "../photo/PhotoStore";
+import { PhotoList, getPhotoById, loadPhotoList } from "../photo/PhotoStore";
 
-export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
+export function SelectMenu(props: CommandMenuProps & { photos: PhotoList }) {
   const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
-    selectionManager.add(props.photos);
+    selectionManager.add(props.photos.photos);
     props.onMenuClose();
   }
 
   function handleSelectNone() {
-    selectionManager.remove(props.photos);
+    selectionManager.remove(props.photos.photos);
     props.onMenuClose();
   }
 
   function handleInvertSelect() {
     let select: AlbumPhoto[] = [];
-    for (let x of props.photos) {
+    for (let x of props.photos.photos) {
       if (!selectionManager.items.get(x.wire.hash)) {
         select.push(x);
       }
@@ -41,8 +41,8 @@ export function SelectMenu(props: CommandMenuProps & { photos: AlbumPhoto[] }) {
   async function handleAddPhone() {
     let device = await wireConnectDevice("Ezh14");
     let listResp = await wireGetSyncList({ deviceFolderId: device.archiveFolderId, files: ["hello"] });
-    let photos = await loadPhotoList('all');
-    let blob = await wireGetFile(photos[0].getPhotoUrl());
+    let photos = await loadPhotoList(new PhotoListId('all', 0));
+    let blob = await wireGetFile(photos.photos[0].getPhotoUrl());
     let uploadResp = await wireUploadFile(blob);
     await wireAddFile({
       hash: uploadResp.hash,

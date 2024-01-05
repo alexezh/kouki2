@@ -14,16 +14,16 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     event.preventDefault();
   } else {
     if (viewMode === ViewMode.zoom && event.key === 'ArrowLeft') {
-      let idx = selectionManager.getLastSelectedIndex(getState().currentList);
+      let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
       if (idx !== -1) {
         idx = Math.max(0, idx - 1);
-        selectionManager.reset([getState().currentList[idx]]);
+        selectionManager.reset([getState().currentList.photos[idx]]);
       }
     } else if (viewMode === ViewMode.zoom && event.key === 'ArrowRight') {
-      let idx = selectionManager.getLastSelectedIndex(getState().currentList);
+      let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
       if (idx !== -1) {
-        idx = Math.min(getState().currentList.length - 1, idx + 1);
-        selectionManager.reset([getState().currentList[idx]]);
+        idx = Math.min(getState().currentList.photoCount - 1, idx + 1);
+        selectionManager.reset([getState().currentList.photos[idx]]);
       }
     } else if (event.key === 'p') {
       selectionManager.forEach((x) => { x.favorite = 1; });
@@ -65,11 +65,11 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
     }
     if (event.shiftKey) {
       let photos = getState().currentList;
-      let idxCurrent = selectionManager.getLastSelectedIndex(photos);
+      let idxCurrent = selectionManager.getLastSelectedIndex(photos.photos);
       let idxPhoto = photos.findIndex((x) => x === photo);
 
       if (idxCurrent !== -1 && idxPhoto !== -1) {
-        let range = (idxCurrent > idxPhoto) ? photos.slice(idxPhoto, idxCurrent) : photos.slice(idxCurrent, idxPhoto + 1);
+        let range = (idxCurrent > idxPhoto) ? photos.photos.slice(idxPhoto, idxCurrent) : photos.photos.slice(idxCurrent, idxPhoto + 1);
         selectionManager.add(range);
       } else {
         selectionManager.add([photo]);
@@ -91,16 +91,16 @@ export function handlePhotoSelected(
   }
 
   let photos = getState().currentList;
-  let lastIndex = selectionManager.getLastSelectedIndex(photos);
+  let lastIndex = selectionManager.getLastSelectedIndex(photos.photos);
   if (event.shiftKey && lastIndex !== -1) {
     let batch: AlbumPhoto[] = [];
     if (lastIndex > index) {
       for (let i = index; i < lastIndex; i++) {
-        batch.push(getState().currentList[i])
+        batch.push(getState().currentList.photos[i])
       }
     } else {
       for (let i = index; i > lastIndex; i--) {
-        batch.push(getState().currentList[i])
+        batch.push(getState().currentList.photos[i])
       }
     }
     if (!selected) {

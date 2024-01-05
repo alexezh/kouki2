@@ -16,7 +16,9 @@ export function LibraryMenu(props: CommandMenuProps) {
         (openAddFolder) ? (<AddFolderDialog onClose={() => setOpenAddFolder(false)} />) : null
       }
       {
-        (openRescanFolder) ? (<RescanFolderDialog onClose={() => setOpenRescanFolder(false)} folderId={getState().currentListId as number} />) : null
+        (openRescanFolder) ? (<RescanFolderDialog
+          onClose={() => setOpenRescanFolder(false)}
+          folderId={getState().currentListId} />) : null
       }
     </div>)
   }

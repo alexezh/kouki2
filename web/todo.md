@@ -1,5 +1,5 @@
 - done: fix pick for zoom selection, actually select item
+- done: add month/year/timeslice rows
 - add items to quick collection
 - add imports
-- add month/year/timeslice rows
 - add code to read and set favs.. form photo lib?

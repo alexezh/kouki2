@@ -1,10 +1,20 @@
 import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
-export type CatalogId = 'quick' | 'all' | 'starred' | 'unknown';
+export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'unknown';
 export type FolderId = number & {
   __tag_folder: boolean;
 }
-export type PhotoListId = CatalogId | FolderId;
+export class PhotoListId {
+  public kind: PhotoListKind;
+  public id: number;
+
+  public constructor(kind: PhotoListKind, id: number) {
+    this.kind = kind;
+    this.id = id;
+  }
+
+  public toString() { return `${this.kind}!${this.id}` };
+}
 
 export class AlbumPhoto {
   private onChanged: { id: number, func: (p: AlbumPhoto) => void }[] = [];

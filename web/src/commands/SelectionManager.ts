@@ -14,7 +14,7 @@ export class SelectionManager {
 
   private _lastSelectedIndex = -1;
 
-  public getLastSelectedIndex(photos: AlbumPhoto[]): number {
+  public getLastSelectedIndex(photos: ReadonlyArray<AlbumPhoto>): number {
     if (this._lastSelectedIndex !== -1) {
       return this._lastSelectedIndex;
     }
@@ -51,7 +51,7 @@ export class SelectionManager {
     return !!this._selected.get(photo.wire.hash);
   }
 
-  public add(photos: AlbumPhoto[]) {
+  public add(photos: ReadonlyArray<AlbumPhoto>) {
     for (let p of photos) {
       this._selected.set(p.wire.hash, p);
       this.invokeOnSelected(p, true);
@@ -65,7 +65,7 @@ export class SelectionManager {
     this.invokeOnSelectionChanged();
   }
 
-  public remove(photos: AlbumPhoto[]) {
+  public remove(photos: ReadonlyArray<AlbumPhoto>) {
     for (let p of photos) {
       this._selected.delete(p.wire.hash);
       this.invokeOnSelected(p, false);

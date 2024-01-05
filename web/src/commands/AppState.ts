@@ -1,6 +1,6 @@
 import { AlbumPhoto, AlbumRow, PhotoListId } from "../photo/AlbumPhoto";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { loadPhotoList } from "../photo/PhotoStore";
+import { PhotoList, loadPhotoList } from "../photo/PhotoStore";
 import { selectionManager } from "./SelectionManager";
 import { isEqualDay, toDayStart } from "../lib/date";
 import { makeRows } from "../photo/MakeRows";
@@ -10,7 +10,7 @@ export type FilterFavorite = "all" | "favorite" | "rejected";
 export interface AppState {
   readonly viewMode: ViewMode;
   readonly currentListId: PhotoListId;
-  readonly currentList: AlbumPhoto[];
+  readonly currentList: PhotoList;
   readonly filterFavorite: FilterFavorite;
   readonly filterDups: boolean;
   readonly filterStars: number;
@@ -51,8 +51,8 @@ export enum ViewMode {
 
 let state: AppState = {
   viewMode: ViewMode.measure,
-  currentListId: "unknown",
-  currentList: [],
+  currentListId: new PhotoListId("unknown", 0),
+  currentList: new PhotoList(new PhotoListId('unknown', 0), []),
   filterFavorite: "all",
   filterDups: false,
   filterStars: 0,
@@ -122,12 +122,9 @@ export function updateState(update: AppStateUpdate) {
         return true;
       });
 
-      // @ts-ignore
-      state.currentList = photos;
-      // @ts-ignore
-      state.years = buildYears(photos);
-      // @ts-ignore
-      state.rows = null;
+      (state as any).currentList = photos;
+      (state as any).years = buildYears(photos.photos);
+      (state as any).rows = null;
       selectionManager.clear();
       stateChanged.invoke();
     })
@@ -136,7 +133,7 @@ export function updateState(update: AppStateUpdate) {
   }
 }
 
-function buildYears(photos: AlbumPhoto[]): YearEntry[] {
+function buildYears(photos: ReadonlyArray<AlbumPhoto>): YearEntry[] {
   let years: YearEntry[] = [];
   let yearMap = new Map<number, YearEntry>();
 

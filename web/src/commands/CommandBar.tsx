@@ -6,10 +6,11 @@ import React from 'react';
 import { SelectMenu } from './SelectMenu';
 import { LibraryMenu } from './LibraryMenu';
 import { FilterMenu } from './FilterMenu';
+import { PhotoList } from '../photo/PhotoStore';
 
 
 
-export function CommandBar(props: { className?: string, photos: AlbumPhoto[] }) {
+export function CommandBar(props: { className?: string, photos: PhotoList }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
 
   function handleMenuClick(id: string, event: React.MouseEvent<HTMLElement>) {

@@ -86,7 +86,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   function updateRows() {
     let rows = getState().rows;
     if (!rows) {
-      rows = makeByMonthRows(getState().currentList, props.width, photoPadding);
+      rows = makeByMonthRows(getState().currentList.photos, props.width, photoPadding);
       updateState({ rows: rows });
 
       setRows(rows);

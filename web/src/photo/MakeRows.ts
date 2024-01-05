@@ -10,12 +10,12 @@ import { getDuplicateBucket } from "./PhotoStore";
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photos: AlbumPhoto[],
+export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
   options: {
     optimalHeight: number,
     targetWidth: number,
     padding: number,
-    startNewRow?: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => AlbumRow[] | null
+    startNewRow?: (photo: AlbumPhoto, idx: number, photos: ReadonlyArray<AlbumPhoto>) => AlbumRow[] | null
   }): AlbumRow[] {
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
@@ -120,14 +120,14 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   return height * scale;
 }
 
-export function makeByMonthRows(photos: AlbumPhoto[], targetWidth: number, padding: number): AlbumRow[] {
+export function makeByMonthRows(photos: ReadonlyArray<AlbumPhoto>, targetWidth: number, padding: number): AlbumRow[] {
   let currentMonth: Date | null = null;
 
   let rows = makeRows(photos, {
     optimalHeight: 200,
     targetWidth: targetWidth,
     padding: padding,
-    startNewRow: (photo: AlbumPhoto, idx: number, photos: AlbumPhoto[]) => {
+    startNewRow: (photo: AlbumPhoto, idx: number, photos: ReadonlyArray<AlbumPhoto>) => {
       if (idx !== 0) {
         let d1 = photos[idx - 1].originalDate;
         let d2 = photo.originalDate;
