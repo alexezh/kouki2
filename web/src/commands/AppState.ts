@@ -48,10 +48,14 @@ export enum ViewMode {
   zoom
 }
 
-let state: AppState = {
+let state: AppState & {
+  // change id from List.onChange
+  listChangeId: number
+} = {
   viewMode: ViewMode.measure,
   currentListId: new PhotoListId("unknown", 0),
-  currentList: new PhotoList(new PhotoListId('unknown', 0), []),
+  currentList: new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([])),
+  listChangeId: 0,
   filterFavorite: "all",
   filterDups: false,
   filterStars: 0,
@@ -123,7 +127,17 @@ export function updateState(update: AppStateUpdate) {
         return true;
       });
 
+      if (state.currentList) {
+        state.currentList.removeOnChanged(state.listChangeId);
+      }
       (state as any).currentList = photos;
+      state.listChangeId = state.currentList.addOnChanged(() => {
+        console.log('Update current collection: ' + state.currentList.photoCount);
+        // reset rows so layout code can regenerate
+        (state as any).rows = null;
+        stateChanged.invoke();
+      });
+
       (state as any).years = buildYears(photos.photos);
       (state as any).rows = null;
       selectionManager.clear();

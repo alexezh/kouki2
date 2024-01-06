@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, AlbumRow, FolderId, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
-import { PhotoFolder, addOnFoldersChanged, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
 import { getQuickCollection } from "../photo/CollectionStore";
@@ -66,26 +66,20 @@ function FolderLayout(props: { folder: PhotoFolder }) {
   const [openFolders, setOpenFolders] = useState(false);
 
   useEffect(() => {
-    let collId = 0;
+    if (!props.folder.wire) {
+      return;
+    }
 
-    // to avoid race condition, keep track if it was already unmounted
-    setTimeout(async () => {
-      let list = await loadPhotoList(new PhotoListId('folder', props.folder.wire!.id));
+    let list = getFolderList(new PhotoListId('folder', props.folder.wire!.id));
+    setCount(list.photoCount);
+    let collId = list.addOnChanged(() => {
       setCount(list.photoCount);
-      if (collId !== -1) {
-        collId = list.addOnChanged(() => {
-          setCount(list.photoCount);
-        });
-      }
     });
 
     return () => {
-      if (collId) {
-        getQuickCollection().removeOnChanged(collId);
-      }
-      collId = -1;
+      list.removeOnChanged(collId);
     }
-  });
+  }, [props.folder]);
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);

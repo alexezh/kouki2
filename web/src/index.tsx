@@ -23,9 +23,11 @@ setSessionId('42')
 
 // start load of library
 setTimeout(async () => {
-  await loadLibrary();
-  await loadFolders();
-  await loadCollections();
+  await loadLibrary(async () => {
+    await loadCollections();
+    await loadFolders();
+    return true;
+  });
   await loadDevices();
 });
 

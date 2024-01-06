@@ -91,7 +91,7 @@ function MyAutoSizer(props: { className: string, render: (size: Size) => JSX.Ele
 
 function App() {
   const size = useWindowSize();
-  const [photos, setPhotos] = useState(new PhotoList(new PhotoListId('unknown', 0), []));
+  const [photos, setPhotos] = useState(new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([])));
 
   useEffect(() => {
     let id = addOnStateChanged(async () => {

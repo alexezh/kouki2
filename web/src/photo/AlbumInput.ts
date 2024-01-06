@@ -30,7 +30,7 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     } else if (event.key === 'x') {
       selectionManager.forEach((x) => { x.favorite = -1; });
     } else if (event.key === 'b') {
-      addQuickCollection(selectionManager.items.values());
+      addQuickCollection(() => selectionManager.items.values());
     }
   }
 }

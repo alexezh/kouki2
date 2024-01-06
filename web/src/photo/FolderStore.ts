@@ -24,6 +24,7 @@ export class PhotoFolder {
 let photoFolders: PhotoFolder[] = [];
 let folderIdMap = new Map<FolderId, PhotoFolder>();
 let folderChanged = new SimpleEventSource();
+let folderLists = new Map<FolderId, PhotoList>();
 
 export function addOnFoldersChanged(func: () => void): number {
   return folderChanged.add(func);
@@ -129,10 +130,22 @@ export async function loadFolders(): Promise<PhotoFolder[]> {
   return photoFolders;
 }
 
-export function getFolderList(folderId: PhotoListId) {
+/**
+ * filters all collection based on folder
+ * can be called only after collection loaded; so we do not have to deal
+ * with delay load
+ */
+export function getFolderList(folderId: PhotoListId): PhotoList {
+  let folderList = folderLists.get(folderId.id as FolderId);
+  if (folderList) {
+    return folderList;
+  }
+
   let folderPhotos = filterPhotos(photoLibraryMap, (x: AlbumPhoto) => { return x.wire.folderId === folderId.id })
   sortByDate(folderPhotos);
 
-  return new PhotoList(folderId, folderPhotos);
+  folderList = new PhotoList(folderId, () => Promise.resolve(folderPhotos));
+  folderLists.set(folderId.id as FolderId, folderList);
 
+  return folderList;
 }

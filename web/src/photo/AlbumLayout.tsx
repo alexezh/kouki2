@@ -33,7 +33,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const listRef = useRef(null);
 
   useEffect(() => {
-    console.log("PhotoAlbum: effect");
+    console.log("PhotoAlbum: effect " + getState().currentList?.photoCount);
 
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {

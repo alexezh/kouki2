@@ -7,6 +7,7 @@ let allPhotos: PhotoList | undefined;
 export const photoLibraryMap = new Map<number, AlbumPhoto>();
 const duplicateByHashBuckets = new Map<string, number[]>();
 const photoLibraryChanged: SimpleEventSource = new SimpleEventSource();
+const loadQueue: (() => Promise<any>)[] = [];
 let loaded = false;
 
 export function addOnPhotoLibraryChanged(func: () => void): number {
@@ -17,7 +18,37 @@ export function removeOnPhotoLibraryChanged(id: number) {
   photoLibraryChanged.remove(id);
 }
 
-export async function loadLibrary() {
+export function queueOnLoaded<T>(func: () => Promise<T>): Promise<T> {
+  let promise = new Promise<T>((resolve) => {
+    if (loaded) {
+      setTimeout(async () => {
+        let result = await func();
+        resolve(result);
+      });
+    } else {
+      loadQueue.push(async () => {
+        let result = await func();
+        resolve(result);
+      });
+    }
+  });
+  return promise;
+}
+
+function completeLoad() {
+  loaded = true;
+
+  setTimeout(async () => {
+    for (let func of loadQueue) {
+      await func();
+    }
+
+    // clear the queue
+    loadQueue.splice(0, loadQueue.length);
+  });
+}
+
+export async function loadLibrary(loadParts: () => Promise<boolean>) {
   if (loaded) {
     return;
   }
@@ -35,13 +66,9 @@ export async function loadLibrary() {
 
   buildDuplicateBuckets();
 
-  // make list of non-duplicate photos while including at least one into collection
-  let uniquePhotos = filterUnique(photoLibraryMap);
-  sortByDate(uniquePhotos);
+  await loadParts();
 
-  allPhotos = new PhotoList(new PhotoListId('all', 0), uniquePhotos);
-
-  loaded = true;
+  completeLoad();
 }
 
 /**
@@ -137,8 +164,17 @@ export function getPhotoById(id: number): AlbumPhoto | undefined {
 }
 
 export function getAllPhotos(): PhotoList {
-  if (!allPhotos) {
-    throw new Error('Invalid state');
+  if (allPhotos) {
+    return allPhotos;
   }
+
+  allPhotos = new PhotoList(new PhotoListId('all', 0), () => {
+    return queueOnLoaded((): Promise<AlbumPhoto[]> => {
+      let uniquePhotos = filterUnique(photoLibraryMap);
+      sortByDate(uniquePhotos);
+      return Promise.resolve(uniquePhotos);
+    });
+  });
+
   return allPhotos;
 }
