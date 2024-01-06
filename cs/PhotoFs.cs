@@ -144,44 +144,47 @@ public class PhotoFs
     return new FileStreamResult(new MemoryStream(infos[0].data), "image/jpeg");
   }
 
-  public static void CreateLink(SourceFileName nm, OutputFileName on)
-  {
-
-  }
-
   public IEnumerable<FolderEntry> GetSourceFolders()
   {
     return _photoDb.GetSourceFolders();
   }
 
-  public IEnumerable<PhotoEntry> GetFolder(Int64 folderId)
+  public IEnumerable<CollectionItem> GetFolder(Int64 folderId)
   {
     return _photoDb.GetPhotosByFolder(folderId);
   }
 
-  public IEnumerable<PhotoEntry> GetCollection(string name)
+  public IEnumerable<PhotoEntry> GetLibrary()
   {
-    if (name == "all")
+    return _photoDb.SelectPhotos((command) =>
     {
-      return _photoDb.SelectPhotos((command) =>
-      {
-        command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
-      });
-    }
-    else if (name == "dups")
+      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
+    });
+  }
+
+  public IEnumerable<CollectionItem> GetCollectionItems(Int64 id)
+  {
+    return _photoDb.GetCollectionItems(id);
+  }
+
+  public bool AddCollectionItems(Int64 id, CollectionItem[] items)
+  {
+    foreach (var item in items)
     {
-      return DuplicateFinder.GetDuplicates(_photoDb);
+      _photoDb.AddCollectionItem(id, item.photoId, DateTime.Parse(item.updateDt).ToBinary());
     }
-    else // if (name == "import")
-    {
-      return new PhotoEntry[0];
-    }
-    //return _photoDb.GetCollection(name);
+
+    return true;
   }
 
   public List<CollectionEntry> GetCollections()
   {
     return _photoDb.GetCollections();
+  }
+
+  public Int64? AddCollection(AddCollectionRequest request)
+  {
+    return _photoDb.AddCollection(request.name, request.kind);
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)

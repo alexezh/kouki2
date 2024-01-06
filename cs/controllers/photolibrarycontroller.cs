@@ -60,21 +60,75 @@ public class PhotoLibraryController : Controller
   }
 
   [HttpGet]
-  public IEnumerable<PhotoEntry> GetFolder(Int64 id)
+  public IEnumerable<CollectionItem> GetFolder(Int64 id)
   {
     return PhotoFs.Instance.GetFolder(id);
   }
 
   [HttpGet]
-  public IEnumerable<PhotoEntry> GetCollection(string id)
+  public IEnumerable<CollectionItem> GetCollectionItems(Int64 id)
   {
-    return PhotoFs.Instance.GetCollection(id);
+    return PhotoFs.Instance.GetCollectionItems(id);
+  }
+
+  [HttpGet]
+  public IEnumerable<PhotoEntry> GetLibrary()
+  {
+    return PhotoFs.Instance.GetLibrary();
+  }
+
+  [HttpPost]
+  public async Task<ResultResponse> AddCollectionItems(Int64 id)
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
+
+      bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
+
+      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
+    }
+  }
+
+  [HttpPost]
+  public async Task<ResultResponse> RemoveCollectionItems(Int64 id)
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
+
+      bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
+
+      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
+    }
   }
 
   [HttpGet]
   public IEnumerable<CollectionEntry> GetCollections()
   {
     return PhotoFs.Instance.GetCollections();
+  }
+
+  [HttpPost]
+  public async Task<AddCollectionResponse> AddCollection()
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<AddCollectionRequest>(content);
+
+      Int64? id = PhotoFs.Instance.AddCollection(request);
+      if (id != null)
+      {
+        return new AddCollectionResponse() { id = id.Value, result = "Ok" };
+      }
+      else
+      {
+        return new AddCollectionResponse() { id = 0, result = "Failed" };
+      }
+    }
   }
 
   // get string as resource
@@ -108,26 +162,3 @@ public class PhotoLibraryController : Controller
   }
 }
 
-// public class ListFiles : Controller
-// {
-//   [HttpPost]
-//   public async Task<WireLoginResponse> Login()
-//   {
-//     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
-//     {
-//       string content = await reader.ReadToEndAsync();
-//       WireLoginRequest request = JsonSerializer.Deserialize<WireLoginRequest>(content);
-
-//       var session = UserDbStatics.LoginUser(request.name, request.pwd);
-
-//       if (session == null)
-//       {
-//         return new WireLoginResponse() { url = null, session = null };
-//       }
-//       else
-//       {
-//         return new WireLoginResponse() { url = "/digshell.html", session = session };
-//       }
-//     }
-//   }
-// }

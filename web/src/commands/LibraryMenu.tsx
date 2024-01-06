@@ -5,6 +5,7 @@ import { getState } from "./AppState";
 import { useState } from "react";
 import { wireAddDevice } from "../lib/mobileclient";
 import { catchAll } from "../lib/error";
+import { Divider } from "@mui/material";
 
 export function LibraryMenu(props: CommandMenuProps) {
   const [openAddFolder, setOpenAddFolder] = useState(false);
@@ -49,6 +50,7 @@ export function LibraryMenu(props: CommandMenuProps) {
     <CommandMenu {...props} extra={renderDialogs}>
       <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Add Folder</MenuItem>
       <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Rescan Folder</MenuItem>
+      <Divider />
       <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
       <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>
     </CommandMenu>

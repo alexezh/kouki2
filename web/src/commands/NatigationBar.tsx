@@ -6,12 +6,13 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, AlbumRow, FolderId, PhotoListId, PhotoListKind } from "../photo/AlbumPhoto";
+import { AlbumPhoto, AlbumRow, FolderId, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
 import { PhotoFolder, addOnFoldersChanged, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
-import { getPhotoListSize, getQuickCollection } from "../photo/PhotoStore";
 import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
+import { getQuickCollection } from "../photo/CollectionStore";
+import { loadPhotoList } from "../photo/LoadPhotoList";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
 
@@ -62,14 +63,29 @@ export function collapsablePane(
 
 function FolderLayout(props: { folder: PhotoFolder }) {
   const [count, setCount] = useState(0);
+  const [openFolders, setOpenFolders] = useState(false);
+
   useEffect(() => {
+    let collId = 0;
+
+    // to avoid race condition, keep track if it was already unmounted
     setTimeout(async () => {
-      if (props.folder.wire) {
-        setCount(await getPhotoListSize(new PhotoListId('folder', props.folder.wire.id as FolderId)));
+      let list = await loadPhotoList(new PhotoListId('folder', props.folder.wire!.id));
+      setCount(list.photoCount);
+      if (collId !== -1) {
+        collId = list.addOnChanged(() => {
+          setCount(list.photoCount);
+        });
       }
-    })
+    });
+
+    return () => {
+      if (collId) {
+        getQuickCollection().removeOnChanged(collId);
+      }
+      collId = -1;
+    }
   });
-  let [openFolders, setOpenFolders] = useState(false);
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);
@@ -109,21 +125,23 @@ function CatalogLayout(props: { text: string, id: PhotoListId }) {
 
   useEffect(() => {
     let collId = 0;
-    if (props.id.kind === 'quick') {
-      collId = getQuickCollection().addOnChanged(() => {
-        setCount(getQuickCollection().photoCount);
-      });
-    } else {
 
-      setTimeout(async () => {
-        setCount(await getPhotoListSize(props.id));
-      });
-    }
+    // to avoid race condition, keep track if it was already unmounted
+    setTimeout(async () => {
+      let list = await loadPhotoList(props.id);
+      setCount(list.photoCount);
+      if (collId !== -1) {
+        collId = list.addOnChanged(() => {
+          setCount(list.photoCount);
+        });
+      }
+    });
 
     return () => {
       if (collId) {
         getQuickCollection().removeOnChanged(collId);
       }
+      collId = -1;
     }
   });
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {

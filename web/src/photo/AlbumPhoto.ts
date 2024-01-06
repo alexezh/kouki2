@@ -1,6 +1,5 @@
-import { WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
+import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
-export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'unknown';
 export type FolderId = number & {
   __tag_folder: boolean;
 }

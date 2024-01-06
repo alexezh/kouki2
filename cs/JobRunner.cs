@@ -16,6 +16,11 @@ public class BackgroundJobResponse
   public string result { get; set; }
 }
 
+public class CollectionItem
+{
+  public Int64 photoId { get; set; }
+  public string updateDt { get; set; }
+}
 
 public interface IJob
 {

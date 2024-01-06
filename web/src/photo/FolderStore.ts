@@ -1,6 +1,8 @@
 import { WireFolder, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { FolderId } from "./AlbumPhoto";
+import { AlbumPhoto, FolderId, PhotoListId } from "./AlbumPhoto";
+import { PhotoList } from "./PhotoList";
+import { filterPhotos, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
   public wire: WireFolder | null;
@@ -21,6 +23,7 @@ export class PhotoFolder {
 
 let photoFolders: PhotoFolder[] = [];
 let folderIdMap = new Map<FolderId, PhotoFolder>();
+let folderChanged = new SimpleEventSource();
 
 export function addOnFoldersChanged(func: () => void): number {
   return folderChanged.add(func);
@@ -35,8 +38,6 @@ export function triggerRefreshFolders() {
     await loadFolders();
   });
 }
-
-let folderChanged = new SimpleEventSource();
 
 function generatePhotoFolders(wireFolders: WireFolder[]): PhotoFolder[] {
   let folderMap = new Map<string, PhotoFolder>();
@@ -126,4 +127,12 @@ export async function loadFolders(): Promise<PhotoFolder[]> {
   folderChanged.invoke();
 
   return photoFolders;
+}
+
+export function getFolderList(folderId: PhotoListId) {
+  let folderPhotos = filterPhotos(photoLibraryMap, (x: AlbumPhoto) => { return x.wire.folderId === folderId.id })
+  sortByDate(folderPhotos);
+
+  return new PhotoList(folderId, folderPhotos);
+
 }

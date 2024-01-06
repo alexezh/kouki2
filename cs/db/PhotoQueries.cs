@@ -29,13 +29,27 @@ public static class PhotoQueriesExt
     });
   }
 
-  public static List<PhotoEntry> GetPhotosByFolder(this PhotoDb self, Int64 folderId)
+  public static List<CollectionItem> GetPhotosByFolder(this PhotoDb self, Int64 folderId)
   {
-    return self.SelectPhotos((command) =>
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT (id, importedDt) FROM Photos WHERE folder == $folder order by originalDt";
+    command.Parameters.AddWithValue("$folder", folderId);
+
+    var entries = new List<CollectionItem>();
+    using (var reader = command.ExecuteReader())
     {
-      command.CommandText = "SELECT * FROM Photos WHERE folder == $folder order by originalDt";
-      command.Parameters.AddWithValue("$folder", folderId);
-    });
+      while (reader.Read())
+      {
+        var entry = new CollectionItem()
+        {
+          photoId = reader.ReadInt64("id"),
+          updateDt = reader.ReadMagicTime("originalDt")?.ToString("o"),
+        };
+        entries.Add(entry);
+      }
+    }
+
+    return entries;
   }
 
   public static Int64? InsertWithId(this PhotoDb self, string table, (string, object val)[] values)
@@ -56,6 +70,23 @@ public static class PhotoQueriesExt
     }
 
     return null;
+  }
+
+  public static bool Insert(this PhotoDb self, string table, (string, object val)[] values)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = $"INSERT INTO {table}({String.Join(",", values.Select(x => x.Item1))}) VALUES({String.Join(",", values.Select(x => "$" + x.Item1))})";
+    foreach (var val in values)
+    {
+      command.Parameters.AddWithValue("$" + val.Item1, val.Item2);
+    }
+
+    var inserted = command.ExecuteNonQuery();
+    if (inserted != 1)
+    {
+      return false;
+    }
+    return true;
   }
 
   public static bool UpdatePhoto(this PhotoDb self, UpdatePhotoRequest updateReqest)

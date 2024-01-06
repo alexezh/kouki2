@@ -1,5 +1,6 @@
+import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { BatchDelayedQueue } from "./DispatchQueue";
-import { fetchAdapter } from "./fetchadapter";
+import { ResultResponse, fetchAdapter } from "./fetchadapter";
 
 export type WirePhotoEntry = {
   id: number;
@@ -34,11 +35,29 @@ export type WireFolder = {
   path: string;
 }
 
+export type WireCollectionItem = {
+  photoId: number;
+  updateDt: number;
+}
+
+export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'unknown';
+
 export type WireCollection = {
   id: number;
   name: string;
   // quick, device, user
+  kind: PhotoListKind;
+  updateDt: string;
+}
+
+export type WireAddCollectionRequest = {
   kind: string;
+  name: string;
+  createDt: string;
+}
+
+export type WireAddCollectionResponse = ResultResponse & {
+  collection: WireCollection;
 }
 
 export type UpdateString = {
@@ -60,7 +79,7 @@ export async function wireGetFolders(): Promise<WireFolder[]> {
   return response;
 }
 
-export async function wireGetFolder(id: number): Promise<WirePhotoEntry[]> {
+export async function wireGetFolder(id: number): Promise<WireCollectionItem[]> {
   let response = await (await fetchAdapter!.get(`/api/photolibrary/getfolder/${id}`)).json();
   return response;
 }
@@ -70,8 +89,23 @@ export async function wireGetCollections(): Promise<WireCollection[]> {
   return response;
 }
 
-export async function wireGetCollection(name: string): Promise<WirePhotoEntry[]> {
-  let response = await (await fetchAdapter!.get(`/api/photolibrary/getcollection/${name}`)).json();
+export async function wireAddCollection(request: WireAddCollectionRequest): Promise<WireAddCollectionResponse> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/addcollection`, JSON.stringify(request))).json();
+  return response;
+}
+
+export async function wireGetLibrary(): Promise<WirePhotoEntry[]> {
+  let response = await (await fetchAdapter!.get(`/api/photolibrary/getlibrary`)).json();
+  return response;
+}
+
+export async function wireGetCollectionItems(id: number): Promise<WireCollectionItem[]> {
+  let response = await (await fetchAdapter!.get(`/api/photolibrary/getcollectionitems/${id}`)).json();
+  return response;
+}
+
+export async function wireAddCollectionItems(id: number, items: WireCollectionItem[]): Promise<ResultResponse> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/addcollectionitems/${id}`, JSON.stringify(items))).json();
   return response;
 }
 
@@ -147,3 +181,4 @@ export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<Expor
   let response = await (await fetchAdapter!.post(`/api/export/exportphotos`, JSON.stringify(wire))).json();
   return response;
 }
+

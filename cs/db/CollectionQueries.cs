@@ -1,12 +1,25 @@
 public static class CollectionsQueriesExt
 {
-  public static List<PhotoEntry> GetCollectionItems(this PhotoDb self, Int64 collectionId)
+
+  public static List<CollectionItem> GetCollectionItems(this PhotoDb self, Int64 id)
   {
-    return self.SelectPhotos((command) =>
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM CollectionItems WHERE id == $id";
+    command.Parameters.AddWithValue("$id", id);
+
+    var items = new List<CollectionItem>();
+    using (var reader = command.ExecuteReader())
     {
-      command.CommandText = "SELECT * FROM CollectionItems INNER JOIN Photos ON CollectionItems.id == Photos.id  WHERE id == $id";
-      command.Parameters.AddWithValue("$id", collectionId);
-    });
+      while (reader.Read())
+      {
+        var item = new CollectionItem();
+        item.photoId = reader.ReadInt64("photoId");
+        item.updateDt = DateTime.FromBinary(reader.ReadInt64("updateDt")).ToString("o");
+        items.Add(item);
+      }
+    }
+
+    return items;
   }
 
   public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user")

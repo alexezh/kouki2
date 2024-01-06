@@ -2,7 +2,7 @@ import { ViewMode, getState, updateState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
-import { addQuickCollection } from "./PhotoStore";
+import { addQuickCollection } from "./CollectionStore";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   let viewMode = getState().viewMode;

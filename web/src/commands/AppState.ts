@@ -1,9 +1,8 @@
 import { AlbumPhoto, AlbumRow, PhotoListId } from "../photo/AlbumPhoto";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { PhotoList, loadPhotoList } from "../photo/PhotoStore";
 import { selectionManager } from "./SelectionManager";
-import { isEqualDay, toDayStart } from "../lib/date";
-import { makeRows } from "../photo/MakeRows";
+import { PhotoList } from "../photo/PhotoList";
+import { loadPhotoList } from "../photo/LoadPhotoList";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -107,7 +106,9 @@ export function updateState(update: AppStateUpdate) {
 
   if (rebuildList) {
     setTimeout(async () => {
-      let photos = await loadPhotoList(state.currentListId, (x: AlbumPhoto) => {
+      let photos: PhotoList = await loadPhotoList(state.currentListId);
+
+      photos.setFilter((x: AlbumPhoto) => {
         if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
           return false;
         }

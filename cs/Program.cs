@@ -64,25 +64,33 @@ app.UseStaticFiles(staticOptions);
 app.UseRouting();
 app.UseAuthorization();
 
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller=ProjectList}/{action=ListProjects}");
-
-// app.MapControllerRoute(
-//     name: "GetFolder",
-//     pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder)/{id?}");
-
 app.MapControllerRoute(
     name: "GetFolder",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder}/{id}");
 
 app.MapControllerRoute(
-    name: "GetCollection",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollection}/{id}");
+    name: "GetCollectionItems",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollectionItems}/{id}");
+
+app.MapControllerRoute(
+    name: "AddCollectionItems",
+    pattern: "/api/{controller=PhotoLibrary}/{action=AddCollectionItems}/{id}");
+
+app.MapControllerRoute(
+    name: "RemoveCollectionItems",
+    pattern: "/api/{controller=PhotoLibrary}/{action=RemoveCollectionItems}/{id}");
+
+app.MapControllerRoute(
+    name: "GetLibrary",
+    pattern: "/api/{controller=PhotoLibrary}/{action=GetLibrary}");
 
 app.MapControllerRoute(
     name: "GetCollections",
     pattern: "/api/{controller=PhotoLibrary}/{action=GetCollections}");
+
+app.MapControllerRoute(
+    name: "AddCollection",
+    pattern: "/api/{controller=PhotoLibrary}/{action=AddCollection}");
 
 app.MapControllerRoute(
     name: "GetSourceFolders",

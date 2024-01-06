@@ -3,12 +3,11 @@ import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import Divider from "@mui/material/Divider/Divider";
 import { ExportSelectionDialog } from "./ExportSelectionDialog";
 import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
+import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { useState } from "react";
-import { wireAddFile, wireConnectDevice, wireGetFile, wireGetSyncList, wireUploadFile } from "../lib/mobileclient";
-import { PhotoList, getPhotoById, loadPhotoList } from "../photo/PhotoStore";
+import { PhotoList } from "../photo/PhotoList";
 
-export function SelectMenu(props: CommandMenuProps & { photos: PhotoList }) {
+export function EditMenu(props: CommandMenuProps & { photos: PhotoList }) {
   const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
@@ -38,20 +37,20 @@ export function SelectMenu(props: CommandMenuProps & { photos: PhotoList }) {
     props.onMenuClose();
   }
 
-  async function handleAddPhone() {
-    let device = await wireConnectDevice("Ezh14");
-    let listResp = await wireGetSyncList({ deviceFolderId: device.archiveFolderId, files: ["hello"] });
-    let photos = await loadPhotoList(new PhotoListId('all', 0));
-    let blob = await wireGetFile(photos.photos[0].getPhotoUrl());
-    let uploadResp = await wireUploadFile(blob);
-    await wireAddFile({
-      hash: uploadResp.hash,
-      fileName: "hello.jpg",
-      favorite: false,
-      archiveFolderId: device.archiveFolderId,
-      deviceCollectionId: device.deviceCollectionId
-    })
-  }
+  // async function handleAddPhone() {
+  //   let device = await wireConnectDevice("Ezh14");
+  //   let listResp = await wireGetSyncList({ deviceFolderId: device.archiveFolderId, files: ["hello"] });
+  //   let photos = await loadPhotoList(new PhotoListId('all', 0));
+  //   let blob = await wireGetFile(photos.photos[0].getPhotoUrl());
+  //   let uploadResp = await wireUploadFile(blob);
+  //   await wireAddFile({
+  //     hash: uploadResp.hash,
+  //     fileName: "hello.jpg",
+  //     favorite: false,
+  //     archiveFolderId: device.archiveFolderId,
+  //     deviceCollectionId: device.deviceCollectionId
+  //   })
+  // }
 
   function renderDialogs() {
     return (<div>
@@ -68,7 +67,6 @@ export function SelectMenu(props: CommandMenuProps & { photos: PhotoList }) {
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
       <MenuItem key="export_selection" onClick={handleExportSelection}>Export Selection</MenuItem>
-      <MenuItem key="addphone" onClick={handleAddPhone}>Add Phone</MenuItem>
     </CommandMenu>
   )
 }

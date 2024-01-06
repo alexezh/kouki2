@@ -18,7 +18,7 @@ import { addOnStateChanged, getState, removeOnStateChanged } from './commands/Ap
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { CalendarBar } from './commands/CalendarBar';
-import { PhotoList } from './photo/PhotoStore';
+import { PhotoList } from './photo/PhotoList';
 
 const darkTheme = createTheme({
   palette: {

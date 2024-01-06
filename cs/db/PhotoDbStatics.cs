@@ -57,8 +57,8 @@ public class PhotoDbStatics
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoOriginal` ON `Photos` (`originalHash` ASC);");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackHash` ASC);");
 
-      CreateTable(connection, "CREATE TABLE IF NOT EXISTS Collections (id INTEGER PRIMARY KEY, name TEXT, metadata TEXT)");
-      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `CollectionName` ON `Collections` (`name` ASC);");
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS Collections (id INTEGER PRIMARY KEY, kind TEXT, createDt INTEGER, name TEXT, metadata TEXT)");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `CollectionCreateTime` ON `Collections` (`id` ASC, 'createDt' ASC);");
 
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS CollectionItems (id INTEGER, photoId INTEGER, updateDt INTEGER, metadata TEXT)");
       CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `CollectionItems_PhotoId` ON `CollectionItems` (`id` ASC, 'photoId' ASC);");

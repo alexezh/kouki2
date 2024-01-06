@@ -1,5 +1,6 @@
 using System.Data.SqlTypes;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -42,6 +43,18 @@ public class UpdatePhotoResponse
   public string error { get; set; }
 }
 
+public class AddCollectionRequest
+{
+  public string kind { get; set; }
+  public string name { get; set; }
+  public string createDt { get; set; }
+}
+
+public class AddCollectionResponse : ResultResponse
+{
+  public Int64 id { get; set; }
+}
+
 public class ThumbnailEntry
 {
   public string hash { get; set; }
@@ -76,6 +89,7 @@ public static class ReaderExt
       return unchecked((int)(Int64)val);
     }
   }
+
   public static Int64 ReadInt64(this SqliteDataReader reader, string name)
   {
     var val = reader[name];
@@ -87,6 +101,18 @@ public static class ReaderExt
     {
       return unchecked((Int64)val);
     }
+  }
+
+  public static DateTime? ReadMagicTime(this SqliteDataReader reader, string name)
+  {
+    var dtStr = reader.ReadString("originalDt");
+    if (dtStr == null)
+    {
+      return null;
+    }
+
+    CultureInfo provider = CultureInfo.InvariantCulture;
+    return DateTime.ParseExact(dtStr, "yyyy:MM:dd HH:mm:ss", provider);
   }
 }
 public class PhotoDb
@@ -197,14 +223,6 @@ public class PhotoDb
 
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
-    var dtStr = reader.ReadString("originalDt");
-    DateTime? dt = null;
-    if (dtStr != null)
-    {
-      CultureInfo provider = CultureInfo.InvariantCulture;
-      dt = DateTime.ParseExact(dtStr, "yyyy:MM:dd HH:mm:ss", provider);
-    }
-
     var en = new PhotoEntry()
     {
       folderId = (Int64)reader["folder"],
@@ -219,7 +237,7 @@ public class PhotoDb
       width = unchecked((int)(Int64)reader["width"]),
       height = unchecked((int)(Int64)reader["height"]),
       format = unchecked((int)(Int64)reader["format"]),
-      originalDateTime = dt?.ToString("o"),
+      originalDateTime = reader.ReadMagicTime("originalDt")?.ToString("o"),
       originalHash = reader.ReadString("originalHash"),
       stackHash = reader.ReadString("stackHash"),
       imageId = reader.ReadString("imageId"),
@@ -259,9 +277,3 @@ public class CollectionEntry
   public string name { get; set; }
   public string kind { get; set; }
 }
-
-
-
-
-
-

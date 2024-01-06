@@ -5,10 +5,7 @@ import { DateRowLayout, PhotoRowLayout } from "./RowLayout";
 import { selectionManager } from "../commands/SelectionManager";
 import { PhotoLayout } from "./PhotoLayout";
 import { Measure } from "../Measure";
-import { isEqualDay, toDayStart } from "../lib/date";
-import React from "react";
 import { makeByMonthRows, makeRows } from "./MakeRows";
-import { addQuickCollection } from "./PhotoStore";
 import { Command, ViewMode, addCommandHandler, addOnStateChanged, getState, removeCommandHandler, removeOnStateChanged, updateState } from "../commands/AppState";
 import { handleDateSelected, handleKeyDown, handlePhotoClick, handlePhotoSelected } from "./AlbumInput";
 

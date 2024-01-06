@@ -16,6 +16,7 @@ import { FetchAdapterWeb } from './lib/fetchadapterweb';
 import { loadFolders } from './photo/FolderStore';
 import { loadLibrary } from './photo/PhotoStore';
 import { loadDevices } from './photo/Device';
+import { loadCollections } from './photo/CollectionStore';
 
 setFetchAdapter(new FetchAdapterWeb());
 setSessionId('42')
@@ -24,6 +25,7 @@ setSessionId('42')
 setTimeout(async () => {
   await loadLibrary();
   await loadFolders();
+  await loadCollections();
   await loadDevices();
 });
 
