@@ -1,7 +1,7 @@
-import { PhotoListKind, WireCollection, WireCollectionItem, WireFolder, wireAddCollection, wireGetCollectionItems, wireGetCollections, wireGetFolders } from "../lib/photoclient";
+import { PhotoListKind, WireCollection, WireCollectionItem, WireFolder, wireAddCollection, wireAddCollectionItems, wireGetCollectionItems, wireGetCollections, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
-import { PhotoList } from "./PhotoList";
+import { PhotoList, PhotoListChangeType } from "./PhotoList";
 import { getPhotoById, queueOnLoaded } from "./PhotoStore";
 
 export type CollectionId = number & {
@@ -86,7 +86,7 @@ export function getQuickCollection(): PhotoList {
     return quickList;
   }
 
-  quickList = new PhotoList(new PhotoListId('quick', 0), async () => {
+  quickList = new PhotoList(new PhotoListId('quick', 0), async (self: PhotoList) => {
     return queueOnLoaded(async () => {
 
       let quickColl: PhotoCollection | null = null;
@@ -101,7 +101,7 @@ export function getQuickCollection(): PhotoList {
 
       // ensure that we have quick collection
       if (!quickColl) {
-        let response = await wireAddCollection({ kind: 'quick', name: '', createDt: Date.now().toString() });
+        let response = await wireAddCollection({ kind: 'quick', name: '', createDt: new Date(Date.now()).toISOString() });
         quickColl = new PhotoCollection(response.collection);
         collectionMap.set(response.collection.id as CollectionId, quickColl);
       }
@@ -118,6 +118,16 @@ export function getQuickCollection(): PhotoList {
         photos.push(photo);
       }
 
+      self.addOnChanged((ct: PhotoListChangeType, items: AlbumPhoto[]) => {
+        if (ct === PhotoListChangeType.load) {
+          return;
+        }
+
+        wireAddCollectionItems(quickColl!.wire.id, items.map((x) => {
+          return { photoId: x.wire.id, updateDt: new Date(Date.now()).toISOString() }
+        }));
+      });
+
       return photos;
     });
   });
@@ -126,7 +136,6 @@ export function getQuickCollection(): PhotoList {
   return quickList;
 }
 
-export function addQuickCollection(photos: AlbumPhoto[] | (() => IterableIterator<AlbumPhoto>)) {
-
+export function addQuickCollection(photos: AlbumPhoto[]) {
   getQuickCollection().addPhotos(photos);
 }

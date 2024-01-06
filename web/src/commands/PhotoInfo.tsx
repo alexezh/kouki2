@@ -15,7 +15,6 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   props.push({ name: 'Width:', value: photo.wire.width.toString() });
   props.push({ name: 'Height:', value: photo.wire.height.toString() });
   props.push({ name: 'Size:', value: photo.wire.fileSize.toString() });
-  props.push({ name: 'Date:', value: photo.wire.originalDateTime });
   props.push({ name: 'DupCount:', value: photo.dupCount.toString() });
   if (photo.wire.imageId) {
     props.push({ name: 'ImageId:', value: photo.wire.imageId });
@@ -52,7 +51,7 @@ export function PhotoInfo() {
   return (
     <div className="PhotoInfo">
       {getProperties(currentPhoto).map((x) => (
-        <div className="PhotoInfoItem">
+        <div key={x.name} className="PhotoInfoItem">
           <div>{x.name}</div>
           <div className="PhotoInfoValue">{x.value}</div>
         </div>

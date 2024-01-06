@@ -31,42 +31,34 @@ export class PhotoList {
 
   public get photoCount(): number { return this._photos.length }
 
-  public constructor(id: PhotoListId, getPhotos: () => Promise<AlbumPhoto[]>) {
+  public constructor(id: PhotoListId, getPhotos: (self: PhotoList) => Promise<AlbumPhoto[]>) {
     this.id = id;
     this._photos = [];
     this._filtered = this._photos;
     setTimeout(async () => {
-      let photos = await getPhotos();
-      this.addPhotos(photos);
+      let photos = await getPhotos(this);
+      this.addPhotosWorker(photos, PhotoListChangeType.load);
     });
   }
 
-  public addPhotos(photos: AlbumPhoto[] | (() => IterableIterator<AlbumPhoto>)) {
-    if (Array.isArray(photos)) {
-      this._photos.push(...photos);
-      if (this._filter) {
-        for (let x of photos) {
-          if (this._filter(x)) {
-            this._filtered.push(x);
-          }
-        }
-      }
-    }
-    else {
-      this._photos.push(...photos());
-      if (this._filter) {
-        for (let x of photos()) {
-          if (this._filter(x)) {
-            this._filtered.push(x);
-          }
-        }
-      }
-    }
-
-    this.onChanged.invoke();
+  public addPhotos(photos: AlbumPhoto[]) {
+    this.addPhotosWorker(photos, PhotoListChangeType.add);
   }
 
-  public addOnChanged(func: () => void): number {
+  private addPhotosWorker(photos: AlbumPhoto[], ct: PhotoListChangeType) {
+    this._photos.push(...photos);
+    if (this._filter) {
+      for (let x of photos) {
+        if (this._filter(x)) {
+          this._filtered.push(x);
+        }
+      }
+    }
+
+    this.onChanged.invoke(ct, photos);
+  }
+
+  public addOnChanged(func: (ct: PhotoListChangeType, photos: AlbumPhoto[]) => void): number {
     return this.onChanged.add(func);
   }
 
@@ -94,4 +86,10 @@ export class PhotoList {
       this._filtered = this._photos;
     }
   }
+}
+
+export enum PhotoListChangeType {
+  load,
+  add,
+  remove
 }

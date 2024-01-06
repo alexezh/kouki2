@@ -7,20 +7,29 @@ import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { useState } from "react";
 import { PhotoList } from "../photo/PhotoList";
 
-export function EditMenu(props: CommandMenuProps & { photos: PhotoList }) {
+export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null }) {
   const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
+    if (!props.photos) {
+      return;
+    }
     selectionManager.add(props.photos.photos);
     props.onMenuClose();
   }
 
   function handleSelectNone() {
+    if (!props.photos) {
+      return;
+    }
     selectionManager.remove(props.photos.photos);
     props.onMenuClose();
   }
 
   function handleInvertSelect() {
+    if (!props.photos) {
+      return;
+    }
     let select: AlbumPhoto[] = [];
     for (let x of props.photos.photos) {
       if (!selectionManager.items.get(x.wire.hash)) {

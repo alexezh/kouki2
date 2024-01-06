@@ -37,7 +37,7 @@ export type WireFolder = {
 
 export type WireCollectionItem = {
   photoId: number;
-  updateDt: number;
+  updateDt: string;
 }
 
 export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'unknown';

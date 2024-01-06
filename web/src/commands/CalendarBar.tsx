@@ -22,7 +22,7 @@ function CalendarBarYear(props: {
   }
 
   return (
-    <div>
+    <div key={'year_' + props.year.year}>
       <div className="CalendarBarYear" onClick={handleClick}>{props.year.year}</div>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>

@@ -1,15 +1,29 @@
 import AppBar from '@mui/material/AppBar/AppBar';
 import Toolbar from '@mui/material/Toolbar/Toolbar';
 import { AlbumPhoto } from '../photo/AlbumPhoto';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import React from 'react';
 import { EditMenu } from './SelectMenu';
 import { LibraryMenu } from './LibraryMenu';
 import { FilterMenu } from './FilterMenu';
 import { PhotoList } from '../photo/PhotoList';
+import { addOnStateChanged, getState, removeOnStateChanged } from './AppState';
 
-export function CommandBar(props: { className?: string, photos: PhotoList }) {
+export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
+  const [photos, setPhotos] = useState<PhotoList | null>(null);
+
+  useEffect(() => {
+    let id = addOnStateChanged(async () => {
+      if (photos !== getState().currentList) {
+        setPhotos(getState().currentList);
+      }
+    });
+
+    return () => {
+      removeOnStateChanged(id);
+    };
+  }, []);
 
   function handleMenuClick(id: string, event: React.MouseEvent<HTMLElement>) {
     setAnchorEl({ elem: event.currentTarget, id: id });
@@ -26,7 +40,7 @@ export function CommandBar(props: { className?: string, photos: PhotoList }) {
   return (
     <AppBar position="static" className={props.className}>
       <Toolbar variant="dense">
-        <EditMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} photos={props.photos} label="Edit" id="edit" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
+        <EditMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} photos={photos} label="Edit" id="edit" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <LibraryMenu open={anchorEl?.id === "library"} anchorEl={anchorEl?.elem ?? null} label='Library' id='library' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <FilterMenu open={anchorEl?.id === "filter"} anchorEl={anchorEl?.elem ?? null} label='Filter' id='filter' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
       </Toolbar>

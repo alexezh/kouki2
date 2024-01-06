@@ -14,7 +14,10 @@ export class SelectionManager {
 
   private _lastSelectedIndex = -1;
 
-  public getLastSelectedIndex(photos: ReadonlyArray<AlbumPhoto>): number {
+  public getLastSelectedIndex(photos: ReadonlyArray<AlbumPhoto> | undefined): number {
+    if (!photos) {
+      return -1;
+    }
     if (this._lastSelectedIndex !== -1) {
       return this._lastSelectedIndex;
     }

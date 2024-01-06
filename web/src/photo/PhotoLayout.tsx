@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, Key, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 
@@ -23,7 +23,6 @@ function getFavIcon(favorite: number): string | null {
 }
 
 export type PhotoPropTypes = {
-  key: string;
   className?: string;
   style?: CSSProperties;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
@@ -132,7 +131,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
   }
 
   return (
-    <div style={divStyle} className={props.className}>
+    <div key={props.photo.wire.hash} style={divStyle} className={props.className}>
       {(fav) ?
         (<img
           className="PhotoLayoutFavIcon"

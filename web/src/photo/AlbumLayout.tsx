@@ -22,24 +22,81 @@ type RowsDef = {
   rows: AlbumRow[];
 }
 
+/**
+ * render 2 photos; switches visibility between them
+ */
+function renderPreviewPhotos(version: number, width: number, height: number): JSX.Element[] {
+  let elements: JSX.Element[] = [];
+
+  let idx = selectionManager.getLastSelectedIndex(getState().currentList?.photos);
+  console.log("preview: " + idx);
+
+  if (idx === -1) {
+    return elements;
+  }
+
+  let photos = getState().currentList.photos;
+
+  if (idx > 0) {
+    let photo = photos[idx - 1];
+    elements.push(
+      (<PhotoLayout
+        className="Photo"
+        visibility="hidden"
+        photo={photo!}
+        padding={0}
+        width={width}
+        height={height}
+        selected={true}></PhotoLayout>));
+  }
+
+  {
+    let photo = photos[idx];
+    elements.push(
+      (<PhotoLayout
+        className="Photo"
+        visibility="visible"
+        photo={photo!}
+        padding={0}
+        width={width}
+        height={height}
+        selected={true}></PhotoLayout>));
+  }
+
+  if (idx < photos.length - 1) {
+    let photo = photos[idx + 1];
+    elements.push(
+      (<PhotoLayout
+        className="Photo"
+        visibility="hidden"
+        photo={photo!}
+        padding={0}
+        width={width}
+        height={height}
+        selected={true}></PhotoLayout>));
+  }
+
+  return elements;
+}
+
 export function PhotoAlbum(props: PhotoAlbumProps) {
   // react-window has a bug with updates
   // it caches height of items for variable height based on function object
   // so we have to give it different function when photos change
   const [rows, setRows] = useState<AlbumRow[] | null>(getState().rows);
   const [viewMode, setViewMode] = useState(getState().viewMode);
-  const [currentPhoto, setCurrentPhoto] = useState<AlbumPhoto | null>(selectionManager.lastSelectedPhoto);
+  // simple counter for refresh
+  const [version, setVersion] = useState(0);
   const ref = useRef(null);
   const listRef = useRef(null);
 
   useEffect(() => {
-    console.log("PhotoAlbum: effect " + getState().currentList?.photoCount);
+    console.log("PhotoAlbum: effect:" + getState().currentList?.photoCount);
 
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {
-      if (selectionManager.lastSelectedPhoto !== currentPhoto) {
-        setCurrentPhoto(selectionManager.lastSelectedPhoto);
-      }
+      console.log('Selection changed');
+      setVersion(version + 1);
     });
 
     // add listener to commands
@@ -78,7 +135,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       removeCommandHandler(cmdId);
       removeOnStateChanged(stateId);
     }
-  }, [getState().currentList, getState().rows, props.width, viewMode, ref, currentPhoto]);
+  }, [getState().currentList, getState().rows, props.width, viewMode, ref, version]);
 
   function updateRows() {
     let rows = getState().rows;
@@ -147,11 +204,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     setViewMode(getState().viewMode);
   }
 
-  if (currentPhoto !== selectionManager.lastSelectedPhoto) {
-    setCurrentPhoto(currentPhoto);
-  }
-
-  let showList = (viewMode === ViewMode.grid || !currentPhoto);
+  let showList = (viewMode === ViewMode.grid || !selectionManager.lastSelectedPhoto);
   let listStyle: CSSProperties = {
     visibility: showList ? "visible" : "hidden",
     height: props.height,
@@ -170,6 +223,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       updateState({ viewMode: ViewMode.grid });
     }
   }
+
 
   if (viewMode === ViewMode.measure) {
     return (
@@ -199,15 +253,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         </List>
         {
           (!showList) ? (
-            <PhotoLayout
-              key={currentPhoto!.wire.hash}
-              className="Photo"
-              visibility={showList ? "hidden" : "visible"}
-              photo={currentPhoto!}
-              padding={0}
-              width={props.width}
-              height={props.height}
-              selected={true}></PhotoLayout>
+            renderPreviewPhotos(version, props.width, props.height)
           ) : null
         }
       </div >);

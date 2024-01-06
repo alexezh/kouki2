@@ -91,19 +91,6 @@ function MyAutoSizer(props: { className: string, render: (size: Size) => JSX.Ele
 
 function App() {
   const size = useWindowSize();
-  const [photos, setPhotos] = useState(new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([])));
-
-  useEffect(() => {
-    let id = addOnStateChanged(async () => {
-      if (photos !== getState().currentList) {
-        setPhotos(getState().currentList);
-      }
-    });
-
-    return () => {
-      removeOnStateChanged(id);
-    };
-  }, []);
 
   let appStyle = {
     'width': size.width, 'height': size.height
@@ -177,7 +164,7 @@ function App() {
                   <PhotoAlbum width={width} height={height}></PhotoAlbum>)}
               </AutoSizer>
             </div>
-            <CommandBar className="CommandBar" photos={photos}></CommandBar>
+            <CommandBar className="CommandBar"></CommandBar>
             <StatusBar className="StatusBar"></StatusBar>
             <CalendarBar className="CalendarBar"></CalendarBar>
           </div>

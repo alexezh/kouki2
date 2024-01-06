@@ -17,13 +17,13 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
     let index = 0;
     for (let photo of row.photos!) {
       res.push((<PhotoLayout
+        key={photo.wire.hash}
         photo={photo}
         onClick={props.onClick}
         onSelected={props.onSelected}
         selected={selectionManager.isSelected(photo)}
         padding={props.row.padding}
-        left={left}
-        key={'photo_' + index}></PhotoLayout>));
+        left={left} />));
 
       index++;
       left += Math.round(photo.width * photo.scale) + row.padding * 2;

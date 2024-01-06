@@ -169,12 +169,19 @@ public class PhotoFs
 
   public bool AddCollectionItems(Int64 id, CollectionItem[] items)
   {
-    foreach (var item in items)
+    try
     {
-      _photoDb.AddCollectionItem(id, item.photoId, DateTime.Parse(item.updateDt).ToBinary());
-    }
+      foreach (var item in items)
+      {
+        _photoDb.AddCollectionItem(id, item.photoId, DateTime.Parse(item.updateDt).ToBinary());
+      }
 
-    return true;
+      return true;
+    }
+    catch (Exception e)
+    {
+      return false;
+    }
   }
 
   public List<CollectionEntry> GetCollections()
