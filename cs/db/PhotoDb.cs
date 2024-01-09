@@ -52,7 +52,7 @@ public class AddCollectionRequest
 
 public class AddCollectionResponse : ResultResponse
 {
-  public Int64 id { get; set; }
+  public CollectionEntry collection { get; set; }
 }
 
 public class ThumbnailEntry
@@ -276,4 +276,5 @@ public class CollectionEntry
   public Int64 id { get; set; }
   public string name { get; set; }
   public string kind { get; set; }
+  public string createDt { get; set; }
 }

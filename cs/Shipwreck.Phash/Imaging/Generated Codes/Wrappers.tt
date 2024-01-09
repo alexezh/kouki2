@@ -1,0 +1,53 @@
+<#@ template language="C#" debug="True" #>
+<#@ output extension="cs" #>
+using System.Runtime;
+
+namespace Shipwreck.Phash.Imaging
+{
+<#
+foreach (var T in new [] { "ByteImage", "Gray8Image", "Bgr24LuminanceImage" })
+{
+#>
+    internal struct <#= T #>Wrapper : IByteImageWrapper
+    {
+        private static readonly IByteImageOperations _Operations = new ByteImageOperations<<#= T #>Wrapper>();
+
+        private readonly <#= T #> _Image;
+
+        public <#= T #>Wrapper(<#= T #> image)
+        {
+            _Image = image;
+        }
+
+        public int Width
+        {
+#if !NO_SERIALIZABLE
+            [TargetedPatchingOptOut("")]
+#endif
+            get => _Image.Width;
+        }
+
+        public int Height
+        {
+#if !NO_SERIALIZABLE
+            [TargetedPatchingOptOut("")]
+#endif
+            get => _Image.Height;
+        }
+
+        public byte this[int x, int y]
+        {
+#if !NO_SERIALIZABLE
+            [TargetedPatchingOptOut("")]
+#endif
+            get => ((IByteImage)_Image)[x, y];
+        }
+
+        public IByteImageOperations GetOperations()
+            => _Operations;
+    }
+
+<#
+}
+#>
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { wireAddFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
+import { wireImportFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -12,6 +12,7 @@ import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
 import { selectionManager } from "./SelectionManager";
 import { AlbumPhoto } from "../photo/AlbumPhoto";
+import { getStandardCollection } from "../photo/CollectionStore";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
   const [path, setPath] = useState("");
@@ -27,7 +28,10 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
 
     try {
       let photos = selectionManager.map((x: AlbumPhoto) => x.wire.id);
-      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos });
+
+      let exportList = getStandardCollection('export');
+
+      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: (await exportList).id.id });
       if (exportResponse.result !== 'Ok') {
         props.onClose();
         return;

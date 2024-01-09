@@ -124,10 +124,17 @@ app.MapControllerRoute(
     name: "GetJobStatus",
     pattern: "/api/{controller=Job}/{action=GetJobStatus}/{id}");
 
+// export
 app.MapControllerRoute(
     name: "ExportPhotos",
     pattern: "/api/{controller=Export}/{action=ExportPhotos}");
 
+// smart features
+app.MapControllerRoute(
+    name: "Similarity",
+    pattern: "/api/{controller=Similarity}/{action=BuildPHash}");
+
+// mobile
 app.MapControllerRoute(
     name: "GetSyncList",
     pattern: "/api/{controller=MobileSync}/{action=GetSyncList}");

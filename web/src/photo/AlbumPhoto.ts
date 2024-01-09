@@ -48,8 +48,9 @@ export class AlbumPhoto {
 
   public constructor(wire: WirePhotoEntry) {
     this.wire = wire;
-    this.width = wire.width;
-    this.height = wire.height;
+    // set width/height to default size to avoid divide by 0 cases
+    this.width = wire.width ?? 200;
+    this.height = wire.height ?? 200;
   }
 
   public getPhotoUrl(): string {

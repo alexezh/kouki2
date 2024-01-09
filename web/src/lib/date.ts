@@ -13,3 +13,7 @@ export function isEqualDay(d1: Date, d2: Date): boolean {
 export function isEqualMonth(d1: Date, d2: Date): boolean {
   return (d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear());
 }
+
+export function nowAsISOString(): string {
+  return new Date(Date.now()).toISOString()
+}

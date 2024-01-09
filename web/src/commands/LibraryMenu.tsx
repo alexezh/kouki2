@@ -1,6 +1,6 @@
 import MenuItem from "@mui/material/MenuItem/MenuItem";
 import { CommandMenu, CommandMenuProps } from "./CommandMenu";
-import { AddFolderDialog, RescanFolderDialog } from "./AddFolderDialog";
+import { AddFolderDialog, ProgressDialog, RescanFolderDialog } from "./AddFolderDialog";
 import { getState } from "./AppState";
 import { useState } from "react";
 import { wireAddDevice } from "../lib/mobileclient";
@@ -10,6 +10,7 @@ import { Divider } from "@mui/material";
 export function LibraryMenu(props: CommandMenuProps) {
   const [openAddFolder, setOpenAddFolder] = useState(false);
   const [openRescanFolder, setOpenRescanFolder] = useState(false);
+  const [openBuildPHash, setOpenBuildPHash] = useState(false);
 
   function renderDialogs() {
     return (<div>
@@ -19,6 +20,11 @@ export function LibraryMenu(props: CommandMenuProps) {
       {
         (openRescanFolder) ? (<RescanFolderDialog
           onClose={() => setOpenRescanFolder(false)}
+          folderId={getState().currentListId} />) : null
+      }
+      {
+        (openBuildPHash) ? (<ProgressDialog
+          onClose={() => setOpenBuildPHash(false)}
           folderId={getState().currentListId} />) : null
       }
     </div>)
@@ -37,8 +43,16 @@ export function LibraryMenu(props: CommandMenuProps) {
   function handleRescanFolder() {
     props.onMenuClose();
     let listId = getState().currentListId;
-    if (typeof listId === "number") {
+    if (listId.kind === "folder") {
       setOpenRescanFolder(true);
+    }
+  }
+
+  function handleBuildPHash() {
+    props.onMenuClose();
+    let listId = getState().currentListId;
+    if (listId.kind === "folder") {
+      setOpenBuildPHash(true);
     }
   }
 
@@ -49,7 +63,8 @@ export function LibraryMenu(props: CommandMenuProps) {
   return (
     <CommandMenu {...props} extra={renderDialogs}>
       <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Add Folder</MenuItem>
-      <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Rescan Folder</MenuItem>
+      <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Build Folder Thumbnails</MenuItem>
+      <MenuItem key="lib_buildpash" onClick={handleBuildPHash}>Build Folder PHash</MenuItem>
       <Divider />
       <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
       <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>

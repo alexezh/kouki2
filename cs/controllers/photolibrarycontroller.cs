@@ -12,21 +12,21 @@ namespace kouki2.Controllers;
 public class PhotoLibraryController : Controller
 {
   [HttpPost]
-  public async Task<AddFolderResponse> AddSourceFolder()
+  public async Task<ImportFolderResponse> AddSourceFolder()
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<AddFolderRequest>(content);
+      var request = JsonSerializer.Deserialize<ImportFolderRequest>(content);
 
       var id = JobRunner.Instance.RunJob(new ImportJob(request.folder));
 
-      return new AddFolderResponse() { result = "Ok", jobId = id };
+      return new ImportFolderResponse() { result = "Ok", jobId = id };
     }
   }
 
   [HttpPost]
-  public async Task<AddFolderResponse> RescanSourceFolder()
+  public async Task<ImportFolderResponse> RescanSourceFolder()
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
@@ -35,7 +35,7 @@ public class PhotoLibraryController : Controller
 
       var id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
 
-      return new AddFolderResponse() { result = "Ok", jobId = id };
+      return new ImportFolderResponse() { result = "Ok", jobId = id };
     }
   }
 
@@ -45,7 +45,7 @@ public class PhotoLibraryController : Controller
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<AddFolderRequest>(content);
+      var request = JsonSerializer.Deserialize<ImportFolderRequest>(content);
 
       bool exists = PhotoFs.Instance.CheckSourceFolder(new FolderName(request.folder));
 
@@ -119,14 +119,14 @@ public class PhotoLibraryController : Controller
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<AddCollectionRequest>(content);
 
-      Int64? id = PhotoFs.Instance.AddCollection(request);
-      if (id != null)
+      CollectionEntry coll = PhotoFs.Instance.AddCollection(request);
+      if (coll != null)
       {
-        return new AddCollectionResponse() { id = id.Value, result = "Ok" };
+        return new AddCollectionResponse() { collection = coll, result = "Ok" };
       }
       else
       {
-        return new AddCollectionResponse() { id = 0, result = "Failed" };
+        return new AddCollectionResponse() { collection = null, result = "Failed" };
       }
     }
   }

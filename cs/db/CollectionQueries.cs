@@ -22,9 +22,9 @@ public static class CollectionsQueriesExt
     return items;
   }
 
-  public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user")
+  public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user", Int64 dt = 0)
   {
-    (string, object)[] values = { ("name", name), ("kind", kind) };
+    (string, object)[] values = { ("name", name), ("kind", kind), ("createDt", dt) };
     return self.InsertWithId("Collections", values);
   }
 

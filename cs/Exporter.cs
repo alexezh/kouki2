@@ -1,13 +1,16 @@
 
-using System.Drawing;
+using System.Numerics;
 using ImageMagick;
+using Shipwreck.Phash;
+using Shipwreck.Phash.Imaging;
 
-public class AddFolderRequest
+public class ImportFolderRequest
 {
   public string folder { get; set; }
+  public Int64 importCollection { get; set; }
 }
 
-public class AddFolderResponse : BackgroundJobResponse
+public class ImportFolderResponse : BackgroundJobResponse
 {
 }
 
@@ -28,6 +31,7 @@ public class ExportPhotosRequest
   /// </summary>
   public string format { get; set; }
   public Int64[] photos { get; set; }
+  public Int64 exportCollection { get; set; }
 }
 
 public class ExportPhotosResponse : BackgroundJobResponse
@@ -85,7 +89,11 @@ public class ExportStatus
 public class Exporter
 {
 
-  internal static void ExportPhotos(PhotoDb photoDb, string exportPath, ExportPhotosRequest request, Action<ExportStatus> progress)
+  internal static void ExportPhotos(
+    PhotoDb photoDb,
+    string exportPath,
+    ExportPhotosRequest request,
+    Action<ExportStatus> progress)
   {
     var status = new ExportStatus();
 
@@ -119,7 +127,10 @@ public class Exporter
           }
 
           var targetPath = Path.GetFullPath(photo.fileName + photo.fileExt, folderPath);
-          if (request.format == "jpeg" && !(photo.format == (int)MagickFormat.Jpeg || photo.format == (int)MagickFormat.Jpg))
+
+          var runPhash = true;
+
+          if (runPhash && request.format == "jpeg" && !(photo.format == (int)MagickFormat.Jpeg || photo.format == (int)MagickFormat.Jpg))
           {
             var destPath = Path.GetFullPath(photo.fileName + ".jpg", exportFolder);
             CopyJpeg(destPath, targetPath);
@@ -140,6 +151,15 @@ public class Exporter
 
         progress(status);
       }
+
+      if (request.exportCollection != 0)
+      {
+        var now = DateTime.Now;
+        foreach (var photo in request.photos)
+        {
+          photoDb.AddCollectionItem(request.exportCollection, photo, now.ToBinary());
+        }
+      }
     }
     catch (Exception e)
     {
@@ -151,13 +171,9 @@ public class Exporter
   {
     using (var srcStm = File.OpenRead(srcPath))
     {
-      // get hash of actual content
-      srcStm.Position = 0;
-
       srcStm.Position = 0;
       using (var image = new MagickImage(srcStm))
       {
-
         image.Format = MagickFormat.Jpg;
         image.Quality = 100;
 

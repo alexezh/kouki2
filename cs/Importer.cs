@@ -1,6 +1,9 @@
 
 using System.Drawing;
+using System.Numerics;
 using ImageMagick;
+using Shipwreck.Phash;
+using Shipwreck.Phash.Imaging;
 
 public class ImportJobResponse
 {

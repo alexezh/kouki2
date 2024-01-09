@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net4;netstandard1.0</TargetFrameworks>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Product>priHash CrossCorrelation</Product>
+    <Description>C# Implementation of phash-0.9.4 that provides Only GetCrossCorrelation functionality. Intended to be referenced from SQL CLR.</Description>
+    <RootNamespace>Shipwreck.Phash</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DefineConstants>DEBUG;TRACE;NO_UNSAFE;NO_MATHF;NO_VECTOR;NO_SPAN;NO_X86_INSTRINSICS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DefineConstants>TRACE;NO_UNSAFE;NO_MATHF;NO_VECTOR;NO_SPAN;NO_X86_INSTRINSICS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+</Project>

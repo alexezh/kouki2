@@ -189,9 +189,21 @@ public class PhotoFs
     return _photoDb.GetCollections();
   }
 
-  public Int64? AddCollection(AddCollectionRequest request)
+  public CollectionEntry AddCollection(AddCollectionRequest request)
   {
-    return _photoDb.AddCollection(request.name, request.kind);
+    var createDt = DateTime.Parse(request.createDt).ToBinary();
+    var id = _photoDb.AddCollection(request.name, request.kind, createDt);
+    if (id == null)
+    {
+      return null;
+    }
+
+    return new CollectionEntry()
+    {
+      createDt = DateTime.FromBinary(createDt).ToString("o"),
+      id = id.Value,
+      name = ""
+    };
   }
 
   public static void MoveFiles(FolderName dest, List<string> files)

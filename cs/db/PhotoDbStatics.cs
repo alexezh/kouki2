@@ -62,6 +62,9 @@ public class PhotoDbStatics
 
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS CollectionItems (id INTEGER, photoId INTEGER, updateDt INTEGER, metadata TEXT)");
       CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `CollectionItems_PhotoId` ON `CollectionItems` (`id` ASC, 'photoId' ASC);");
+
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS PHash (photoId INTEGER, digest BLOB)");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PHashId` ON `PHash` (`photoId` ASC);");
     }
   }
 

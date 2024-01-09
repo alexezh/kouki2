@@ -24,9 +24,6 @@ export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
   let height = Number.MAX_SAFE_INTEGER;
   for (let idx = 0; idx < photos.length; idx++) {
     let photo = photos[idx];
-    if (photo.height === 0) {
-      continue;
-    }
 
     // if (photo.dupCount > 1) {
     //   let ids = getDuplicateBucket(photo);

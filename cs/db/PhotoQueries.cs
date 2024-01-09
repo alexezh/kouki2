@@ -32,7 +32,7 @@ public static class PhotoQueriesExt
   public static List<CollectionItem> GetPhotosByFolder(this PhotoDb self, Int64 folderId)
   {
     var command = self.Connection.CreateCommand();
-    command.CommandText = "SELECT (id, importedDt) FROM Photos WHERE folder == $folder order by originalDt";
+    command.CommandText = "SELECT id, originalDt FROM Photos WHERE folder == $folder order by originalDt";
     command.Parameters.AddWithValue("$folder", folderId);
 
     var entries = new List<CollectionItem>();

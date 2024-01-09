@@ -1,3 +1,4 @@
+import { nowAsISOString } from "../lib/date";
 import { PhotoListKind, WireCollection, WireCollectionItem, WireFolder, wireAddCollection, wireAddCollectionItems, wireGetCollectionItems, wireGetCollections, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
@@ -11,7 +12,6 @@ export type CollectionId = number & {
 export class PhotoCollection {
   public readonly wire: WireCollection;
   public readonly updateDt: Date;
-  public isDefault: boolean = false;
 
   public constructor(wire: WireCollection) {
     this.wire = wire;
@@ -52,27 +52,12 @@ export function triggerRefreshCollections() {
 export async function loadCollections(): Promise<boolean> {
   let wireCollections = await wireGetCollections();
 
-  let catalogMap = new Map<PhotoListKind, PhotoCollection>();
   for (let wc of wireCollections) {
     let coll = collectionMap.get(wc.id as CollectionId);
     if (!coll) {
       coll = new PhotoCollection(wc);
       collectionMap.set(wc.id as CollectionId, coll);
     }
-
-    // get the current quick and other collections
-    let cat = catalogMap.get(coll.wire.kind as PhotoListKind);
-    if (!cat) {
-      catalogMap.set(coll.wire.kind as PhotoListKind, coll);
-    } else {
-      if (coll.updateDt.valueOf() > cat.updateDt.valueOf()) {
-        catalogMap.set(coll.wire.kind as PhotoListKind, coll)
-      }
-    }
-  }
-
-  for (let [key, coll] of catalogMap) {
-    coll.isDefault = true;
   }
 
   collectionChanged.invoke();
@@ -80,28 +65,109 @@ export async function loadCollections(): Promise<boolean> {
   return true;
 }
 
+function findCollection(pred: (coll: PhotoCollection) => boolean): PhotoCollection | null {
+  for (let [key, item] of collectionMap) {
+    if (pred(item)) {
+      return item;
+    }
+  }
+  return null;
+}
+
+function findNewestCollection(kind: PhotoListKind): PhotoCollection | null {
+  let coll: PhotoCollection | null = null;
+  for (let [key, item] of collectionMap) {
+    if (item.wire.kind === kind) {
+      if (coll) {
+        if (coll.updateDt.valueOf() > item.updateDt.valueOf()) {
+          coll = item;
+        }
+      } else {
+        coll = item;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * for import/export, we create collection on demand and we update collection daily
+ */
+export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoList> {
+  let coll: PhotoCollection | null = findNewestCollection(kind);
+
+  let list: PhotoList | undefined;
+  if (!coll) {
+    let response = await wireAddCollection({ kind: kind, name: '', createDt: nowAsISOString() });
+    coll = new PhotoCollection(response.collection);
+    collectionMap.set(response.collection.id as CollectionId, coll);
+  }
+
+  let listId = new PhotoListId(kind, coll.wire.id);
+  list = collectionLists.get(new PhotoListId(kind, listId.id).toString());
+  if (list) {
+    return list;
+  }
+
+  list = createCollectionPhotoList(listId);
+
+  return list;
+}
+
+function createCollectionPhotoList(listId: PhotoListId) {
+  let list = new PhotoList(listId, async (self: PhotoList) => {
+    return queueOnLoaded(async () => {
+
+      let items: WireCollectionItem[] = await wireGetCollectionItems(listId.id);
+      let photos: AlbumPhoto[] = [];
+
+      for (let item of items) {
+        let photo = getPhotoById(item.photoId);
+        if (!photo) {
+          console.error('Collection: cannot find photo ' + item.photoId);
+          continue;
+        }
+        photos.push(photo);
+      }
+
+      self.addOnChanged((ct: PhotoListChangeType, items: AlbumPhoto[]) => {
+        if (ct === PhotoListChangeType.load) {
+          return;
+        }
+
+        wireAddCollectionItems(listId.id, items.map((x) => {
+          return { photoId: x.wire.id, updateDt: nowAsISOString() }
+        }));
+      });
+
+      return photos;
+    });
+  });
+
+  return list;
+}
+
+/**
+ * quick list is special as we need it at all time
+ * the rest we can create on demand
+ */
 export function getQuickCollection(): PhotoList {
   let quickList = collectionLists.get('quick' as PhotoListKind);
   if (quickList) {
     return quickList;
   }
 
-  quickList = new PhotoList(new PhotoListId('quick', 0), async (self: PhotoList) => {
+  let quickListId = new PhotoListId('quick', 0);
+  quickList = new PhotoList(quickListId, async (self: PhotoList) => {
     return queueOnLoaded(async () => {
 
-      let quickColl: PhotoCollection | null = null;
-
       // at this point we have collection list; find default quick and map to it
-      for (let [key, coll] of collectionMap) {
-        if (coll.isDefault && coll.wire.kind === 'quick') {
-          quickColl = coll;
-          break;
-        }
-      }
+      // get the current quick and other collections
+      let quickColl: PhotoCollection | null = findNewestCollection('quick');
 
       // ensure that we have quick collection
       if (!quickColl) {
-        let response = await wireAddCollection({ kind: 'quick', name: '', createDt: new Date(Date.now()).toISOString() });
+        let response = await wireAddCollection({ kind: quickListId.kind, name: '', createDt: nowAsISOString() });
         quickColl = new PhotoCollection(response.collection);
         collectionMap.set(response.collection.id as CollectionId, quickColl);
       }
@@ -124,7 +190,7 @@ export function getQuickCollection(): PhotoList {
         }
 
         wireAddCollectionItems(quickColl!.wire.id, items.map((x) => {
-          return { photoId: x.wire.id, updateDt: new Date(Date.now()).toISOString() }
+          return { photoId: x.wire.id, updateDt: nowAsISOString() }
         }));
       });
 
@@ -133,6 +199,7 @@ export function getQuickCollection(): PhotoList {
   });
 
   collectionLists.set('quick', quickList);
+
   return quickList;
 }
 

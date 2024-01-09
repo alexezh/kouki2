@@ -124,8 +124,9 @@ export function wireUpdatePhotos(wire: WirePhotoUpdate) {
 }
 
 // ------------- add source folder ----------------
-export type AddFolderRequest = {
+export type ImportFolderRequest = {
   folder: string;
+  importCollection: number;
 }
 
 export type AddFolderResponse = {
@@ -142,8 +143,7 @@ export type RescanFolderResponse = {
   result: string;
 }
 
-export async function wireAddFolder(name: string): Promise<AddFolderResponse> {
-  let request: AddFolderRequest = { folder: name };
+export async function wireImportFolder(request: ImportFolderRequest): Promise<AddFolderResponse> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
   return response;
 }
@@ -157,17 +157,18 @@ export async function wireRescanFolder(folderId: number): Promise<RescanFolderRe
 export type GetJobInfoResponse = {
   addedFiles: number;
   updatedFiles: number;
+  processedFiles: number;
   result: string;
 }
 
-export async function wireGetJobStatus(name: string): Promise<GetJobInfoResponse> {
-  let request: AddFolderRequest = { folder: name };
-  let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${name}`)).json();
+export async function wireGetJobStatus(id: string): Promise<GetJobInfoResponse> {
+  let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${id}`)).json();
   return response;
 }
 
 export type ExportPhotosRequest = {
   path: string;
+  exportCollection: number;
   format: string;
   photos: number[];
 }
@@ -182,3 +183,16 @@ export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<Expor
   return response;
 }
 
+export type BuildPHashRequest = {
+  photos: number[] | null;
+  folderId?: number;
+}
+
+export type BuildPHashResponse = ResultResponse & {
+  jobId: string;
+}
+
+export async function wireBuildPHash(wire: BuildPHashRequest): Promise<BuildPHashResponse> {
+  let response = await (await fetchAdapter!.post(`/api/similarity/buildphash`, JSON.stringify(wire))).json();
+  return response;
+}

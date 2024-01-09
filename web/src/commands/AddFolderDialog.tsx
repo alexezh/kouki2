@@ -10,8 +10,9 @@ import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
 import { catchAll, catchAllAsync } from "../lib/error";
-import { wireAddFolder, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
+import { wireImportFolder, wireGetJobStatus, wireRescanFolder, wireBuildPHash } from "../lib/photoclient";
 import { PhotoListId } from "../photo/AlbumPhoto";
+import { getStandardCollection } from "../photo/CollectionStore";
 
 export function AddFolderDialog(props: { onClose: () => void }) {
   const [value, setValue] = useState("");
@@ -27,7 +28,9 @@ export function AddFolderDialog(props: { onClose: () => void }) {
 
     catchAllAsync(async () => {
       try {
-        let addResponse = await wireAddFolder(value);
+        let importList = await getStandardCollection('import');
+
+        let addResponse = await wireImportFolder({ folder: value, importCollection: importList.id.id });
         if (addResponse.result !== 'Ok') {
           props.onClose();
           return;
@@ -83,7 +86,6 @@ export function AddFolderDialog(props: { onClose: () => void }) {
 }
 
 export function RescanFolderDialog(props: { onClose: () => void, folderId: PhotoListId }) {
-  const [value, setValue] = useState("");
   const [processing, setProcessing] = useState(false);
   const [addedFiles, setAddedFiles] = useState(0);
   const [updatedFiles, setUpdatedFiles] = useState(0);
@@ -123,11 +125,6 @@ export function RescanFolderDialog(props: { onClose: () => void, folderId: Photo
     props.onClose();
   };
 
-  async function handleChanged(event: React.ChangeEvent) {
-    // @ts-ignore
-    setValue(event.target.value);
-  }
-
   return (
     <Dialog open={true} onClose={handleClose}>
       <DialogTitle>Add Folder</DialogTitle>
@@ -137,6 +134,60 @@ export function RescanFolderDialog(props: { onClose: () => void, folderId: Photo
         </DialogContentText>
         <Typography variant="body1">{'Added: ' + addedFiles + ' files'}</Typography>
         <Typography variant="body1">{'Updated: ' + updatedFiles + ' files'}</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button disabled={processing} onClick={handleClose}>Cancel</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+export function ProgressDialog(props: { onClose: () => void, folderId: PhotoListId }) {
+  const [processing, setProcessing] = useState(false);
+  const [processedFiles, setProcessedFiles] = useState(0);
+
+  useEffect(() => {
+    setTimeout(async () => {
+      setProcessing(true);
+
+      catchAllAsync(async () => {
+        try {
+          let addResponse = await wireBuildPHash({ folderId: props.folderId.id, photos: null });
+          if (addResponse.result !== 'Ok') {
+            props.onClose();
+            return;
+          }
+
+          while (true) {
+            let jobInfo = await wireGetJobStatus(addResponse.jobId);
+            if (jobInfo.result !== 'Processing') {
+              break;
+            } else {
+              setProcessedFiles(jobInfo.processedFiles);
+            }
+            await sleep(1);
+          }
+        }
+        finally {
+          triggerRefreshFolders();
+          props.onClose();
+        }
+      });
+    });
+  }, [props.folderId]);
+
+  function handleClose() {
+    props.onClose();
+  };
+
+  return (
+    <Dialog open={true} onClose={handleClose}>
+      <DialogTitle>Add Folder</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Updating folder.
+        </DialogContentText>
+        <Typography variant="body1">{'Processed: ' + processedFiles + ' files'}</Typography>
       </DialogContent>
       <DialogActions>
         <Button disabled={processing} onClick={handleClose}>Cancel</Button>
