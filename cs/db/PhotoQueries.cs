@@ -119,4 +119,63 @@ public static class PhotoQueriesExt
 
     return true;
   }
+
+  public static void UpdatePhotoPHash(this PhotoDb self, Int64 photoId, byte[] phash)
+  {
+    var command = self.Connection.CreateCommand();
+
+    command.CommandText = "UPDATE Photos SET phash=$phash WHERE id == $id";
+
+    command.Parameters.AddWithValue("$id", photoId);
+    self.AddBlobValue(command, "$phash", phash);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      throw new ArgumentException("Cannot update");
+    }
+  }
+
+  public static void UpdatePhotoFileInfo(this PhotoDb self, PhotoEntry entry)
+  {
+    var command = self.Connection.CreateCommand();
+
+    command.CommandText = "UPDATE Photos SET hash=$hash, filesize=$filesize, phash=$phash, width=$width, height=$height, format=$format, originalDt=$originalDt WHERE folder == $folderId AND filename == $filename AND fileext == $fileext";
+
+    command.Parameters.AddWithValue("$folderId", entry.folderId);
+    command.Parameters.AddWithValue("$filename", entry.fileName);
+    command.Parameters.AddWithValue("$fileext", entry.fileExt);
+    command.Parameters.AddWithValue("$hash", entry.hash);
+    command.Parameters.AddWithValue("$filesize", entry.fileSize);
+    self.AddBlobValue(command, "$phash", entry.phash);
+    command.Parameters.AddWithValue("$width", entry.width);
+    command.Parameters.AddWithValue("$height", entry.height);
+    command.Parameters.AddWithValue("$format", entry.format);
+    self.AddStringValue(command, "$originalDt", entry.originalDateTime);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      throw new ArgumentException("Cannot update");
+    }
+  }
+
+  public static bool HasPhoto(this PhotoDb self, Int64 folderId, string fileName, string fileExt)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and filename == $filename and fileext == $fileext";
+    command.Parameters.AddWithValue("$folder", folderId);
+    command.Parameters.AddWithValue("$filename", fileName);
+    command.Parameters.AddWithValue("$fileext", fileExt);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

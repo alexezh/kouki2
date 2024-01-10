@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.Sqlite;
 
@@ -25,7 +26,8 @@ public class PhotoEntry
   public string originalDateTime { get; set; }
   public string originalHash { get; set; }
   public string stackHash { get; set; }
-  public string imageId { get; set; }
+  [JsonIgnore]
+  public byte[] phash;
 }
 
 public class UpdatePhotoRequest
@@ -65,6 +67,18 @@ public class ThumbnailEntry
 
 public static class ReaderExt
 {
+  public static byte[] ReadBlob(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return null;
+    }
+    else
+    {
+      return (byte[])val;
+    }
+  }
   public static string ReadString(this SqliteDataReader reader, string name)
   {
     var val = reader[name];
@@ -132,12 +146,12 @@ public class PhotoDb
   public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt, imageId) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt, $imageId)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt, $phash)";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
     command.Parameters.AddWithValue("$filesize", entry.fileSize);
-    AddStringValue(command, "$imageId", entry.imageId);
+    AddBlobValue(command, "$phash", entry.phash);
     command.Parameters.AddWithValue("$hash", entry.hash);
     command.Parameters.AddWithValue("$fav", entry.favorite);
     command.Parameters.AddWithValue("$width", entry.width);
@@ -167,7 +181,7 @@ public class PhotoDb
     return 0;
   }
 
-  private void AddStringValue(SqliteCommand command, string name, string val)
+  public void AddStringValue(SqliteCommand command, string name, string val)
   {
     if (val != null)
     {
@@ -179,47 +193,18 @@ public class PhotoDb
     }
   }
 
-  public void UpdatePhotoFileInfo(PhotoEntry entry)
+  public void AddBlobValue(SqliteCommand command, string name, byte[] val)
   {
-    var command = _connection.CreateCommand();
-
-    command.CommandText = "UPDATE Photos SET hash=$hash, filesize=$filesize, imageId=$imageId, width=$width, height=$height, format=$format, originalDt=$originalDt WHERE folder == $folderId AND filename == $filename AND fileext == $fileext";
-
-    command.Parameters.AddWithValue("$folderId", entry.folderId);
-    command.Parameters.AddWithValue("$filename", entry.fileName);
-    command.Parameters.AddWithValue("$fileext", entry.fileExt);
-    command.Parameters.AddWithValue("$hash", entry.hash);
-    command.Parameters.AddWithValue("$filesize", entry.fileSize);
-    AddStringValue(command, "$imageId", entry.imageId);
-    command.Parameters.AddWithValue("$width", entry.width);
-    command.Parameters.AddWithValue("$height", entry.height);
-    command.Parameters.AddWithValue("$format", entry.format);
-    AddStringValue(command, "$originalDt", entry.originalDateTime);
-
-    var updated = command.ExecuteNonQuery();
-    if (updated != 1)
+    if (val != null)
     {
-      throw new ArgumentException("Cannot update");
+      command.Parameters.AddWithValue(name, val);
+    }
+    else
+    {
+      command.Parameters.AddWithValue(name, DBNull.Value);
     }
   }
-  public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
-  {
-    var command = _connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Photos WHERE folder == $folder and filename == $filename and fileext == $fileext";
-    command.Parameters.AddWithValue("$folder", folderId);
-    command.Parameters.AddWithValue("$filename", fileName);
-    command.Parameters.AddWithValue("$fileext", fileExt);
 
-    using (var reader = command.ExecuteReader())
-    {
-      while (reader.Read())
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
@@ -240,7 +225,7 @@ public class PhotoDb
       originalDateTime = reader.ReadMagicTime("originalDt")?.ToString("o"),
       originalHash = reader.ReadString("originalHash"),
       stackHash = reader.ReadString("stackHash"),
-      imageId = reader.ReadString("imageId"),
+      phash = reader.ReadBlob("phash"),
     };
 
     return en;

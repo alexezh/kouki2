@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using ImageMagick;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Org.BouncyCastle.Asn1.Ocsp;
 using Shipwreck.Phash;
 
@@ -16,6 +17,22 @@ public class BuildPHashRequest
 public class BuildPHashResponse : ResultResponse
 {
   public string jobId { get; set; }
+}
+
+public class IdPair
+{
+  public Int64 left { get; set; }
+  public Int64 right { get; set; }
+}
+
+public class GetCorrelationRequest
+{
+  public IdPair[] photos { get; set; }
+}
+
+public class GetCorrelationResponse : ResultResponse
+{
+  public float[] corrections { get; set; }
 }
 
 public class BuildPHashJobResponse
@@ -36,31 +53,51 @@ public class BuildPHashJob : IJob
   public object Status => _status;
 
 
-  public void Run()
+  public async void Run()
   {
     _status.result = "Processing";
 
-    Int64[] photos;
-    if (_request.photos != null)
+    // Int64[] photos;
+    // if (_request.photos != null)
+    // {
+    //   photos = _request.photos;
+    // }
+    // else
+    // {
+    //photos = PhotoFs.Instance.PhotoDb.GetPhotosByFolder(_request.folderId).Select(x => x.photoId).ToArray();
+    var photoObjs = PhotoFs.Instance.PhotoDb.SelectPhotos((command) =>
     {
-      photos = _request.photos;
-    }
-    else
-    {
-      photos = PhotoFs.Instance.PhotoDb.GetPhotosByFolder(_request.folderId).Select(x => x.photoId).ToArray();
-    }
+      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
+    });
+    //   photos = photoObjs.Select(x => x.id).ToArray();
+    // }
 
-    foreach (var photo in photos)
+    var pending = new List<Task>();
+    foreach (var photo in photoObjs)
     {
-      try
+      if (photo.phash != null)
       {
-        var digest = ComputePHash(photo);
-        PhotoFs.Instance.PhotoDb.AddDigest(photo, digest.Coefficients);
-        _status.processedFiles++;
+        continue;
       }
-      catch (Exception e)
+
+      pending.Add(Task.Run(() =>
       {
-        Console.Error.WriteLine("Failed process. Exception:" + e.Message);
+        try
+        {
+          var digest = ComputePHash(photo.id);
+          PhotoFs.Instance.PhotoDb.UpdatePhotoPHash(photo.id, digest.Coefficients);
+          _status.processedFiles++;
+        }
+        catch (Exception e)
+        {
+          Console.Error.WriteLine("Failed process. Exception:" + e.Message);
+        }
+      }));
+
+      if (pending.Count == 4)
+      {
+        await Task.WhenAll(pending.ToArray());
+        pending.Clear();
       }
     }
 
@@ -82,11 +119,13 @@ public class BuildPHashJob : IJob
 
   private static Digest ComputePHash(MagickImage image)
   {
-    var pixels = image.GetPixels();
-    var bytes = pixels.ToByteArray("RGB");
-    var bitmap = new ByteImage(image.Width, image.Height, bytes);
-    var hash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
-    return hash;
+    using (var pixels = image.GetPixels())
+    {
+      var bytes = pixels.ToByteArray("RGB");
+      var bitmap = new ByteImage(image.Width, image.Height, bytes);
+      var hash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
+      return hash;
+    }
   }
 
   private static Digest ComputePHash(Int64 photoId)
@@ -133,6 +172,41 @@ public class SimilarityController : Controller
       var id = JobRunner.Instance.RunJob(new BuildPHashJob(request));
 
       return new BuildPHashResponse() { jobId = id, result = "Ok" };
+    }
+  }
+
+  [HttpPost]
+  public async Task<GetCorrelationResponse> GetCorrelation()
+  {
+    try
+    {
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+      {
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<GetCorrelationRequest>(content);
+
+        var correlations = new List<float>();
+        foreach (var pair in request.photos)
+        {
+          var left = PhotoFs.Instance.PhotoDb.GetPhotosById(pair.left);
+          var right = PhotoFs.Instance.PhotoDb.GetPhotosById(pair.right);
+
+          if (left[0].phash == null || right[0].phash == null)
+          {
+            correlations.Add(-1);
+          }
+          else
+          {
+            correlations.Add(CrossCorrelation.GetCrossCorrelation(left[0].phash, right[0].phash));
+          }
+        }
+
+        return new GetCorrelationResponse() { result = "Ok", corrections = correlations.ToArray() };
+      }
+    }
+    catch (Exception e)
+    {
+      return new GetCorrelationResponse() { result = "Failed" };
     }
   }
 }

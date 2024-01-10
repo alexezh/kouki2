@@ -120,7 +120,7 @@ export function updateState(update: AppStateUpdate) {
           return false;
         }
 
-        if (state.filterDups && x.dupCount < 2) {
+        if (state.filterDups && x.similarId === 0) {
           return false;
         }
 

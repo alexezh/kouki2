@@ -260,8 +260,8 @@ public class Importer
       var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
       entry.originalDateTime = original.ToString();
 
-      var imageId = profile.GetValue<string>(ExifTag.ImageUniqueID);
-      entry.imageId = imageId?.ToString();
+      //var imageId = profile.GetValue<string>(ExifTag.ImageUniqueID);
+      //entry.imageId = imageId?.ToString();
     }
   }
 

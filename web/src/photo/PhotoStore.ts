@@ -1,5 +1,5 @@
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
-import { wireGetLibrary } from "../lib/photoclient";
+import { WirePhotoEntry, wireGetCollections, wireGetCorrelation, wireGetLibrary } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { PhotoList } from "./PhotoList";
 
@@ -54,17 +54,45 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
   }
   let wirePhotos = await wireGetLibrary();
 
+  let pairs: { left: number, right: number }[] = [];
+  let prevPhoto: AlbumPhoto | null = null;
   for (let wirePhoto of wirePhotos) {
     let photo = photoLibraryMap.get(wirePhoto.id);
     if (photo) {
-      ;
+      // nothing do do
     } else {
       photo = new AlbumPhoto(wirePhoto);
       photoLibraryMap.set(wirePhoto.id, photo);
     }
+
+    if (prevPhoto) {
+      if (photo.originalDate.valueOf() === prevPhoto.originalDate.valueOf()) {
+        pairs.push({ left: prevPhoto.wire.id, right: photo.wire.id });
+      }
+    }
+
+    prevPhoto = photo;
   }
 
   buildDuplicateBuckets();
+
+  let corrResp = await wireGetCorrelation({ photos: pairs });
+  for (let i = 0; i < pairs.length; i++) {
+    let correlation = corrResp.corrections[i];
+    if (correlation < 0.9) {
+      continue;
+    }
+
+    let left = photoLibraryMap.get(pairs[i].left)!;
+    let right = photoLibraryMap.get(pairs[i].right)!;
+    if (left.similarId) {
+      right.similarId = left.similarId;
+    } else {
+      right.similarId = left.wire.id;
+      left.similarId = left.wire.id;
+    }
+    right.correlation = correlation;
+  }
 
   await loadParts();
 

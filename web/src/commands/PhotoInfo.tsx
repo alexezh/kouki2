@@ -19,6 +19,9 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   if (photo.wire.imageId) {
     props.push({ name: 'ImageId:', value: photo.wire.imageId });
   }
+  if (photo.correlation) {
+    props.push({ name: 'Corr:', value: photo.correlation.toString() });
+  }
 
   //if (photo.dupCount > 1) {
   let ids = getDuplicateBucket(photo);

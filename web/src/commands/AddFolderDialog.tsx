@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
 import { catchAll, catchAllAsync } from "../lib/error";
-import { wireImportFolder, wireGetJobStatus, wireRescanFolder, wireBuildPHash } from "../lib/photoclient";
+import { wireImportFolder, wireGetJobStatus, wireRescanFolder, wireBuildPHash, JobResponse, GetJobInfoResponse } from "../lib/photoclient";
 import { PhotoListId } from "../photo/AlbumPhoto";
 import { getStandardCollection } from "../photo/CollectionStore";
 
@@ -142,6 +142,46 @@ export function RescanFolderDialog(props: { onClose: () => void, folderId: Photo
   );
 }
 
+let jobMap = new Map<string, boolean>();
+
+export async function runJob(
+  key: string,
+  func: () => Promise<JobResponse>,
+  onStatus: (status: GetJobInfoResponse) => void,
+  onComplete: () => void): Promise<boolean> {
+
+  let jobResponse = jobMap.get(key);
+  if (jobResponse) {
+    return true;
+  }
+
+  try {
+    jobMap.set(key, true);
+    console.log("start job " + key);
+
+    let jobResponse = await func();
+    if (jobResponse.result !== 'Ok') {
+      return false;
+    }
+
+    while (true) {
+      let jobInfo = await wireGetJobStatus(jobResponse.jobId);
+      if (jobInfo.result !== 'Processing') {
+        break;
+      } else {
+        onStatus(jobInfo);
+      }
+      await sleep(1);
+    }
+  }
+  finally {
+    jobMap.delete(key);
+    onComplete();
+  }
+
+  return true;
+}
+
 export function ProgressDialog(props: { onClose: () => void, folderId: PhotoListId }) {
   const [processing, setProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState(0);
@@ -151,27 +191,13 @@ export function ProgressDialog(props: { onClose: () => void, folderId: PhotoList
       setProcessing(true);
 
       catchAllAsync(async () => {
-        try {
-          let addResponse = await wireBuildPHash({ folderId: props.folderId.id, photos: null });
-          if (addResponse.result !== 'Ok') {
+        runJob("phash_" + props.folderId.id,
+          () => wireBuildPHash({ folderId: props.folderId.id, photos: null }),
+          (status: GetJobInfoResponse) => setProcessedFiles(status.processedFiles),
+          () => {
+            triggerRefreshFolders();
             props.onClose();
-            return;
-          }
-
-          while (true) {
-            let jobInfo = await wireGetJobStatus(addResponse.jobId);
-            if (jobInfo.result !== 'Processing') {
-              break;
-            } else {
-              setProcessedFiles(jobInfo.processedFiles);
-            }
-            await sleep(1);
-          }
-        }
-        finally {
-          triggerRefreshFolders();
-          props.onClose();
-        }
+          });
       });
     });
   }, [props.folderId]);

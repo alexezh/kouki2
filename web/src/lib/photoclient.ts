@@ -188,11 +188,27 @@ export type BuildPHashRequest = {
   folderId?: number;
 }
 
-export type BuildPHashResponse = ResultResponse & {
+export type JobResponse = ResultResponse & {
   jobId: string;
+}
+
+export type BuildPHashResponse = JobResponse & {
 }
 
 export async function wireBuildPHash(wire: BuildPHashRequest): Promise<BuildPHashResponse> {
   let response = await (await fetchAdapter!.post(`/api/similarity/buildphash`, JSON.stringify(wire))).json();
+  return response;
+}
+
+export type GetCorrelationRequest = {
+  photos: { left: number, right: number }[];
+}
+
+export type GetCorrelationResponse = ResultResponse & {
+  corrections: number[];
+}
+
+export async function wireGetCorrelation(wire: GetCorrelationRequest): Promise<GetCorrelationResponse> {
+  let response = await (await fetchAdapter!.post(`/api/similarity/getcorrelation`, JSON.stringify(wire))).json();
   return response;
 }

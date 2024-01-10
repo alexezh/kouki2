@@ -134,6 +134,10 @@ app.MapControllerRoute(
     name: "Similarity",
     pattern: "/api/{controller=Similarity}/{action=BuildPHash}");
 
+app.MapControllerRoute(
+    name: "Similarity",
+    pattern: "/api/{controller=Similarity}/{action=GetCorrelation}");
+
 // mobile
 app.MapControllerRoute(
     name: "GetSyncList",

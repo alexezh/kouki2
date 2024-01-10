@@ -21,6 +21,11 @@ export class AlbumPhoto {
   public width: number = 0;
   public height: number = 0;
   public scale: number = 1;
+
+  // ID of first similar
+  public similarId: number = 0;
+  public correlation: number = 0;
+
   //public src: string;
 
   /**
