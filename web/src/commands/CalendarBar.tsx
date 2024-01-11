@@ -58,11 +58,13 @@ export function CalendarBar(props: { className: string }) {
 
   return (
     <div className={props.className}>
-      <List component="div" disablePadding>
-        {
-          years.map((year: YearEntry) => (<CalendarBarYear year={year} isOpen={openedYear === year.year} onSelect={handleSelect} />))
-        }
-      </List>
+      <div className="CalendarBarArea">
+        <List component="div" disablePadding>
+          {
+            years.map((year: YearEntry) => (<CalendarBarYear year={year} isOpen={openedYear === year.year} onSelect={handleSelect} />))
+          }
+        </List>
+      </div>
     </div>
   );
 }

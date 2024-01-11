@@ -11,6 +11,65 @@ namespace kouki2.Controllers;
 /// </summary>
 public class PhotoLibraryController : Controller
 {
+  internal static void RegisterRoutes(WebApplication app)
+  {
+    app.MapControllerRoute(
+        name: "GetFolder",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder}/{id}");
+
+    app.MapControllerRoute(
+        name: "GetCollectionItems",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetCollectionItems}/{id}");
+
+    app.MapControllerRoute(
+        name: "AddCollectionItems",
+        pattern: "/api/{controller=PhotoLibrary}/{action=AddCollectionItems}/{id}");
+
+    app.MapControllerRoute(
+        name: "RemoveCollectionItems",
+        pattern: "/api/{controller=PhotoLibrary}/{action=RemoveCollectionItems}/{id}");
+
+    app.MapControllerRoute(
+        name: "GetLibrary",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetLibrary}");
+
+    app.MapControllerRoute(
+        name: "GetCollections",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetCollections}");
+
+    app.MapControllerRoute(
+        name: "AddCollection",
+        pattern: "/api/{controller=PhotoLibrary}/{action=AddCollection}");
+
+    app.MapControllerRoute(
+        name: "GetSourceFolders",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetSourceFolders}");
+
+    app.MapControllerRoute(
+        name: "GetImage",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
+
+    app.MapControllerRoute(
+        name: "GetThumbnail",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
+
+    app.MapControllerRoute(
+        name: "AddSourceFolder",
+        pattern: "/api/{controller=PhotoLibrary}/{action=AddSourceFolder}");
+
+    app.MapControllerRoute(
+        name: "UpdateSourceFolder",
+        pattern: "/api/{controller=PhotoLibrary}/{action=RescanSourceFolder}");
+
+    app.MapControllerRoute(
+        name: "CheckSourceFolder",
+        pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
+
+    app.MapControllerRoute(
+        name: "UpdatePhotos",
+        pattern: "/api/{controller=PhotoLibrary}/{action=UpdatePhotos}");
+  }
+
   [HttpPost]
   public async Task<ImportFolderResponse> AddSourceFolder()
   {

@@ -118,7 +118,6 @@
 
 .CalendarBar {
   width: var(--calendarbar-width);
-  margin-left: 5px;
   height: var(--middlerow-height);
   overflow: auto;
   max-height: var(--middlerow-height);
@@ -126,6 +125,12 @@
   grid-column: 3;
   grid-row: 2/3;
   z-index: 3;
+}
+
+.CalendarBarArea {
+  width: 100%;
+  height: 100%;
+  margin-left: 5px;
 }
 
 .CalendarBarYear {

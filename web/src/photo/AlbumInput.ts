@@ -13,24 +13,73 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     }
     event.preventDefault();
   } else {
-    if (viewMode === ViewMode.zoom && event.key === 'ArrowLeft') {
-      let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
-      if (idx !== -1) {
-        idx = Math.max(0, idx - 1);
-        selectionManager.reset([getState().currentList.photos[idx]]);
+    if (!getState().currentList || !selectionManager.lastSelectedPhoto) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'Enter': {
+        if (viewMode === ViewMode.grid) {
+          updateState({ viewMode: ViewMode.zoom });
+        }
+        break;
       }
-    } else if (viewMode === ViewMode.zoom && event.key === 'ArrowRight') {
-      let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
-      if (idx !== -1) {
-        idx = Math.min(getState().currentList.photoCount - 1, idx + 1);
-        selectionManager.reset([getState().currentList.photos[idx]]);
+      case 'ArrowLeft': {
+        let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
+        if (idx !== -1) {
+          idx = Math.max(0, idx - 1);
+          selectionManager.reset([getState().currentList.photos[idx]]);
+        }
+        break;
       }
-    } else if (event.key === 'p') {
-      selectionManager.forEach((x) => { x.favorite = 1; });
-    } else if (event.key === 'x') {
-      selectionManager.forEach((x) => { x.favorite = -1; });
-    } else if (event.key === 'b') {
-      addQuickCollection([...selectionManager.items.values()]);
+      case 'ArrowRight': {
+        let idx = selectionManager.getLastSelectedIndex(getState().currentList.photos);
+        if (idx !== -1) {
+          idx = Math.min(getState().currentList.photoCount - 1, idx + 1);
+          selectionManager.reset([getState().currentList.photos[idx]]);
+        }
+        break;
+      }
+      case 'ArrowUp': {
+        let photos = getState().currentList.photos;
+        let rowIdx = getState().currentList.getRow(selectionManager.lastSelectedPhoto!.id);
+        let idx = getState().currentList.findIndexById(selectionManager.lastSelectedPhoto!.id);
+        for (; idx >= 0; idx--) {
+          if (getState().currentList.getRow(photos[idx].id) !== rowIdx) {
+
+            let rowIdx = getState().currentList.getRow(photos[idx].id);
+            for (; idx >= 0; idx--) {
+              let row = getState().currentList.getRow(photos[idx].id);
+              if (row !== rowIdx) {
+                selectionManager.reset([photos[idx + 1]]);
+                return;
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'ArrowDown': {
+        let photos = getState().currentList.photos;
+        let rowIdx = getState().currentList.getRow(selectionManager.lastSelectedPhoto!.id);
+        let idx = getState().currentList.findIndexById(selectionManager.lastSelectedPhoto!.id);
+        for (; idx < photos.length; idx++) {
+          if (getState().currentList.getRow(photos[idx].id) !== rowIdx) {
+            selectionManager.reset([photos[idx]]);
+            return;
+          }
+        }
+        break;
+      }
+      case 'p':
+        selectionManager.forEach((x) => { x.favorite = 1; });
+        break;
+      case 'x':
+        selectionManager.forEach((x) => { x.favorite = -1; });
+        break;
+      case 'b':
+        addQuickCollection([...selectionManager.items.values()]);
+        break;
     }
   }
 }
@@ -52,6 +101,7 @@ class MouseController {
   }
 }
 
+
 let mouseController = new MouseController();
 
 export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
@@ -66,7 +116,7 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
     if (event.shiftKey) {
       let photos = getState().currentList;
       let idxCurrent = selectionManager.getLastSelectedIndex(photos.photos);
-      let idxPhoto = photos.findIndex((x) => x === photo);
+      let idxPhoto = photos.findIndexById(photo.wire.id);
 
       if (idxCurrent !== -1 && idxPhoto !== -1) {
         let range = (idxCurrent > idxPhoto) ? photos.photos.slice(idxPhoto, idxCurrent) : photos.photos.slice(idxCurrent, idxPhoto + 1);
@@ -85,7 +135,7 @@ export function handlePhotoSelected(
   event: React.MouseEvent<HTMLImageElement>,
   photo: AlbumPhoto) {
   let selected = selectionManager.isSelected(photo);
-  let index = getState().currentList.findIndex((x) => x === photo);
+  let index = getState().currentList.findIndexById(photo.wire.id);
   if (index === -1) {
     return;
   }

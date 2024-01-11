@@ -6,6 +6,34 @@ namespace kouki2.Controllers;
 
 public class MobileSyncController : Controller
 {
+  public static void RegisterRoutes(WebApplication app)
+  {
+    // mobile
+    app.MapControllerRoute(
+        name: "GetSyncList",
+        pattern: "/api/{controller=MobileSync}/{action=GetSyncList}");
+
+    app.MapControllerRoute(
+        name: "ConnectDevice",
+        pattern: "/api/{controller=MobileSync}/{action=ConnectDevice}");
+
+    app.MapControllerRoute(
+        name: "AddDevice",
+        pattern: "/api/{controller=MobileSync}/{action=AddDevice}");
+
+    app.MapControllerRoute(
+        name: "GetDevices",
+        pattern: "/api/{controller=MobileSync}/{action=GetDevices}");
+
+    app.MapControllerRoute(
+        name: "UploadFile",
+        pattern: "/api/{controller=MobileSync}/{action=UploadFile}");
+
+    app.MapControllerRoute(
+        name: "AddFile",
+        pattern: "/api/{controller=MobileSync}/{action=AddFile}");
+  }
+
   [HttpPost]
   public async Task<ResultResponse> AddDevice()
   {

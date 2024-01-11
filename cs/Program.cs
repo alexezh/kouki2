@@ -3,6 +3,8 @@
 //         merge external fav
 //         move unfav to archive
 //         bring back fav 
+using kouki2.Controllers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
@@ -64,104 +66,12 @@ app.UseStaticFiles(staticOptions);
 app.UseRouting();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "GetFolder",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder}/{id}");
 
-app.MapControllerRoute(
-    name: "GetCollectionItems",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollectionItems}/{id}");
-
-app.MapControllerRoute(
-    name: "AddCollectionItems",
-    pattern: "/api/{controller=PhotoLibrary}/{action=AddCollectionItems}/{id}");
-
-app.MapControllerRoute(
-    name: "RemoveCollectionItems",
-    pattern: "/api/{controller=PhotoLibrary}/{action=RemoveCollectionItems}/{id}");
-
-app.MapControllerRoute(
-    name: "GetLibrary",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetLibrary}");
-
-app.MapControllerRoute(
-    name: "GetCollections",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetCollections}");
-
-app.MapControllerRoute(
-    name: "AddCollection",
-    pattern: "/api/{controller=PhotoLibrary}/{action=AddCollection}");
-
-app.MapControllerRoute(
-    name: "GetSourceFolders",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetSourceFolders}");
-
-app.MapControllerRoute(
-    name: "GetImage",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
-
-app.MapControllerRoute(
-    name: "GetThumbnail",
-    pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
-
-app.MapControllerRoute(
-    name: "AddSourceFolder",
-    pattern: "/api/{controller=PhotoLibrary}/{action=AddSourceFolder}");
-
-app.MapControllerRoute(
-    name: "UpdateSourceFolder",
-    pattern: "/api/{controller=PhotoLibrary}/{action=RescanSourceFolder}");
-
-app.MapControllerRoute(
-    name: "CheckSourceFolder",
-    pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
-
-app.MapControllerRoute(
-    name: "UpdatePhotos",
-    pattern: "/api/{controller=PhotoLibrary}/{action=UpdatePhotos}");
-
-app.MapControllerRoute(
-    name: "GetJobStatus",
-    pattern: "/api/{controller=Job}/{action=GetJobStatus}/{id}");
-
-// export
-app.MapControllerRoute(
-    name: "ExportPhotos",
-    pattern: "/api/{controller=Export}/{action=ExportPhotos}");
-
-// smart features
-app.MapControllerRoute(
-    name: "Similarity",
-    pattern: "/api/{controller=Similarity}/{action=BuildPHash}");
-
-app.MapControllerRoute(
-    name: "Similarity",
-    pattern: "/api/{controller=Similarity}/{action=GetCorrelation}");
-
-// mobile
-app.MapControllerRoute(
-    name: "GetSyncList",
-    pattern: "/api/{controller=MobileSync}/{action=GetSyncList}");
-
-app.MapControllerRoute(
-    name: "ConnectDevice",
-    pattern: "/api/{controller=MobileSync}/{action=ConnectDevice}");
-
-app.MapControllerRoute(
-    name: "AddDevice",
-    pattern: "/api/{controller=MobileSync}/{action=AddDevice}");
-
-app.MapControllerRoute(
-    name: "GetDevices",
-    pattern: "/api/{controller=MobileSync}/{action=GetDevices}");
-
-app.MapControllerRoute(
-    name: "UploadFile",
-    pattern: "/api/{controller=MobileSync}/{action=UploadFile}");
-
-app.MapControllerRoute(
-    name: "AddFile",
-    pattern: "/api/{controller=MobileSync}/{action=AddFile}");
+PhotoLibraryController.RegisterRoutes(app);
+JobController.RegisterRoutes(app);
+ExportController.RegisterRoutes(app);
+SimilarityController.RegisterRoutes(app);
+MobileSyncController.RegisterRoutes(app);
 
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");

@@ -25,7 +25,7 @@ type RowsDef = {
 /**
  * render 2 photos; switches visibility between them
  */
-function renderPreviewPhotos(version: number, width: number, height: number): JSX.Element[] {
+function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
   let elements: JSX.Element[] = [];
 
   let idx = selectionManager.getLastSelectedIndex(getState().currentList?.photos);
@@ -86,7 +86,6 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const [rows, setRows] = useState<AlbumRow[] | null>(getState().rows);
   const [viewMode, setViewMode] = useState(getState().viewMode);
   // simple counter for refresh
-  const [version, setVersion] = useState(0);
   const ref = useRef(null);
   const listRef = useRef(null);
 
@@ -96,7 +95,17 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {
       console.log('Selection changed');
-      setVersion(version + 1);
+
+      if (listRef.current) {
+        if (rows && rows.length > 0 && selectionManager.lastSelectedPhoto) {
+          let idx = getState().currentList.getRow(selectionManager.lastSelectedPhoto.wire.id);
+          console.log("Scroll to " + idx);
+          if (idx !== -1) {
+            // @ts-ignore
+            listRef.current.scrollToItem(idx);
+          }
+        }
+      }
     });
 
     // add listener to commands
@@ -107,6 +116,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
             let dt = args[0] as { year: number, month: number };
             let idx = rows.findIndex((row: AlbumRow) => row.dt &&
               (dt.year >= row.dt!.getFullYear() && dt.month >= row.dt!.getMonth()))
+            console.log("Scroll to " + idx);
             if (idx >= 0) {
               // @ts-ignore
               listRef.current.scrollToItem(idx);
@@ -135,12 +145,12 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       removeCommandHandler(cmdId);
       removeOnStateChanged(stateId);
     }
-  }, [getState().currentList, getState().rows, props.width, viewMode, ref, version]);
+  }, [props.width, viewMode, ref]);
 
   function updateRows() {
     let rows = getState().rows;
     if (!rows) {
-      rows = makeByMonthRows(getState().currentList.photos, props.width, photoPadding);
+      rows = makeByMonthRows(getState().currentList, props.width, photoPadding);
       updateState({ rows: rows });
 
       setRows(rows);
@@ -182,6 +192,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     if (row.kind !== RowKind.photos) {
       return (
         <DateRowLayout
+          key={row.key}
           style={props.style}
           row={row}
           onSelected={handleDateSelected}
@@ -190,6 +201,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     } else {
       return (
         <PhotoRowLayout
+          key={row.key}
           style={props.style}
           row={row}
           onClick={handlePhotoClick}
@@ -229,10 +241,10 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     return (
       <div>
         <Measure onMeasured={(width: number, height: number) => onMeasureDateHeader(height, RowKind.month)}>
-          <DateRowLayout row={{ kind: RowKind.month, dt: new Date(), height: 0, padding: 0 }} />
+          <DateRowLayout row={{ key: 0, kind: RowKind.month, dt: new Date(), height: 0, padding: 0 }} />
         </Measure>
         <Measure onMeasured={(width: number, height: number) => onMeasureDateHeader(height, RowKind.day)}>
-          <DateRowLayout row={{ kind: RowKind.day, dt: new Date(), height: 0, padding: 0 }} />
+          <DateRowLayout row={{ key: 0, kind: RowKind.day, dt: new Date(), height: 0, padding: 0 }} />
         </Measure>
       </div>)
   } else {
@@ -253,7 +265,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
         </List>
         {
           (!showList) ? (
-            renderPreviewPhotos(version, props.width, props.height)
+            renderPreviewPhotos(props.width, props.height)
           ) : null
         }
       </div >);

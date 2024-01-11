@@ -11,6 +11,12 @@ namespace kouki2.Controllers;
 /// </summary>
 public class ExportController : Controller
 {
+  internal static void RegisterRoutes(WebApplication app)
+  {
+    app.MapControllerRoute(
+        name: "ExportPhotos",
+        pattern: "/api/{controller=Export}/{action=ExportPhotos}");
+  }
 
   // get string as resource
   [HttpPost]

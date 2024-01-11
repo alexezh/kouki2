@@ -158,7 +158,16 @@ public class BuildPHashJob : IJob
 /// </summary>
 public class SimilarityController : Controller
 {
+  public static void RegisterRoutes(WebApplication app)
+  {
+    app.MapControllerRoute(
+        name: "Similarity",
+        pattern: "/api/{controller=Similarity}/{action=BuildPHash}");
 
+    app.MapControllerRoute(
+        name: "Similarity",
+        pattern: "/api/{controller=Similarity}/{action=GetCorrelation}");
+  }
 
   // get string as resource
   [HttpPost]

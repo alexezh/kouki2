@@ -24,6 +24,15 @@ export class PhotoList {
   public readonly id: PhotoListId;
   private _filter?: (x: AlbumPhoto) => boolean;
 
+  /**
+   * map from id to index
+   */
+  private _idIndex: Map<number, number> = new Map<number, number>();
+
+  /**
+   * map from id to row index
+   */
+  private _rowIndex: Map<number, number> = new Map<number, number>();
 
   public get photos(): ReadonlyArray<AlbumPhoto> {
     return this._filtered;
@@ -46,7 +55,14 @@ export class PhotoList {
   }
 
   private addPhotosWorker(photos: AlbumPhoto[], ct: PhotoListChangeType) {
+    let idx = this._photos.length;
     this._photos.push(...photos);
+
+    for (let photo of photos) {
+      this._idIndex.set(photo.wire.id, idx);
+      idx++;
+    }
+
     if (this._filter) {
       for (let x of photos) {
         if (this._filter(x)) {
@@ -70,6 +86,10 @@ export class PhotoList {
     return this._photos.findIndex(pred);
   }
 
+  public findIndexById(id: number): number {
+    return this._idIndex.get(id)!;
+  }
+
   /**
    * return photos matching criteria
    */
@@ -85,6 +105,18 @@ export class PhotoList {
       this._filter = undefined;
       this._filtered = this._photos;
     }
+  }
+
+  public setRow(id: number, idx: number) {
+    return this._rowIndex.set(id, idx)!;
+  }
+
+  public resetRows() {
+    return this._rowIndex.clear();
+  }
+
+  public getRow(id: number): number {
+    return this._rowIndex.get(id)!;
   }
 }
 

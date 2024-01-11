@@ -1,3 +1,4 @@
+import { Key } from "react";
 import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 
 export type FolderId = number & {
@@ -35,6 +36,10 @@ export class AlbumPhoto {
 
   public get favorite(): number {
     return this.wire.favorite;
+  }
+
+  public get id(): number {
+    return this.wire.id;
   }
 
   public set favorite(val: number) {
@@ -97,6 +102,7 @@ export enum RowKind {
 }
 
 export type AlbumRow = {
+  key: Key;
   kind: RowKind,
   photos?: AlbumPhoto[];
   dt?: Date;

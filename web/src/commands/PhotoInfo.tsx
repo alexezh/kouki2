@@ -52,7 +52,7 @@ export function PhotoInfo() {
   })
 
   return (
-    <div className="PhotoInfo">
+    <div key={currentPhoto?.wire.hash} className="PhotoInfo">
       {getProperties(currentPhoto).map((x) => (
         <div key={x.name} className="PhotoInfoItem">
           <div>{x.name}</div>

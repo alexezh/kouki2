@@ -1,6 +1,6 @@
 import { isEqualDay, isEqualMonth, toDayStart, toMonthStart } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
-import { getDuplicateBucket } from "./PhotoStore";
+import { PhotoList } from "./PhotoList";
 
 /**
  * split photo array into rows
@@ -10,33 +10,31 @@ import { getDuplicateBucket } from "./PhotoStore";
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
+export function makeRows(photoList: PhotoList,
   options: {
     optimalHeight: number,
     targetWidth: number,
     padding: number,
     startNewRow?: (photo: AlbumPhoto, idx: number, photos: ReadonlyArray<AlbumPhoto>) => AlbumRow[] | null
   }): AlbumRow[] {
+  let photos = photoList.photos;
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
   let maxHeight = Math.round(options.optimalHeight * 1.3);
   let height = Number.MAX_SAFE_INTEGER;
+
+  photoList.resetRows();
+
   for (let idx = 0; idx < photos.length; idx++) {
     let photo = photos[idx];
-
-    // if (photo.dupCount > 1) {
-    //   let ids = getDuplicateBucket(photo);
-    //   if (photo.wire.id !== ids[0]) {
-    //     continue;
-    //   }
-    // }
 
     if (options.startNewRow) {
       let startRows = options.startNewRow(photo, idx, photos);
       if (startRows) {
         if (row.length > 0) {
           rows.push(enforceMaxHeight({
+            key: row[0].wire.hash,
             kind: RowKind.photos,
             height: height,
             padding: options.padding,
@@ -52,11 +50,13 @@ export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
     }
 
     prevHeight = height;
+    photoList.setRow(photo.id, rows.length);
     row.push(photo);
 
     height = computeRowHeight(row, options.targetWidth, options.padding);
     if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
       rows.push(enforceMaxHeight({
+        key: row[0].wire.hash,
         kind: RowKind.photos,
         height: height,
         padding: options.padding,
@@ -64,6 +64,7 @@ export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
       }, maxHeight));
       row = [];
       // add last element back
+      photoList.setRow(photo.id, rows.length);
       row.push(photo);
       height = computeRowHeight(row, options.targetWidth, options.padding);
     }
@@ -71,6 +72,7 @@ export function makeRows(photos: ReadonlyArray<AlbumPhoto>,
 
   if (row.length > 0) {
     rows.push(enforceMaxHeight({
+      key: row[0].wire.hash,
       kind: RowKind.photos,
       height: height,
       padding: options.padding,
@@ -117,10 +119,10 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   return height * scale;
 }
 
-export function makeByMonthRows(photos: ReadonlyArray<AlbumPhoto>, targetWidth: number, padding: number): AlbumRow[] {
+export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padding: number): AlbumRow[] {
   let currentMonth: Date | null = null;
 
-  let rows = makeRows(photos, {
+  let rows = makeRows(photosList, {
     optimalHeight: 200,
     targetWidth: targetWidth,
     padding: padding,
@@ -135,20 +137,24 @@ export function makeByMonthRows(photos: ReadonlyArray<AlbumPhoto>, targetWidth: 
 
       let rows: AlbumRow[] = [];
       if (currentMonth === null || !isEqualMonth(currentMonth, photo.originalDate)) {
+        let month = toMonthStart(photo.originalDate);
         rows.push({
+          key: 'month_' + month,
           kind: RowKind.month,
-          dt: toMonthStart(photo.originalDate),
+          dt: month,
           height: 0,
-          padding: 0
+          padding: 0,
         });
         currentMonth = photo.originalDate;
       }
 
+      let day = toDayStart(photo.originalDate);
       rows.push({
+        key: 'day_' + day,
         kind: RowKind.day,
-        dt: toDayStart(photo.originalDate),
+        dt: day,
         height: 0,
-        padding: 0
+        padding: 0,
       });
 
       return rows;
@@ -157,3 +163,4 @@ export function makeByMonthRows(photos: ReadonlyArray<AlbumPhoto>, targetWidth: 
 
   return rows;
 }
+
