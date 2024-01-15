@@ -27,6 +27,10 @@ export class AlbumPhoto {
   public similarId: number = 0;
   public correlation: number = 0;
 
+  // if photo is stack, list of photo ids stacked
+  // this way 
+  public stack: number[] | undefined;
+
   //public src: string;
 
   /**
@@ -52,6 +56,14 @@ export class AlbumPhoto {
     wireUpdatePhotos(upd);
   }
 
+  public get originalId(): number {
+    return this.wire.originalId;
+  }
+
+  public set originalId(val: number) {
+    this.wire.originalId = val;
+  }
+
   public get originalDate(): Date {
     return new Date(this.wire.originalDateTime);
   }
@@ -73,6 +85,13 @@ export class AlbumPhoto {
 
   public getFileName(): string {
     return this.wire.fileName + this.wire.fileExt;
+  }
+
+  public addStack(photo: AlbumPhoto) {
+    if (!this.stack) {
+      this.stack = [];
+    }
+    this.stack.push(photo.id);
   }
 
   public addOnChanged(func: (p: AlbumPhoto) => void) {

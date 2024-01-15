@@ -16,7 +16,9 @@ export type WirePhotoEntry = {
   height: number;
   format: number;
   originalDateTime: string;
-  originalHash: string;
+  // if stacked, id of photo which is main in the stack
+  // stack makes sense when original photo is included in the list
+  originalId: number;
   stackHash: string;
   imageId: string;
 }

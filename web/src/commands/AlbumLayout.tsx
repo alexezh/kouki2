@@ -1,12 +1,12 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
-import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
-import { DateRowLayout, PhotoRowLayout } from "./RowLayout";
-import { selectionManager } from "../commands/SelectionManager";
-import { PhotoLayout } from "./PhotoLayout";
+import { AlbumPhoto, AlbumRow, RowKind } from "../photo/AlbumPhoto";
+import { DateRowLayout, PhotoRowLayout } from "../photo/RowLayout";
+import { selectionManager } from "./SelectionManager";
+import { PhotoLayout } from "../photo/PhotoLayout";
 import { Measure } from "../Measure";
-import { makeByMonthRows, makeRows } from "./MakeRows";
-import { Command, ViewMode, addCommandHandler, addOnStateChanged, getState, removeCommandHandler, removeOnStateChanged, updateState } from "../commands/AppState";
+import { makeByMonthRows } from "../photo/MakeRows";
+import { Command, ViewMode, addAnyCommandHandler, addOnStateChanged, getState, removeAnyCommandHandler, removeOnStateChanged, updateState } from "./AppState";
 import { handleDateSelected, handleKeyDown, handlePhotoClick, handlePhotoSelected } from "./AlbumInput";
 
 type PhotoAlbumProps = {
@@ -28,17 +28,18 @@ type RowsDef = {
 function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
   let elements: JSX.Element[] = [];
 
-  let idx = selectionManager.getLastSelectedIndex(getState().currentList?.photos);
+  let photos = getState().currentList;
+  let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
   console.log("preview: " + idx);
 
   if (idx === -1) {
     return elements;
   }
 
-  let photos = getState().currentList.photos;
 
-  if (idx > 0) {
-    let photo = photos[idx - 1];
+  let prevIdx = photos.getPrev(idx);
+  if (prevIdx >= 0) {
+    let photo = photos.getItem(prevIdx);
     elements.push(
       (<PhotoLayout
         className="Photo"
@@ -51,7 +52,7 @@ function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
   }
 
   {
-    let photo = photos[idx];
+    let photo = photos.getItem(idx);
     elements.push(
       (<PhotoLayout
         className="Photo"
@@ -63,8 +64,9 @@ function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
         selected={true}></PhotoLayout>));
   }
 
-  if (idx < photos.length - 1) {
-    let photo = photos[idx + 1];
+  let nextIdx = photos.getNext(idx);
+  if (nextIdx >= 0) {
+    let photo = photos.getItem(nextIdx);
     elements.push(
       (<PhotoLayout
         className="Photo"
@@ -90,7 +92,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   const listRef = useRef(null);
 
   useEffect(() => {
-    console.log("PhotoAlbum: effect:" + getState().currentList?.photoCount);
+    console.log("PhotoAlbum: useEffect:" + getState().currentList?.photoCount);
 
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {
@@ -98,8 +100,8 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
 
       if (listRef.current) {
         if (rows && rows.length > 0 && selectionManager.lastSelectedPhoto) {
-          let idx = getState().currentList.getRow(selectionManager.lastSelectedPhoto.wire.id);
-          console.log("Scroll to " + idx);
+          let idx = getState().currentList.getRow(selectionManager.lastSelectedPhoto);
+          console.log("ScrollSelect to " + idx);
           if (idx !== -1) {
             // @ts-ignore
             listRef.current.scrollToItem(idx);
@@ -109,14 +111,14 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     });
 
     // add listener to commands
-    let cmdId = addCommandHandler((cmd: Command, ...args: any[]) => {
+    let cmdId = addAnyCommandHandler((cmd: Command, ...args: any[]) => {
       if (cmd == Command.ScrollAlbum) {
         if (listRef.current) {
           if (rows) {
             let dt = args[0] as { year: number, month: number };
             let idx = rows.findIndex((row: AlbumRow) => row.dt &&
               (dt.year >= row.dt!.getFullYear() && dt.month >= row.dt!.getMonth()))
-            console.log("Scroll to " + idx);
+            console.log("ScrollAlbum to " + idx);
             if (idx >= 0) {
               // @ts-ignore
               listRef.current.scrollToItem(idx);
@@ -142,7 +144,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
 
     return () => {
       selectionManager.removeOnSelectionChanged(selectId);
-      removeCommandHandler(cmdId);
+      removeAnyCommandHandler(cmdId);
       removeOnStateChanged(stateId);
     }
   }, [props.width, viewMode, ref]);
@@ -151,6 +153,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
     let rows = getState().rows;
     if (!rows) {
       rows = makeByMonthRows(getState().currentList, props.width, photoPadding);
+      console.log('updateRows:' + rows.length);
       updateState({ rows: rows });
 
       setRows(rows);

@@ -6,6 +6,10 @@ import { selectionManager } from "./SelectionManager";
 import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { useState } from "react";
 import { PhotoList } from "../photo/PhotoList";
+import ListItemText from "@mui/material/ListItemText/ListItemText";
+import Typography from "@mui/material/Typography/Typography";
+import { Command, invokeCommand } from "./AppState";
+import { MyMenuItem } from "./MyMenuItem";
 
 export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null }) {
   const [openExport, setOpenExport] = useState(false);
@@ -14,7 +18,7 @@ export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null })
     if (!props.photos) {
       return;
     }
-    selectionManager.add(props.photos.photos);
+    selectionManager.add(props.photos.asArray());
     props.onMenuClose();
   }
 
@@ -22,7 +26,7 @@ export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null })
     if (!props.photos) {
       return;
     }
-    selectionManager.remove(props.photos.photos);
+    selectionManager.clear();
     props.onMenuClose();
   }
 
@@ -31,7 +35,7 @@ export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null })
       return;
     }
     let select: AlbumPhoto[] = [];
-    for (let x of props.photos.photos) {
+    for (let x of props.photos.asArray()) {
       if (!selectionManager.items.get(x.wire.hash)) {
         select.push(x);
       }
@@ -71,11 +75,17 @@ export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null })
 
   return (
     <CommandMenu {...props} extra={renderDialogs}>
-      <MenuItem key="edit_all" onClick={handleSelectAll}>Select All</MenuItem>
+      <MenuItem key="edit_all" onClick={handleSelectAll}>
+        <ListItemText>Select All</ListItemText>
+        <Typography variant="body2" color="text.secondary">A</Typography>
+      </MenuItem>
       <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
-      <MenuItem key="export_selection" onClick={handleExportSelection}>Export Selection</MenuItem>
-    </CommandMenu>
+      <MyMenuItem key="mark_fav" command={Command.MarkFavorite} text="Mark Favorite" shortcut="A" />
+      <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="P" />
+      <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
+      <MenuItem key="export_selection" onClick={handleExportSelection}>Export</MenuItem>
+    </CommandMenu >
   )
 }

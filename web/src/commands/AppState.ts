@@ -134,11 +134,12 @@ export function updateState(update: AppStateUpdate) {
       state.listChangeId = state.currentList.addOnChanged(() => {
         console.log('Update current collection: ' + state.currentList.photoCount);
         // reset rows so layout code can regenerate
+        (state as any).years = buildYears(photos);
         (state as any).rows = null;
         stateChanged.invoke();
       });
 
-      (state as any).years = buildYears(photos.photos);
+      (state as any).years = buildYears(photos);
       (state as any).rows = null;
       selectionManager.clear();
       stateChanged.invoke();
@@ -148,61 +149,85 @@ export function updateState(update: AppStateUpdate) {
   }
 }
 
-function buildYears(photos: ReadonlyArray<AlbumPhoto>): YearEntry[] {
-  let years: YearEntry[] = [];
-  let yearMap = new Map<number, YearEntry>();
+function buildYears(photos: PhotoList): YearEntry[] {
+  try {
+    let years: YearEntry[] = [];
+    let yearMap = new Map<number, YearEntry>();
 
-  // use months as index
-  for (let photo of photos) {
-    let month = photo.originalDate.getMonth();
-    let yearVal = photo.originalDate.getFullYear();
-    let year = yearMap.get(yearVal);
-    if (!year) {
-      year = { year: yearVal, months: [] }
-      yearMap.set(yearVal, year);
-    }
-    year.months[month] = 1;
-  }
-
-  years = [...yearMap.values()];
-  years.sort((x: YearEntry, y: YearEntry) => Math.sign(y.year - x.year));
-
-  // update months to actual numbers
-  for (let year of years) {
-    let months: number[] = [];
-    for (let idx = year.months.length; idx >= 0; idx--) {
-      if (year.months[idx]) {
-        months.push(idx);
+    // use months as index
+    for (let photo of photos.photos()) {
+      let month = photo.originalDate.getMonth();
+      let yearVal = photo.originalDate.getFullYear();
+      let year = yearMap.get(yearVal);
+      if (!year) {
+        year = { year: yearVal, months: [] }
+        yearMap.set(yearVal, year);
       }
+      year.months[month] = 1;
     }
-    year.months = months;
-  }
 
-  return years;
+    years = [...yearMap.values()];
+    years.sort((x: YearEntry, y: YearEntry) => Math.sign(y.year - x.year));
+
+    // update months to actual numbers
+    for (let year of years) {
+      let months: number[] = [];
+      for (let idx = year.months.length; idx >= 0; idx--) {
+        if (year.months[idx]) {
+          months.push(idx);
+        }
+      }
+      year.months = months;
+    }
+
+    return years;
+  }
+  catch (e) {
+    throw e;
+  }
 }
 
 export enum Command {
   ScrollAlbum = 1,
-  SetFocusAlbum = 2
+  SetFocusAlbum = 2,
+  AddStack = 3,
+  MarkFavorite = 4,
+  MarkRejected = 5,
+  AddQuickCollection = 6
 }
 
-let commandHandler = new SimpleEventSource();
+let anyCommandHandler = new SimpleEventSource();
+let commandHandlers = new Map<Command, SimpleEventSource>();
 
-export function addCommandHandler(func: (cmd: Command, ...args: any[]) => void) {
-  return commandHandler.add(func);
+export function addCommandHandler(cmd: Command, func: (cmd: Command, ...args: any[]) => void) {
+  let source = commandHandlers.get(cmd);
+  if (!source) {
+    source = new SimpleEventSource();
+    commandHandlers.set(cmd, source);
+  }
+
+  source.add(func);
 }
 
-export function removeCommandHandler(id: number) {
-  return commandHandler.remove(id);
+export function addAnyCommandHandler(func: (cmd: Command, ...args: any[]) => void) {
+  return anyCommandHandler.add(func);
+}
+
+export function removeAnyCommandHandler(id: number) {
+  return anyCommandHandler.remove(id);
 }
 
 /**
  * issues command to scroll
  */
 export function scrollAlbumToDate(dt: { year: number, month: number }) {
-  commandHandler.invoke(Command.ScrollAlbum, dt);
+  anyCommandHandler.invoke(Command.ScrollAlbum, dt);
 }
 
 export function setFocusAlbum() {
-  commandHandler.invoke(Command.SetFocusAlbum);
+  anyCommandHandler.invoke(Command.SetFocusAlbum);
+}
+
+export function invokeCommand(cmd: Command) {
+  anyCommandHandler.invoke(cmd);
 }

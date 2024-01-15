@@ -41,13 +41,14 @@ export function CalendarBar(props: { className: string }) {
   const [years, setYears] = useState<YearEntry[]>([]);
   const [openedYear, setOpenedYear] = useState<number | null>(null)
   useEffect(() => {
+    console.log("CalendarBar: useEffect");
     let id = addOnStateChanged(() => {
       setYears(getState().years);
     });
     return () => {
       removeOnStateChanged(id);
     }
-  })
+  }, [])
 
   function handleSelect(year: number, month: number) {
     if (openedYear !== year) {

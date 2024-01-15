@@ -1,6 +1,6 @@
 import { isEqualDay, isEqualMonth, toDayStart, toMonthStart } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
-import { PhotoList } from "./PhotoList";
+import { PhotoList, PhotoListPos } from "./PhotoList";
 
 /**
  * split photo array into rows
@@ -15,9 +15,8 @@ export function makeRows(photoList: PhotoList,
     optimalHeight: number,
     targetWidth: number,
     padding: number,
-    startNewRow?: (photo: AlbumPhoto, idx: number, photos: ReadonlyArray<AlbumPhoto>) => AlbumRow[] | null
+    startNewRow?: (photo: AlbumPhoto, idx: PhotoListPos, photos: PhotoList) => AlbumRow[] | null
   }): AlbumRow[] {
-  let photos = photoList.photos;
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
   let rows: AlbumRow[] = [];
@@ -26,11 +25,11 @@ export function makeRows(photoList: PhotoList,
 
   photoList.resetRows();
 
-  for (let idx = 0; idx < photos.length; idx++) {
-    let photo = photos[idx];
+  for (let pos = photoList.getFirstPos(); pos !== -1; pos = photoList.getNext(pos)) {
+    let photo = photoList.getItem(pos);
 
     if (options.startNewRow) {
-      let startRows = options.startNewRow(photo, idx, photos);
+      let startRows = options.startNewRow(photo, pos, photoList);
       if (startRows) {
         if (row.length > 0) {
           rows.push(enforceMaxHeight({
@@ -126,38 +125,46 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
     optimalHeight: 200,
     targetWidth: targetWidth,
     padding: padding,
-    startNewRow: (photo: AlbumPhoto, idx: number, photos: ReadonlyArray<AlbumPhoto>) => {
-      if (idx !== 0) {
-        let d1 = photos[idx - 1].originalDate;
-        let d2 = photo.originalDate;
-        if (isEqualDay(d1, d2)) {
-          return null;
+    startNewRow: (photo: AlbumPhoto, idx: PhotoListPos, photos: PhotoList) => {
+      try {
+        let prevIdx = photos.getPrev(idx);
+        if (prevIdx !== -1) {
+          let d1 = photos.getItem(prevIdx).originalDate;
+          let d2 = photo.originalDate;
+          if (isEqualDay(d1, d2)) {
+            return null;
+          }
         }
-      }
 
-      let rows: AlbumRow[] = [];
-      if (currentMonth === null || !isEqualMonth(currentMonth, photo.originalDate)) {
-        let month = toMonthStart(photo.originalDate);
+        let rows: AlbumRow[] = [];
+        if (currentMonth === null || !isEqualMonth(currentMonth, photo.originalDate)) {
+          let month = toMonthStart(photo.originalDate);
+          rows.push({
+            key: 'month_' + month,
+            kind: RowKind.month,
+            dt: month,
+            height: 0,
+            padding: 0,
+          });
+          currentMonth = photo.originalDate;
+        }
+
+        let day = toDayStart(photo.originalDate);
         rows.push({
-          key: 'month_' + month,
-          kind: RowKind.month,
-          dt: month,
+          key: 'day_' + day,
+          kind: RowKind.day,
+          dt: day,
           height: 0,
           padding: 0,
         });
-        currentMonth = photo.originalDate;
+
+        return rows;
+
       }
-
-      let day = toDayStart(photo.originalDate);
-      rows.push({
-        key: 'day_' + day,
-        kind: RowKind.day,
-        dt: day,
-        height: 0,
-        padding: 0,
-      });
-
-      return rows;
+      catch (e: any) {
+        console.error('startNewRow failed:' + e.toString());
+        throw e;
+      }
     }
   });
 

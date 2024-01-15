@@ -12,24 +12,9 @@ export class SelectionManager {
     func: () => void
   }[] = [];
 
-  private _lastSelectedIndex = -1;
-
-  public getLastSelectedIndex(photos: ReadonlyArray<AlbumPhoto> | undefined): number {
-    if (!photos) {
-      return -1;
-    }
-    if (this._lastSelectedIndex !== -1) {
-      return this._lastSelectedIndex;
-    }
-    if (this._lastSelectedPhoto === null) {
-      return -1;
-    }
-    this._lastSelectedIndex = photos.findIndex((x) => this._lastSelectedPhoto === x);
-    return this._lastSelectedIndex;
-  }
-
   private _lastSelectedPhoto: AlbumPhoto | null = null;
   public get lastSelectedPhoto(): AlbumPhoto | null { return this._lastSelectedPhoto }
+  public get selectedPhotos(): ReadonlyMap<string, AlbumPhoto> { return this._selected };
 
   public clear() {
     for (let x of this._selected) {
@@ -37,7 +22,6 @@ export class SelectionManager {
     }
     this._selected.clear();
     this._lastSelectedPhoto = null;
-    this._lastSelectedIndex = -1;
     this.invokeOnSelectionChanged();
   }
 
@@ -64,7 +48,6 @@ export class SelectionManager {
     } else {
       this._lastSelectedPhoto = null;
     }
-    this._lastSelectedIndex = -1;
     this.invokeOnSelectionChanged();
   }
 

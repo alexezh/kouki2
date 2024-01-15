@@ -17,9 +17,11 @@ import { loadFolders } from './photo/FolderStore';
 import { loadLibrary } from './photo/PhotoStore';
 import { loadDevices } from './photo/Device';
 import { loadCollections } from './photo/CollectionStore';
+import { registerEditCommands } from './commands/EditCommands';
 
 setFetchAdapter(new FetchAdapterWeb());
 setSessionId('42')
+registerEditCommands();
 
 // start load of library
 setTimeout(async () => {
