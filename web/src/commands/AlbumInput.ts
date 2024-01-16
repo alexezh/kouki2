@@ -180,10 +180,10 @@ export function handlePhotoSelected(
 
 export function handleDateSelected(val: boolean, row: AlbumRow) {
   let filtered = (row.kind === RowKind.month) ?
-    getState().currentList.filter((x: AlbumPhoto) => {
+    getState().currentList.where((x: AlbumPhoto) => {
       return isEqualMonth(x.originalDate, row.dt!);
     })
-    : getState().currentList.filter((x: AlbumPhoto) => {
+    : getState().currentList.where((x: AlbumPhoto) => {
       return isEqualDay(x.originalDate, row.dt!);
     });
   selectionManager.clear();

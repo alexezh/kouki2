@@ -62,3 +62,24 @@ export class SimpleEventSource {
     }
   }
 }
+
+export interface IEventHandler {
+  invoke(...args: any[]): void;
+}
+export class WeakEventSource {
+  private handlers: WeakRef<IEventHandler>[] = [];
+
+  public add(handler: IEventHandler): void {
+    this.handlers.push(new WeakRef<IEventHandler>(handler));
+  }
+
+  public invoke(...args: any[]) {
+    for (let x of this.handlers) {
+      let handler = x.deref();
+      if (handler) {
+        handler.invoke(...args);
+      }
+      // TODO: add cleanup code
+    }
+  }
+}

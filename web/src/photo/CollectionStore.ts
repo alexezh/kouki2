@@ -1,7 +1,11 @@
 import { nowAsISOString } from "../lib/date";
-import { PhotoListKind, WireCollection, WireCollectionItem, WireFolder, wireAddCollection, wireAddCollectionItems, wireGetCollectionItems, wireGetCollections, wireGetFolders } from "../lib/photoclient";
+import {
+  PhotoListKind, WireCollection, WireCollectionItem,
+  wireAddCollection, wireAddCollectionItems,
+  wireGetCollectionItems, wireGetCollections
+} from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
 import { PhotoList, PhotoListChangeType } from "./PhotoList";
 import { getPhotoById, queueOnLoaded } from "./PhotoStore";
 
@@ -122,7 +126,7 @@ function createCollectionPhotoList(listId: PhotoListId) {
       let photos: AlbumPhoto[] = [];
 
       for (let item of items) {
-        let photo = getPhotoById(item.photoId);
+        let photo = getPhotoById(item.photoId as PhotoId);
         if (!photo) {
           console.error('Collection: cannot find photo ' + item.photoId);
           continue;
@@ -176,7 +180,7 @@ export function getQuickCollection(): PhotoList {
       let photos: AlbumPhoto[] = [];
 
       for (let item of items) {
-        let photo = getPhotoById(item.photoId);
+        let photo = getPhotoById(item.photoId as PhotoId);
         if (!photo) {
           console.error('Collection: cannot find photo ' + item.photoId);
           continue;

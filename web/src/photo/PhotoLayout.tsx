@@ -1,6 +1,7 @@
 import { CSSProperties, Key, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
+import { ViewMode } from "../commands/AppState";
 
 // function getFavIcon(favorite: number): string {
 //   if (favorite > 0) {
@@ -31,6 +32,8 @@ export type PhotoPropTypes = {
   padding: number;
   visibility?: string;
   left?: number;
+  viewMode: ViewMode;
+
   // if set, specify size of div
   // in which case picture is set to 100%
   width?: number;
@@ -64,14 +67,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
-  const handleSelect = (event: React.MouseEvent<HTMLImageElement>) => {
-    if (props.onSelected) {
-      props.onSelected(event, props.photo);
-    }
-  };
-
   // @ts-ignore
-  let divStyle: CSSProperties = (!props.width) ? {
+  let divStyle: CSSProperties = (props.viewMode === ViewMode.grid) ? {
     left: props.left,
     backgroundColor: (selected) ? "var(--photo-selectedcolor)" : undefined,
     border: 'solid',
@@ -93,7 +90,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
   let imgStyle: CSSProperties;
   let src: string;
 
-  if (!props.width) {
+  if (props.viewMode === ViewMode.grid) {
     imgStyle = {
       margin: 0,
       left: props.padding,
@@ -109,8 +106,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
   } else {
     let imageHeight = props.height!;
     let imageWidth = Math.round(imageHeight * props.photo.width / props.photo.height);
-    if (imageWidth > props.width) {
-      imageWidth = props.width;
+    if (imageWidth > props.width!) {
+      imageWidth = props.width!;
       imageHeight = Math.round(imageWidth * props.photo.height / props.photo.width);
     }
 

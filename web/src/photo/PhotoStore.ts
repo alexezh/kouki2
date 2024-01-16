@@ -1,21 +1,24 @@
-import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
-import { WirePhotoEntry, wireGetCollections, wireGetCorrelation, wireGetLibrary } from "../lib/photoclient";
-import { SimpleEventSource } from "../lib/synceventsource";
+import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { wireGetCorrelation, wireGetLibrary } from "../lib/photoclient";
+import { IEventHandler, WeakEventSource } from "../lib/synceventsource";
 import { PhotoList } from "./PhotoList";
 
 let allPhotos: PhotoList | undefined;
-export const photoLibraryMap = new Map<number, AlbumPhoto>();
-const duplicateByHashBuckets = new Map<string, number[]>();
-const photoLibraryChanged: SimpleEventSource = new SimpleEventSource();
+export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
+const duplicateByHashBuckets = new Map<string, PhotoId[]>();
+const photoChanged: WeakEventSource = new WeakEventSource();
 const loadQueue: (() => Promise<any>)[] = [];
 let loaded = false;
 
-export function addOnPhotoLibraryChanged(func: () => void): number {
-  return photoLibraryChanged.add(func);
+/**
+ * invoked when any photo is changed
+ */
+export function addOnPhotoChanged(handler: IEventHandler) {
+  photoChanged.add(handler);
 }
 
-export function removeOnPhotoLibraryChanged(id: number) {
-  photoLibraryChanged.remove(id);
+export function invokeOnPhotoChanged(photo: AlbumPhoto) {
+  photoChanged.invoke(photo);
 }
 
 export function queueOnLoaded<T>(func: () => Promise<T>): Promise<T> {
@@ -54,20 +57,20 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
   }
   let wirePhotos = await wireGetLibrary();
 
-  let pairs: { left: number, right: number }[] = [];
+  let pairs: { left: PhotoId, right: PhotoId }[] = [];
   let prevPhoto: AlbumPhoto | null = null;
   for (let wirePhoto of wirePhotos) {
-    let photo = photoLibraryMap.get(wirePhoto.id);
+    let photo = photoLibraryMap.get(wirePhoto.id as PhotoId);
     if (photo) {
       // nothing do do
     } else {
       photo = new AlbumPhoto(wirePhoto);
-      photoLibraryMap.set(wirePhoto.id, photo);
+      photoLibraryMap.set(wirePhoto.id as PhotoId, photo);
     }
 
     if (prevPhoto) {
       if (photo.originalDate.valueOf() === prevPhoto.originalDate.valueOf()) {
-        pairs.push({ left: prevPhoto.wire.id, right: photo.wire.id });
+        pairs.push({ left: prevPhoto.wire.id as PhotoId, right: photo.wire.id as PhotoId });
       }
     }
 
@@ -88,8 +91,8 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
     if (left.similarId) {
       right.similarId = left.similarId;
     } else {
-      right.similarId = left.wire.id;
-      left.similarId = left.wire.id;
+      right.similarId = left.wire.id as PhotoId;
+      left.similarId = left.wire.id as PhotoId;
     }
     right.correlation = correlation;
   }
@@ -113,9 +116,9 @@ function buildDuplicateBuckets() {
   for (let [key, photo] of photoLibraryMap) {
     let ids = duplicateByHashBuckets.get(photo.wire.hash);
     if (ids) {
-      ids.push(photo.wire.id);
+      ids.push(photo.wire.id as PhotoId);
     } else {
-      duplicateByHashBuckets.set(photo.wire.hash, [photo.wire.id]);
+      duplicateByHashBuckets.set(photo.wire.hash, [photo.wire.id as PhotoId]);
     }
   }
 
@@ -182,12 +185,12 @@ export function sortByDate(photos: AlbumPhoto[]): void {
   })
 }
 
-export function getDuplicateBucket(photo: AlbumPhoto): number[] {
+export function getDuplicateBucket(photo: AlbumPhoto): PhotoId[] {
   let ids = duplicateByHashBuckets.get(photo.wire.hash);
-  return ids ?? [photo.wire.id];
+  return ids ?? [photo.wire.id as PhotoId];
 }
 
-export function getPhotoById(id: number): AlbumPhoto | undefined {
+export function getPhotoById(id: PhotoId): AlbumPhoto | undefined {
   return photoLibraryMap.get(id);
 }
 

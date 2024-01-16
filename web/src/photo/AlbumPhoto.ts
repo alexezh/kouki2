@@ -1,9 +1,15 @@
 import { Key } from "react";
 import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
+import { invokeOnPhotoChanged } from "./PhotoStore";
 
 export type FolderId = number & {
   __tag_folder: boolean;
 }
+
+export type PhotoId = number & {
+  __tag_photo: boolean;
+}
+
 export class PhotoListId {
   public kind: PhotoListKind;
   public id: number;
@@ -24,14 +30,17 @@ export class AlbumPhoto {
   public scale: number = 1;
 
   // ID of first similar
-  public similarId: number = 0;
+  public similarId: PhotoId = 0 as PhotoId;
   public correlation: number = 0;
 
-  // if photo is stack, list of photo ids stacked
-  // this way 
-  public stack: number[] | undefined;
 
-  //public src: string;
+  /**
+  * if photo is stack, list of photo ids stacked
+  * this way we can switch between stack and unstack views quickly
+  * 
+  * ATT: we are keeping array as immutable so we can compare references
+  */
+  public stack: ReadonlyArray<PhotoId> | undefined;
 
   /**
    * number of duplicates set by buildDuplicateBuckets
@@ -42,8 +51,8 @@ export class AlbumPhoto {
     return this.wire.favorite;
   }
 
-  public get id(): number {
-    return this.wire.id;
+  public get id(): PhotoId {
+    return this.wire.id as PhotoId;
   }
 
   public set favorite(val: number) {
@@ -88,10 +97,11 @@ export class AlbumPhoto {
   }
 
   public addStack(photo: AlbumPhoto) {
-    if (!this.stack) {
-      this.stack = [];
-    }
-    this.stack.push(photo.id);
+    let stack: PhotoId[] = (this.stack) ? [...this.stack] : [];
+
+    stack.push(photo.id);
+    this.stack = stack;
+    this.invokeOnChanged();
   }
 
   public addOnChanged(func: (p: AlbumPhoto) => void) {
@@ -108,6 +118,9 @@ export class AlbumPhoto {
     for (let x of this.onChanged) {
       x.func(this);
     }
+
+    // invoke global handlers used by lists and so on
+    invokeOnPhotoChanged(this);
   }
 }
 

@@ -34,8 +34,15 @@ export function onAddStack() {
     //prevPhoto
     prevPhoto.addStack(photo);
 
+    // move selection to next photo
+    let nextPhoto = list.getNext(pos);
+    if (nextPhoto !== -1) {
+      selectionManager.reset([list.getItem(nextPhoto)]);
+    } else {
+      selectionManager.reset([prevPhoto]);
+    }
   } else {
-
+    console.log('onAddStack: missing multiple photo');
   }
 }
 

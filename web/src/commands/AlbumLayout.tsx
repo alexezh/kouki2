@@ -15,12 +15,6 @@ type PhotoAlbumProps = {
 }
 
 const photoPadding = 20;
-let nextId = 1;
-
-type RowsDef = {
-  photos: AlbumPhoto[];
-  rows: AlbumRow[];
-}
 
 /**
  * render 2 photos; switches visibility between them
@@ -46,6 +40,7 @@ function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
         visibility="hidden"
         photo={photo!}
         padding={0}
+        viewMode={ViewMode.zoom}
         width={width}
         height={height}
         selected={true}></PhotoLayout>));
@@ -59,6 +54,7 @@ function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
         visibility="visible"
         photo={photo!}
         padding={0}
+        viewMode={ViewMode.zoom}
         width={width}
         height={height}
         selected={true}></PhotoLayout>));
@@ -73,6 +69,7 @@ function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
         visibility="hidden"
         photo={photo!}
         padding={0}
+        viewMode={ViewMode.zoom}
         width={width}
         height={height}
         selected={true}></PhotoLayout>));
@@ -160,7 +157,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
 
       // update layout when we navigate
       if (listRef.current) {
-        console.log("PhotoAlbum: reset scroll");
+        console.log("PhotoAlbum.updateRows: reset scroll");
         // @ts-ignore
         listRef.current.resetAfterIndex(0);
         if (rows && rows.length > 0) {

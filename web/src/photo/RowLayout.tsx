@@ -3,6 +3,7 @@ import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { PhotoLayout } from "./PhotoLayout";
 import { selectionManager } from "../commands/SelectionManager";
 import { toDayStart } from "../lib/date";
+import { ViewMode } from "../commands/AppState";
 
 type PhotoRowLayoutProps = {
   style: CSSProperties,
@@ -19,6 +20,7 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
       res.push((<PhotoLayout
         key={photo.wire.hash}
         photo={photo}
+        viewMode={ViewMode.grid}
         onClick={props.onClick}
         onSelected={props.onSelected}
         selected={selectionManager.isSelected(photo)}

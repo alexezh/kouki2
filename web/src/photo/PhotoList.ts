@@ -1,9 +1,21 @@
-import { PhotoListKind } from "../lib/photoclient";
-import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, AlbumRow, PhotoListId } from "./AlbumPhoto";
+import { IEventHandler, SimpleEventSource } from "../lib/synceventsource";
+import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { addOnPhotoChanged } from "./PhotoStore";
 
 export type PhotoListPos = number & {
   __tag_pos: boolean;
+}
+
+class PhotoListEventHandler implements IEventHandler {
+  private owner: PhotoList;
+
+  public constructor(owner: PhotoList) {
+    this.owner = owner;
+  }
+
+  invoke(...args: any[]): void {
+    this.owner.onPhotoChanged(args[0] as AlbumPhoto);
+  }
 }
 
 /**
@@ -33,12 +45,15 @@ export class PhotoList {
    * map from id to index
    * when we hide photo, we remove it from the filtered list
    */
-  private _idIndex: Map<number, PhotoListPos> = new Map<number, PhotoListPos>();
+  private _idIndex: Map<PhotoId, PhotoListPos> = new Map<PhotoId, PhotoListPos>();
 
   /**
    * map from id to row index
    */
-  private _rowIndex: Map<number, number> = new Map<number, number>();
+  private _rowIndex: Map<PhotoId, number> = new Map<PhotoId, number>();
+
+  private _savedStacks: Map<PhotoId, ReadonlyArray<PhotoId>> = new Map<PhotoId, PhotoId[]>();
+  private _handler: PhotoListEventHandler;
 
   /**
    * total number of photos in the list
@@ -49,6 +64,11 @@ export class PhotoList {
     this.id = id;
     this._photos = [];
     this._filtered = [];
+    this._handler = new PhotoListEventHandler(this);
+
+    // register handler for any photo change
+    addOnPhotoChanged(this._handler);
+
     setTimeout(async () => {
       let photos = await getPhotos(this);
       this.addPhotosWorker(photos, PhotoListChangeType.load);
@@ -69,10 +89,8 @@ export class PhotoList {
       idx++;
     }
 
-    if (this._filter) {
-      for (let x of photos) {
-        this._filtered.push(this._filter(x));
-      }
+    for (let x of photos) {
+      this._filtered.push(this._filter ? this._filter(x) : true);
     }
 
     // if any photo is stack; mark all stacked as hidden
@@ -86,6 +104,8 @@ export class PhotoList {
   }
 
   private hideStackPhotos(photo: AlbumPhoto) {
+    this._savedStacks.set(photo.id, photo.stack!);
+
     for (let sid of photo.stack!) {
       let sidx = this._idIndex.get(sid);
       if (sidx !== undefined) {
@@ -125,7 +145,6 @@ export class PhotoList {
     }
     return (this._photos.length - 1) as PhotoListPos;
   }
-
 
   public getItem(pos: PhotoListPos): AlbumPhoto {
     return this._photos[pos];
@@ -185,11 +204,12 @@ export class PhotoList {
   /**
    * return photos matching criteria
    */
-  public filter(pred: (x: AlbumPhoto) => boolean): AlbumPhoto[] {
+  public where(pred: (x: AlbumPhoto) => boolean): AlbumPhoto[] {
     return this._photos.filter(pred);
   }
 
   public setFilter(pred?: (x: AlbumPhoto) => boolean) {
+    console.log("PhotoList.setFilter");
     if (pred) {
       this._filter = pred;
     } else {
@@ -292,7 +312,7 @@ export class PhotoList {
     return arr;
   }
 
-  public setRow(id: number, idx: number) {
+  public setRow(id: PhotoId, idx: number) {
     return this._rowIndex.set(id, idx)!;
   }
 
@@ -306,6 +326,36 @@ export class PhotoList {
     }
 
     return this._rowIndex.get(photo.id)!;
+  }
+
+  /**
+   * called if any photo changed; we only care about stacks
+   */
+  public onPhotoChanged(photo: AlbumPhoto) {
+    try {
+      if (!this._idIndex.get(photo.id)) {
+        return;
+      }
+
+      let oldStack = this._savedStacks.get(photo.id);
+      if (oldStack !== photo.stack) {
+        console.log("PhotoList: stack changed");
+        if (oldStack) {
+          for (let id of oldStack!) {
+            let idx = this._idIndex.get(id);
+            this._filtered[idx!] = (this._filter) ? this._filter(this._photos[idx!]) : true;
+          }
+        }
+        if (photo.stack) {
+          this.hideStackPhotos(photo);
+        }
+
+        this.onChanged.invoke(PhotoListChangeType.hide);
+      }
+    }
+    catch (e: any) {
+      console.log('onPhotoChanged failed:' + e.toString());
+    }
   }
 }
 

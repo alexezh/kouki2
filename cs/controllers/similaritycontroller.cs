@@ -2,8 +2,6 @@ using System.Text;
 using System.Text.Json;
 using ImageMagick;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Shipwreck.Phash;
 
 namespace kouki2.Controllers;

@@ -229,5 +229,9 @@ export function setFocusAlbum() {
 }
 
 export function invokeCommand(cmd: Command) {
+  let handler = commandHandlers.get(cmd);
+  if (handler) {
+    handler.invoke();
+  }
   anyCommandHandler.invoke(cmd);
 }

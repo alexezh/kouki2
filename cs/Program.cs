@@ -1,12 +1,8 @@
-// https://github.com/suzuki-0000/SKPhotoBrowser
-// phone - browse photos, 
-//         merge external fav
-//         move unfav to archive
-//         bring back fav 
 using kouki2.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//WebApplication.
 builder.Services.AddControllersWithViews();
 //builder.Services.AddSignalR();
 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -66,6 +62,7 @@ app.UseStaticFiles(staticOptions);
 app.UseRouting();
 app.UseAuthorization();
 
+Console.WriteLine("wwwwroot:" + app.Environment.WebRootPath);
 
 PhotoLibraryController.RegisterRoutes(app);
 JobController.RegisterRoutes(app);
