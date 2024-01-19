@@ -5,7 +5,7 @@ import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'rea
 import './App.css';
 import { AlbumPhoto, PhotoListId } from "./photo/AlbumPhoto";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { PhotoAlbum } from './commands/AlbumLayout';
+import { AlbumLayout } from './commands/AlbumLayout';
 import { CommandBar } from './commands/CommandBar';
 import Drawer from '@mui/material/Drawer/Drawer';
 
@@ -31,13 +31,6 @@ enum CanvasViewKind {
   Album,
   Collection,
   Device
-}
-
-type LayoutVars = {
-  totalWidth: number;
-  totalHeight: number;
-  albumWidth: number;
-  albumHeight: number;
 }
 
 function updateVars(width: number, height: number): Size {
@@ -120,7 +113,7 @@ function App() {
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <CssBaseline />
         <div className="App" style={appStyle} >
-          <div className="AppFrame">
+          <div className="App-frame">
             <Typography
               variant="h6"
               noWrap
@@ -158,10 +151,10 @@ function App() {
              * ATT: sizer has weird behavior when it comes to grid. It is better to shield
              * logic by having wrapper div
              */}
-            <div className='AlbumContainer'>
+            <div className='Album-container'>
               <AutoSizer>
                 {({ width, height }: { width: number, height: number }) => (
-                  <PhotoAlbum width={width} height={height}></PhotoAlbum>)}
+                  <AlbumLayout width={width} height={height}></AlbumLayout>)}
               </AutoSizer>
             </div>
             <CommandBar className="CommandBar"></CommandBar>

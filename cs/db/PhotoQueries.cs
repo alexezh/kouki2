@@ -108,6 +108,11 @@ public static class PhotoQueriesExt
       setFields += "color = $color";
       command.Parameters.AddWithValue("$color", updateReqest.color);
     }
+    if (updateReqest.stackId != null)
+    {
+      setFields += "stackId = $stackId";
+      command.Parameters.AddWithValue("$stackId", updateReqest.stackId);
+    }
     command.CommandText = $"UPDATE Photos SET {setFields} WHERE hash == $hash";
     command.Parameters.AddWithValue("$hash", updateReqest.hash);
 

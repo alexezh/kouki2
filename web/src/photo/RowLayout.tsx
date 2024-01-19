@@ -9,23 +9,26 @@ type PhotoRowLayoutProps = {
   style: CSSProperties,
   row: AlbumRow,
   onClick: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void,
-  onSelected: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void
 }
 export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   function renderRow(row: AlbumRow) {
     let res = [];
     let left = 0;
     let index = 0;
+
     for (let photo of row.photos!) {
+      let style: CSSProperties = {
+        left: left
+      }
+
       res.push((<PhotoLayout
         key={photo.wire.hash}
+        style={style}
         photo={photo}
         viewMode={ViewMode.grid}
         onClick={props.onClick}
-        onSelected={props.onSelected}
         selected={selectionManager.isSelected(photo)}
-        padding={props.row.padding}
-        left={left} />));
+        padding={props.row.padding} />));
 
       index++;
       left += Math.round(photo.width * photo.scale) + row.padding * 2;
@@ -37,7 +40,7 @@ export function PhotoRowLayout(props: PhotoRowLayoutProps) {
   let style: CSSProperties = { ...props.style, height: props.row.height + props.row.padding * 2 };
 
   return (
-    <div style={style} className="PhotoRow" >
+    <div style={style} className="Photo-row" >
       {renderRow(props.row)}
     </div>
   );

@@ -34,7 +34,7 @@ public class PhotoDbStatics
           "originalHash TEXT", // hash of original picture
           "originalDt TEXT",
           "importedDt TEXT",
-          "stackHash", // hash of any photo in the stack
+          "stackId NUMBER", // hash of any photo in the stack
           "folder INTEGER",
           "filename TEXT",
           "fileext TEXT",
@@ -55,7 +55,7 @@ public class PhotoDbStatics
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` ('filename' ASC);");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoPath` ON `Photos` (`folder` ASC, 'filename' ASC, 'fileext' ASC);");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoOriginal` ON `Photos` (`originalHash` ASC);");
-      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackHash` ASC);");
+      CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoStack` ON `Photos` (`stackId` ASC);");
 
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS Collections (id INTEGER PRIMARY KEY, kind TEXT, createDt INTEGER, name TEXT, metadata TEXT)");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `CollectionCreateTime` ON `Collections` (`id` ASC, 'createDt' ASC);");

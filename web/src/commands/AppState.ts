@@ -45,6 +45,7 @@ export type YearEntry = {
 export enum ViewMode {
   measure,
   grid,
+  stripe,
   zoom
 }
 

@@ -31,6 +31,8 @@
   --photo-bordercolor: #b4b4b4;
   --favicon-strike: #1d1d1d;
   --favicon-fill: #e8e8e8;
+  /* should match optimalHeight */
+  --photostripe-height: 160px;
 }
 
 .App-header {
@@ -48,7 +50,7 @@
   color: #61dafb;
 }
 
-.AppFrame {
+.App-frame {
   text-align: left;
   display: grid;
   grid-template-columns: var(--sidebar-width) auto var(--calendarbar-width);
@@ -80,7 +82,7 @@
   direction: rtl;
 }
 
-.AlbumContainer {
+.Album-container {
   width: var(--album-width);
   min-width: var(--album-width);
   max-width: var(--album-width);
@@ -93,11 +95,50 @@
   background-color: var(--album-backcolor);
 }
 
-.AlbumLayout {
+.Album-layout {
   width: var(--album-width);
   height: var(--album-height);
   min-height: var(--album-height);
   max-height: var(--album-height);
+}
+
+.Photo-viewer {
+  display: block;
+}
+
+.Photo-stack {
+  display: grid;
+  grid-template-columns: auto;
+  grid-template-rows: auto var(--photostripe-height);
+}
+
+.Photo-stack-stripe {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.Photo-layout {
+  display: 'block';
+}
+
+.Photo-layout-fav-icon {
+  position: absolute;
+  display: block;
+  left: 5px;
+  top: 2px;
+  z-index: 1;
+  fill: rgb(244, 247, 244);
+  filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
+}
+
+.Photo-layout-stack-icon {
+  position: absolute;
+  display: block;
+  right: 5px;
+  top: 2px;
+  z-index: 1;
+  fill: rgb(244, 247, 244);
+  filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
 }
 
 .StatusBar {
@@ -180,7 +221,7 @@
   filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
 }
 
-.PhotoRow {
+.Photo-row {
   display: block;
   flex-wrap: wrap;
   flex-direction: row
@@ -215,15 +256,6 @@
   filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
   margin-left: auto;
   z-index: 1;
-}
-
-.PhotoLayoutFavIcon {
-  position: 'absolute';
-  left: 5;
-  top: 4;
-  z-index: 1;
-  fill: rgb(244, 247, 244);
-  filter: invert(100%) sepia(0%) saturate(1%) hue-rotate(24deg) brightness(105%) contrast(99%);
 }
 
 @keyframes App-logo-spin {

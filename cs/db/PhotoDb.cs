@@ -25,7 +25,7 @@ public class PhotoEntry
   public int format { get; set; }
   public string originalDateTime { get; set; }
   public string originalHash { get; set; }
-  public string stackHash { get; set; }
+  public Int64 stackId { get; set; }
   [JsonIgnore]
   public byte[] phash;
 }
@@ -37,7 +37,7 @@ public class UpdatePhotoRequest
   public int? stars { get; set; }
   public UpdateString? color { get; set; }
   public UpdateString? originalHash { get; set; }
-  public UpdateString? stackHash { get; set; }
+  public Int64? stackId { get; set; }
 }
 
 public class UpdatePhotoResponse
@@ -224,7 +224,7 @@ public class PhotoDb
       format = unchecked((int)(Int64)reader["format"]),
       originalDateTime = reader.ReadMagicTime("originalDt")?.ToString("o"),
       originalHash = reader.ReadString("originalHash"),
-      stackHash = reader.ReadString("stackHash"),
+      stackId = reader.ReadInt64("stackId"),
       phash = reader.ReadBlob("phash"),
     };
 

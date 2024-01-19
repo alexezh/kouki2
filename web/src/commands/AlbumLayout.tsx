@@ -7,78 +7,19 @@ import { PhotoLayout } from "../photo/PhotoLayout";
 import { Measure } from "../Measure";
 import { makeByMonthRows } from "../photo/MakeRows";
 import { Command, ViewMode, addAnyCommandHandler, addOnStateChanged, getState, removeAnyCommandHandler, removeOnStateChanged, updateState } from "./AppState";
-import { handleDateSelected, handleKeyDown, handlePhotoClick, handlePhotoSelected } from "./AlbumInput";
+import { handleDateSelected, handleKeyDown, handlePhotoClick } from "./AlbumInput";
+import { StripeLayout } from "../photo/StripeLayout";
+import { PhotoViewer } from "../photo/PhotoViewer";
+import { off } from "process";
 
 type PhotoAlbumProps = {
   width: number,
   height: number
 }
 
-const photoPadding = 20;
+export const photoPadding = 20;
 
-/**
- * render 2 photos; switches visibility between them
- */
-function renderPreviewPhotos(width: number, height: number): JSX.Element[] {
-  let elements: JSX.Element[] = [];
-
-  let photos = getState().currentList;
-  let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
-  console.log("preview: " + idx);
-
-  if (idx === -1) {
-    return elements;
-  }
-
-
-  let prevIdx = photos.getPrev(idx);
-  if (prevIdx >= 0) {
-    let photo = photos.getItem(prevIdx);
-    elements.push(
-      (<PhotoLayout
-        className="Photo"
-        visibility="hidden"
-        photo={photo!}
-        padding={0}
-        viewMode={ViewMode.zoom}
-        width={width}
-        height={height}
-        selected={true}></PhotoLayout>));
-  }
-
-  {
-    let photo = photos.getItem(idx);
-    elements.push(
-      (<PhotoLayout
-        className="Photo"
-        visibility="visible"
-        photo={photo!}
-        padding={0}
-        viewMode={ViewMode.zoom}
-        width={width}
-        height={height}
-        selected={true}></PhotoLayout>));
-  }
-
-  let nextIdx = photos.getNext(idx);
-  if (nextIdx >= 0) {
-    let photo = photos.getItem(nextIdx);
-    elements.push(
-      (<PhotoLayout
-        className="Photo"
-        visibility="hidden"
-        photo={photo!}
-        padding={0}
-        viewMode={ViewMode.zoom}
-        width={width}
-        height={height}
-        selected={true}></PhotoLayout>));
-  }
-
-  return elements;
-}
-
-export function PhotoAlbum(props: PhotoAlbumProps) {
+export function AlbumLayout(props: PhotoAlbumProps) {
   // react-window has a bug with updates
   // it caches height of items for variable height based on function object
   // so we have to give it different function when photos change
@@ -204,8 +145,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           key={row.key}
           style={props.style}
           row={row}
-          onClick={handlePhotoClick}
-          onSelected={handlePhotoSelected}></PhotoRowLayout >
+          onClick={handlePhotoClick}></PhotoRowLayout >
       )
     }
   }
@@ -217,6 +157,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
   }
 
   let showList = (viewMode === ViewMode.grid || !selectionManager.lastSelectedPhoto);
+  let showStripe = (viewMode === ViewMode.stripe && selectionManager.lastSelectedPhoto?.hasStack);
   let listStyle: CSSProperties = {
     visibility: showList ? "visible" : "hidden",
     height: props.height,
@@ -249,7 +190,7 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
       </div>)
   } else {
     return (
-      <div className='AlbumLayout'
+      <div className='Album-layout'
         tabIndex={0}
         ref={ref}
         onKeyDown={handleKeyDown}>
@@ -264,8 +205,34 @@ export function PhotoAlbum(props: PhotoAlbumProps) {
           {renderRow}
         </List>
         {
+          (showStripe) ? (
+            <StripeLayout
+              width={props.width}
+              height={props.height}
+              photos={selectionManager.lastSelectedPhoto!.stack!}
+              currentPhoto={selectionManager.lastSelectedPhoto}
+              padding={photoPadding} />
+          ) : null
+        }
+        {
           (!showList) ? (
-            renderPreviewPhotos(props.width, props.height)
+            <PhotoViewer width={props.width} height={props.height} getImage={(offs: number): AlbumPhoto | null => {
+
+              let photos = getState().currentList;
+              let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
+              console.log("preview: " + idx);
+              if (idx === -1) {
+                return null;
+              }
+
+              if (offs === -1) {
+                return photos.getItem(photos.getPrev(idx));
+              } else if (offs === 1) {
+                return photos.getItem(photos.getNext(idx));
+              } else {
+                return selectionManager.lastSelectedPhoto;
+              }
+            }} />
           ) : null
         }
       </div >);

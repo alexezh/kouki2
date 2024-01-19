@@ -2,6 +2,7 @@ import { CSSProperties, Key, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 import { ViewMode } from "../commands/AppState";
+import * as CSS from "csstype";
 
 // function getFavIcon(favorite: number): string {
 //   if (favorite > 0) {
@@ -23,15 +24,22 @@ function getFavIcon(favorite: number): string | null {
   }
 }
 
+function getStackIcon(hasStack: boolean): string | null {
+  if (hasStack) {
+    return "./assets/stack.svg";
+  } else {
+    return null;
+  }
+}
+
 export type PhotoPropTypes = {
   className?: string;
   style?: CSSProperties;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
-  onSelected?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
   padding: number;
-  visibility?: string;
-  left?: number;
+  visibility?: CSS.Property.Visibility;
+
   viewMode: ViewMode;
 
   // if set, specify size of div
@@ -46,6 +54,7 @@ const imgWithClick = { cursor: 'pointer' };
 export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
   let [fav, setFav] = useState(getFavIcon(props.photo.favorite));
+  let [stack, setStack] = useState(getStackIcon(props.photo.hasStack));
 
   useEffect(() => {
     let idSelected = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
@@ -67,36 +76,36 @@ export function PhotoLayout(props: PhotoPropTypes) {
     }
   };
 
-  // @ts-ignore
-  let divStyle: CSSProperties = (props.viewMode === ViewMode.grid) ? {
-    left: props.left,
-    backgroundColor: (selected) ? "var(--photo-selectedcolor)" : undefined,
-    border: 'solid',
-    borderColor: "var(--photo-bordercolor)",
-    width: props.photo.width * props.photo.scale + props.padding * 2,
-    height: props.photo.height * props.photo.scale + props.padding * 2,
-    display: 'block',
-    visibility: props.visibility,
-    position: 'absolute'
-  } : {
-    left: props.left,
-    width: props.width,
-    height: props.height,
-    display: 'block',
-    visibility: props.visibility,
-    position: 'absolute'
-  }
-
+  let divStyle: CSSProperties;
   let imgStyle: CSSProperties;
   let src: string;
 
-  if (props.viewMode === ViewMode.grid) {
+  if (props.viewMode === ViewMode.grid || props.viewMode === ViewMode.stripe) {
+    let scale = 1;
+    if (props.viewMode === ViewMode.stripe) {
+      scale = props.height! / props.photo.height;
+    } else {
+      scale = props.photo.scale;
+    }
+
+    divStyle = {
+      ...props.style,
+      backgroundColor: (selected) ? "var(--photo-selectedcolor)" : undefined,
+      border: 'solid',
+      borderColor: "var(--photo-bordercolor)",
+      width: props.photo.width * scale + props.padding * 2,
+      height: props.photo.height * scale + props.padding * 2,
+      display: 'block',
+      visibility: props.visibility,
+      position: 'absolute'
+    };
+
     imgStyle = {
       margin: 0,
       left: props.padding,
       top: props.padding,
-      width: Math.round(props.photo.width * props.photo.scale),
-      height: Math.round(props.photo.height * props.photo.scale),
+      width: Math.round(props.photo.width * scale),
+      height: Math.round(props.photo.height * scale),
       display: 'block',
       position: 'absolute',
       zIndex: 0
@@ -104,6 +113,15 @@ export function PhotoLayout(props: PhotoPropTypes) {
 
     src = props.photo.getThumbnailUrl();
   } else {
+    divStyle = {
+      ...props.style,
+      width: props.width,
+      height: props.height,
+      display: 'block',
+      visibility: props.visibility,
+      position: 'absolute'
+    };
+
     let imageHeight = props.height!;
     let imageWidth = Math.round(imageHeight * props.photo.width / props.photo.height);
     if (imageWidth > props.width!) {
@@ -128,13 +146,21 @@ export function PhotoLayout(props: PhotoPropTypes) {
   }
 
   return (
-    <div key={props.photo.wire.hash} style={divStyle} className={props.className}>
+    <div className="Photo-layout" key={props.photo.wire.hash} style={divStyle}>
       {(fav) ?
         (<img
-          className="PhotoLayoutFavIcon"
+          className="Photo-layout-fav-icon"
           width={20}
           height={20}
           src={fav}
+        />) : null}
+
+      {(stack) ?
+        (<img
+          className="Photo-layout-stack-icon"
+          width={20}
+          height={20}
+          src={stack}
         />) : null}
 
       <img

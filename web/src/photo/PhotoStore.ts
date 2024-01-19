@@ -59,6 +59,8 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
 
   let pairs: { left: PhotoId, right: PhotoId }[] = [];
   let prevPhoto: AlbumPhoto | null = null;
+
+  // for photos with the same ti,e. get similarity
   for (let wirePhoto of wirePhotos) {
     let photo = photoLibraryMap.get(wirePhoto.id as PhotoId);
     if (photo) {
@@ -77,6 +79,7 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
     prevPhoto = photo;
   }
 
+  buildStacks();
   buildDuplicateBuckets();
 
   let corrResp = await wireGetCorrelation({ photos: pairs });
@@ -125,6 +128,19 @@ function buildDuplicateBuckets() {
   for (let [key, photo] of photoLibraryMap) {
     let ids = duplicateByHashBuckets.get(photo.wire.hash);
     photo.dupCount = ids!.length;
+  }
+}
+
+function buildStacks() {
+  for (let [key, photo] of photoLibraryMap) {
+    if (photo.wire.stackId) {
+      let orig = photoLibraryMap.get(photo.wire.stackId as PhotoId);
+      if (orig) {
+        orig.addStack(photo);
+      } else {
+        console.log("updateStacks: cannot find photo");
+      }
+    }
   }
 }
 

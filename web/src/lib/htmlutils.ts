@@ -113,3 +113,8 @@ export function addText(parent: HTMLElement, text: string, css: string) {
   elem.textContent = text;
   parent.appendChild(elem);
 }
+
+export function getCssIntVar(name: string): number {
+  let root = document.documentElement;
+  return parseInt(getComputedStyle(root).getPropertyValue(name));
+}

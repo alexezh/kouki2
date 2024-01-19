@@ -117,7 +117,11 @@ let mouseController = new MouseController();
 export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
   if (mouseController.onClick(event)) {
     selectionManager.reset([photo]);
-    updateState({ viewMode: ViewMode.zoom });
+    if (getState().viewMode === ViewMode.grid && photo.hasStack) {
+      updateState({ viewMode: ViewMode.stripe });
+    } else {
+      updateState({ viewMode: ViewMode.zoom });
+    }
     event.preventDefault();
   } else {
     if (!(event.shiftKey || event.ctrlKey)) {
@@ -138,43 +142,6 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
       selectionManager.add([photo]);
     }
     event.preventDefault();
-  }
-}
-
-export function handlePhotoSelected(
-  event: React.MouseEvent<HTMLImageElement>,
-  photo: AlbumPhoto) {
-  let selected = selectionManager.isSelected(photo);
-  let index = getState().currentList.findPhotoPos(photo);
-  if (index === -1) {
-    return;
-  }
-
-  let photos = getState().currentList;
-  let lastIndex = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
-  if (event.shiftKey && lastIndex !== -1) {
-    let batch: AlbumPhoto[] = [];
-    if (lastIndex > index) {
-      for (let i = index; i < lastIndex; i = photos.getNext(i)) {
-        batch.push(photos.getItem(i));
-      }
-    } else {
-      for (let i = index; i > lastIndex; i = photos.getPrev(i)) {
-        batch.push(photos.getItem(i));
-      }
-    }
-    if (!selected) {
-      selectionManager.add(batch);
-    } else {
-      selectionManager.remove(batch);
-    }
-  } else {
-    if (!selected) {
-      selectionManager.clear();
-      selectionManager.add([photo]);
-    } else {
-      selectionManager.remove([photo]);
-    }
   }
 }
 

@@ -47,6 +47,13 @@ export class AlbumPhoto {
    */
   public dupCount: number = 1;
 
+  /**
+   * true if stack not empty
+   */
+  public get hasStack(): boolean {
+    return !!this.stack && this.stack.length > 0;
+  }
+
   public get favorite(): number {
     return this.wire.favorite;
   }
@@ -101,6 +108,8 @@ export class AlbumPhoto {
 
     stack.push(photo.id);
     this.stack = stack;
+
+    wireUpdatePhotos({ hash: photo.wire.hash, stackId: this.id })
     this.invokeOnChanged();
   }
 

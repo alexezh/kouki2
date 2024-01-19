@@ -19,8 +19,7 @@ export type WirePhotoEntry = {
   // if stacked, id of photo which is main in the stack
   // stack makes sense when original photo is included in the list
   originalId: number;
-  stackHash: string;
-  imageId: string;
+  stackId: number;
 }
 
 export type WirePhotoUpdate = {
@@ -29,7 +28,7 @@ export type WirePhotoUpdate = {
   stars?: number;
   color?: UpdateString;
   originalHash?: UpdateString;
-  stackHash?: UpdateString;
+  stackId?: number;
 }
 
 export type WireFolder = {
