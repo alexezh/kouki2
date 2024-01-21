@@ -8,34 +8,26 @@ import { useState } from "react";
 import { PhotoList } from "../photo/PhotoList";
 import ListItemText from "@mui/material/ListItemText/ListItemText";
 import Typography from "@mui/material/Typography/Typography";
-import { Command, invokeCommand } from "./AppState";
 import { MyMenuItem } from "./MyMenuItem";
+import { Command, invokeCommand } from "./Commands";
+import { getState } from "./AppState";
 
-export function EditMenu(props: CommandMenuProps & { photos: PhotoList | null }) {
+export function EditMenu(props: CommandMenuProps) {
   const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
-    if (!props.photos) {
-      return;
-    }
-    selectionManager.add(props.photos.asArray());
+    selectionManager.add(getState().workList.asArray());
     props.onMenuClose();
   }
 
   function handleSelectNone() {
-    if (!props.photos) {
-      return;
-    }
     selectionManager.clear();
     props.onMenuClose();
   }
 
   function handleInvertSelect() {
-    if (!props.photos) {
-      return;
-    }
     let select: AlbumPhoto[] = [];
-    for (let x of props.photos.asArray()) {
+    for (let x of getState().workList.asArray()) {
       if (!selectionManager.items.get(x.wire.hash)) {
         select.push(x);
       }

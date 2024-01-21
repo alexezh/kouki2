@@ -41,7 +41,7 @@ export type WireCollectionItem = {
   updateDt: string;
 }
 
-export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'unknown';
+export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'runtime' | 'unknown';
 
 export type WireCollection = {
   id: number;

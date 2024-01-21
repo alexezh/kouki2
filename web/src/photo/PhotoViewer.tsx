@@ -13,7 +13,7 @@ export type PhotoViewerProps = {
  * render 2 photos; switches visibility between them
  */
 export function PhotoViewer(props: PhotoViewerProps): JSX.Element {
-  let photos = getState().currentList;
+  let photos = getState().workList;
   let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
   console.log("preview: " + idx);
 

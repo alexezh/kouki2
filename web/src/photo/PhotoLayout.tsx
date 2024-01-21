@@ -2,6 +2,9 @@ import { CSSProperties, Key, useEffect, useState } from "react";
 import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 import { ViewMode } from "../commands/AppState";
+import smiley from "../assets/smiley.svg"
+import smiley_sad from "../assets/smiley-sad.svg"
+import stack from "../assets/stack.svg"
 import * as CSS from "csstype";
 
 // function getFavIcon(favorite: number): string {
@@ -16,9 +19,9 @@ import * as CSS from "csstype";
 
 function getFavIcon(favorite: number): string | null {
   if (favorite > 0) {
-    return "./assets/smiley.svg";
+    return smiley;
   } else if (favorite < 0) {
-    return "./assets/smiley-sad.svg";
+    return smiley_sad;
   } else {
     return null;
   }
@@ -26,7 +29,7 @@ function getFavIcon(favorite: number): string | null {
 
 function getStackIcon(hasStack: boolean): string | null {
   if (hasStack) {
-    return "./assets/stack.svg";
+    return stack;
   } else {
     return null;
   }

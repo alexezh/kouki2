@@ -206,7 +206,3 @@ export function getQuickCollection(): PhotoList {
 
   return quickList;
 }
-
-export function addQuickCollection(photos: AlbumPhoto[]) {
-  getQuickCollection().addPhotos(photos);
-}

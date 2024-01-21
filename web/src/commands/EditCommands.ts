@@ -1,6 +1,8 @@
 import { AlbumPhoto } from "../photo/AlbumPhoto";
-import { Command, addAnyCommandHandler, addCommandHandler, getState } from "./AppState";
+import { ViewMode, closePhotoStack, getState, updateState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
+import { Command, addCommandHandler, invokeCommand } from "./Commands";
+import { getQuickCollection } from "../photo/CollectionStore";
 
 export function onMarkFavorite() {
   selectionManager.forEach((x) => { x.favorite = 1; });
@@ -21,7 +23,7 @@ export function onAddStack() {
     return;
   }
   else if (selectionManager.selectedPhotos.size === 1) {
-    let list = getState().currentList;
+    let list = getState().workList;
     let photoIt = selectionManager.selectedPhotos.values();
     let photo = photoIt.next().value as AlbumPhoto;
     let pos = list.findPhotoPos(photo);
@@ -46,9 +48,26 @@ export function onAddStack() {
   }
 }
 
+function onNavigateBack() {
+  if (getState().viewMode === ViewMode.stripe) {
+    closePhotoStack();
+  } else if (getState().viewMode !== ViewMode.grid) {
+    updateState({ viewMode: ViewMode.grid });
+  }
+}
+
+function onAddQuickCollection() {
+
+}
+
+export function addQuickCollection(photos: AlbumPhoto[]) {
+  getQuickCollection().addPhotos(photos);
+}
+
 export function registerEditCommands() {
   addCommandHandler(Command.MarkFavorite, onMarkFavorite);
   addCommandHandler(Command.MarkRejected, onMarkRejected);
   addCommandHandler(Command.AddStack, onAddStack);
-  addCommandHandler(Command.AddQuickCollection, onAddStack);
+  addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
+  addCommandHandler(Command.NavigateBack, onNavigateBack);
 }

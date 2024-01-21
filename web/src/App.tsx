@@ -5,7 +5,7 @@ import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'rea
 import './App.css';
 import { AlbumPhoto, PhotoListId } from "./photo/AlbumPhoto";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { AlbumLayout } from './commands/AlbumLayout';
+import { AlbumLayout } from './photo/AlbumLayout';
 import { CommandBar } from './commands/CommandBar';
 import Drawer from '@mui/material/Drawer/Drawer';
 

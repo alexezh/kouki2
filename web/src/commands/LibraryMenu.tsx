@@ -20,12 +20,12 @@ export function LibraryMenu(props: CommandMenuProps) {
       {
         (openRescanFolder) ? (<RescanFolderDialog
           onClose={() => setOpenRescanFolder(false)}
-          folderId={getState().currentListId} />) : null
+          folderId={getState().navListId} />) : null
       }
       {
         (openBuildPHash) ? (<ProgressDialog
           onClose={() => setOpenBuildPHash(false)}
-          folderId={getState().currentListId} />) : null
+          folderId={getState().navListId} />) : null
       }
     </div>)
   }
@@ -42,7 +42,7 @@ export function LibraryMenu(props: CommandMenuProps) {
 
   function handleRescanFolder() {
     props.onMenuClose();
-    let listId = getState().currentListId;
+    let listId = getState().navListId;
     if (listId.kind === "folder") {
       setOpenRescanFolder(true);
     }
@@ -50,7 +50,7 @@ export function LibraryMenu(props: CommandMenuProps) {
 
   function handleBuildPHash() {
     props.onMenuClose();
-    let listId = getState().currentListId;
+    let listId = getState().navListId;
     if (listId.kind === "folder") {
       setOpenBuildPHash(true);
     }

@@ -12,7 +12,7 @@ import { sleep } from "../lib/sleep";
 import { triggerRefreshFolders } from "../photo/FolderStore";
 import { selectionManager } from "./SelectionManager";
 import { AlbumPhoto } from "../photo/AlbumPhoto";
-import { getStandardCollection } from "../photo/CollectionStore";
+import { getStandardCollection, triggerRefreshCollections } from "../photo/CollectionStore";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
   const [path, setPath] = useState("");
@@ -29,9 +29,10 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
     try {
       let photos = selectionManager.map((x: AlbumPhoto) => x.wire.id);
 
-      let exportList = getStandardCollection('export');
+      let exportList = await getStandardCollection('export');
+      console.log(`Export ${photos.length} photos to ${exportList.id.id}`);
 
-      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: (await exportList).id.id });
+      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: exportList.id.id });
       if (exportResponse.result !== 'Ok') {
         props.onClose();
         return;
@@ -46,6 +47,8 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
         }
         await sleep(1);
       }
+
+      triggerRefreshCollections();
     }
     catch (e: any) {
       console.log(e.toString());

@@ -1,21 +1,19 @@
-import { Command, ViewMode, getState, invokeCommand, updateState } from "./AppState";
-import { selectionManager } from "./SelectionManager";
+import { ViewMode, getState, openPhotoStack, updateState } from "../commands/AppState";
+import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
-import { AlbumPhoto, AlbumRow, RowKind } from "../photo/AlbumPhoto";
-import { addQuickCollection } from "../photo/CollectionStore";
-import { PhotoListPos } from "../photo/PhotoList";
+import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
+import { Command, invokeCommand } from "../commands/Commands";
+import { addQuickCollection } from "../commands/EditCommands";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   let viewMode = getState().viewMode;
-  let list = getState().currentList;
+  let list = getState().workList;
 
   if (event.key === 'Escape') {
-    if (viewMode !== ViewMode.grid) {
-      updateState({ viewMode: ViewMode.grid });
-    }
+    invokeCommand(Command.NavigateBack);
     event.preventDefault();
   } else {
-    if (!getState().currentList || !selectionManager.lastSelectedPhoto) {
+    if (!getState().workList || !selectionManager.lastSelectedPhoto) {
       return;
     }
 
@@ -118,8 +116,10 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
   if (mouseController.onClick(event)) {
     selectionManager.reset([photo]);
     if (getState().viewMode === ViewMode.grid && photo.hasStack) {
-      updateState({ viewMode: ViewMode.stripe });
+      console.log("handlePhotoClick: stack");
+      openPhotoStack(photo);
     } else {
+      console.log("handlePhotoClick: zoom");
       updateState({ viewMode: ViewMode.zoom });
     }
     event.preventDefault();
@@ -128,7 +128,7 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
       selectionManager.clear();
     }
     if (event.shiftKey) {
-      let list = getState().currentList;
+      let list = getState().workList;
       let idxLastSelected = list.findPhotoPos(selectionManager.lastSelectedPhoto);
       let idxPhoto = list.findPhotoPos(photo);
 
@@ -147,10 +147,10 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
 
 export function handleDateSelected(val: boolean, row: AlbumRow) {
   let filtered = (row.kind === RowKind.month) ?
-    getState().currentList.where((x: AlbumPhoto) => {
+    getState().workList.where((x: AlbumPhoto) => {
       return isEqualMonth(x.originalDate, row.dt!);
     })
-    : getState().currentList.where((x: AlbumPhoto) => {
+    : getState().workList.where((x: AlbumPhoto) => {
       return isEqualDay(x.originalDate, row.dt!);
     });
   selectionManager.clear();

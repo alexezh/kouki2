@@ -3,13 +3,17 @@ import { SimpleEventSource } from "../lib/synceventsource";
 import { selectionManager } from "./SelectionManager";
 import { PhotoList } from "../photo/PhotoList";
 import { loadPhotoList } from "../photo/LoadPhotoList";
+import { getPhotoById } from "../photo/PhotoStore";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
 export interface AppState {
   readonly viewMode: ViewMode;
-  readonly currentListId: PhotoListId;
-  readonly currentList: PhotoList;
+  readonly navListId: PhotoListId;
+  // list user navigated to
+  // normally the same as workList but can be different for stacks
+  readonly navList: PhotoList;
+  readonly workList: PhotoList;
   readonly filterFavorite: FilterFavorite;
   readonly filterDups: boolean;
   readonly filterStars: number;
@@ -23,7 +27,8 @@ export interface AppState {
 
 export type AppStateUpdate = {
   viewMode?: ViewMode;
-  currentListId?: PhotoListId;
+  navListId?: PhotoListId;
+  workList?: PhotoList;
   filterFavorite?: FilterFavorite;
   filterDups?: boolean;
   filterStars?: number;
@@ -49,13 +54,15 @@ export enum ViewMode {
   zoom
 }
 
+let list = new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([]));
 let state: AppState & {
   // change id from List.onChange
   listChangeId: number
 } = {
   viewMode: ViewMode.measure,
-  currentListId: new PhotoListId("unknown", 0),
-  currentList: new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([])),
+  navListId: new PhotoListId("unknown", 0),
+  navList: list,
+  workList: list,
   listChangeId: 0,
   filterFavorite: "all",
   filterDups: false,
@@ -89,10 +96,10 @@ export function updateState(update: AppStateUpdate) {
     rebuildList = true;
   }
 
-  if (update.currentListId) {
-    console.log("set folder id:" + update.currentListId);
+  if (update.navListId) {
+    console.log("set folder id:" + update.navListId);
   }
-  if (update.currentListId && state.currentListId !== update.currentListId) {
+  if (update.navListId && state.navListId !== update.navListId) {
     rebuildList = true;
   }
 
@@ -111,7 +118,7 @@ export function updateState(update: AppStateUpdate) {
 
   if (rebuildList) {
     setTimeout(async () => {
-      let photos: PhotoList = await loadPhotoList(state.currentListId);
+      let photos: PhotoList = await loadPhotoList(state.navListId);
 
       photos.setFilter((x: AlbumPhoto) => {
         if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
@@ -128,12 +135,15 @@ export function updateState(update: AppStateUpdate) {
         return true;
       });
 
-      if (state.currentList) {
-        state.currentList.removeOnChanged(state.listChangeId);
+      if (state.navList) {
+        state.navList.removeOnChanged(state.listChangeId);
       }
-      (state as any).currentList = photos;
-      state.listChangeId = state.currentList.addOnChanged(() => {
-        console.log('Update current collection: ' + state.currentList.photoCount);
+
+      // set both work and nav list
+      (state as any).navList = photos;
+      (state as any).workList = photos;
+      state.listChangeId = state.navList.addOnChanged(() => {
+        console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
         (state as any).years = buildYears(photos);
         (state as any).rows = null;
@@ -188,51 +198,25 @@ function buildYears(photos: PhotoList): YearEntry[] {
   }
 }
 
-export enum Command {
-  ScrollAlbum = 1,
-  SetFocusAlbum = 2,
-  AddStack = 3,
-  MarkFavorite = 4,
-  MarkRejected = 5,
-  AddQuickCollection = 6
-}
-
-let anyCommandHandler = new SimpleEventSource();
-let commandHandlers = new Map<Command, SimpleEventSource>();
-
-export function addCommandHandler(cmd: Command, func: (cmd: Command, ...args: any[]) => void) {
-  let source = commandHandlers.get(cmd);
-  if (!source) {
-    source = new SimpleEventSource();
-    commandHandlers.set(cmd, source);
+export function openPhotoStack(photo: AlbumPhoto) {
+  let photos: AlbumPhoto[] = [];
+  photos.push(photo);
+  if (photo.stack) {
+    for (let id of photo.stack!) {
+      let sp = getPhotoById(id);
+      if (!sp) {
+        console.log('cannot find photo ' + id);
+        continue;
+      }
+      photos.push(sp);
+    }
   }
 
-  source.add(func);
+  let list = new PhotoList(new PhotoListId('runtime', 1), photos, false);
+
+  updateState({ workList: list, viewMode: ViewMode.stripe });
 }
 
-export function addAnyCommandHandler(func: (cmd: Command, ...args: any[]) => void) {
-  return anyCommandHandler.add(func);
-}
-
-export function removeAnyCommandHandler(id: number) {
-  return anyCommandHandler.remove(id);
-}
-
-/**
- * issues command to scroll
- */
-export function scrollAlbumToDate(dt: { year: number, month: number }) {
-  anyCommandHandler.invoke(Command.ScrollAlbum, dt);
-}
-
-export function setFocusAlbum() {
-  anyCommandHandler.invoke(Command.SetFocusAlbum);
-}
-
-export function invokeCommand(cmd: Command) {
-  let handler = commandHandlers.get(cmd);
-  if (handler) {
-    handler.invoke();
-  }
-  anyCommandHandler.invoke(cmd);
+export function closePhotoStack() {
+  updateState({ workList: getState().navList, viewMode: ViewMode.grid });
 }

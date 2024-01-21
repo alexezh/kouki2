@@ -6,8 +6,7 @@ import Button from '@mui/material/Button/Button';
 import Icon from '@mui/material/Icon/Icon';
 import { useEffect, useState } from 'react';
 import { computeAggregatedFavs, selectionManager } from './SelectionManager';
-import { AlbumPhoto } from '../photo/AlbumPhoto';
-import { setFocusAlbum } from './AppState';
+import { setFocusAlbum } from './Commands';
 
 const acceptedActive = (
   <Icon>

@@ -40,6 +40,7 @@ export class PhotoList {
   private readonly onChanged: SimpleEventSource = new SimpleEventSource();
   public readonly id: PhotoListId;
   private _filter?: (x: AlbumPhoto) => boolean;
+  private _hideStack: boolean;
 
   /**
    * map from id to index
@@ -60,19 +61,27 @@ export class PhotoList {
    */
   public get photoCount(): number { return this._photos.length }
 
-  public constructor(id: PhotoListId, getPhotos: (self: PhotoList) => Promise<AlbumPhoto[]>) {
+  public constructor(
+    id: PhotoListId,
+    getPhotos: ((self: PhotoList) => Promise<AlbumPhoto[]>) | AlbumPhoto[],
+    hideStack: boolean = true) {
     this.id = id;
     this._photos = [];
     this._filtered = [];
     this._handler = new PhotoListEventHandler(this);
+    this._hideStack = hideStack;
 
     // register handler for any photo change
     addOnPhotoChanged(this._handler);
 
-    setTimeout(async () => {
-      let photos = await getPhotos(this);
-      this.addPhotosWorker(photos, PhotoListChangeType.load);
-    });
+    if (Array.isArray(getPhotos)) {
+      this.addPhotosWorker(getPhotos, PhotoListChangeType.load);
+    } else {
+      setTimeout(async () => {
+        let photos = await getPhotos(this);
+        this.addPhotosWorker(photos, PhotoListChangeType.load);
+      });
+    }
   }
 
   public addPhotos(photos: AlbumPhoto[]) {
@@ -94,9 +103,11 @@ export class PhotoList {
     }
 
     // if any photo is stack; mark all stacked as hidden
-    for (let x of photos) {
-      if (x.stack) {
-        this.hideStackPhotos(x);
+    if (this._hideStack) {
+      for (let x of photos) {
+        if (x.stack) {
+          this.hideStackPhotos(x);
+        }
       }
     }
 
@@ -225,7 +236,7 @@ export class PhotoList {
 
     for (let idx = 0; idx < this._photos.length; idx++) {
       let photo = this._photos[idx];
-      if (photo.stack) {
+      if (photo.stack && this._hideStack) {
         this.hideStackPhotos(photo);
       }
     }
@@ -325,7 +336,12 @@ export class PhotoList {
       return -1;
     }
 
-    return this._rowIndex.get(photo.id)!;
+    let row = this._rowIndex.get(photo.id)!;
+    if (!row) {
+      return -1;
+    }
+
+    return row;
   }
 
   /**

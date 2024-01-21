@@ -159,6 +159,8 @@ public class Exporter
         {
           photoDb.AddCollectionItem(request.exportCollection, photo, now.ToBinary());
         }
+
+        Console.WriteLine("Export collection " + request.exportCollection);
       }
     }
     catch (Exception e)

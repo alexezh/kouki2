@@ -83,7 +83,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);
-    updateState({ currentListId: new PhotoListId('folder', props.folder.wire!.id as FolderId) });
+    updateState({ navListId: new PhotoListId('folder', props.folder.wire!.id as FolderId) });
   }
 
   if (props.folder.children.length > 0) {
@@ -139,7 +139,7 @@ function CatalogLayout(props: { text: string, id: PhotoListId }) {
     }
   });
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    updateState({ currentListId: props.id });
+    updateState({ navListId: props.id });
   }
 
   return (
@@ -187,7 +187,7 @@ export function NavigationBar() {
     // initially, open "All collection"
     setFolders(getFolders());
     setDevices(getDevices());
-    updateState({ currentListId: new PhotoListId('all', 0) });
+    updateState({ navListId: new PhotoListId('all', 0) });
 
     return () => {
       removeOnFoldersChanged(idFolders);
