@@ -1,5 +1,5 @@
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
-import { getQuickCollection, loadCollections } from "./CollectionStore";
+import { createCollectionPhotoList, getQuickCollection, getStandardCollection, loadCollections } from "./CollectionStore";
 import { getFolderList } from "./FolderStore";
 import { PhotoList } from "./PhotoList";
 import { filterPhotos, getAllPhotos } from "./PhotoStore";
@@ -14,12 +14,16 @@ export function loadPhotoList(id: PhotoListId): PhotoList {
     return getAllPhotos();
   } else if (id.kind === 'quick') {
     return getQuickCollection();
+  } else if (id.kind === 'import') {
+    return getQuickCollection();
+  } else if (id.kind === 'export') {
+    return createCollectionPhotoList(id);
   } else {
     return new PhotoList(id, () => Promise.resolve([]));
   }
 }
 
 export async function getPhotoListSize(id: PhotoListId): Promise<number> {
-  let list = await loadPhotoList(id);
+  let list = loadPhotoList(id);
   return list.photos.length;
 }

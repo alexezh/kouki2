@@ -21,6 +21,9 @@ export class PhotoCollection {
     this.wire = wire;
     this.updateDt = new Date(Date.parse(wire.name));
   }
+
+  public get id(): CollectionId { return this.wire.id as CollectionId }
+  public get kind(): PhotoListKind { return this.wire.kind }
 }
 
 let collectionMap = new Map<CollectionId, PhotoCollection>();
@@ -67,6 +70,16 @@ export async function loadCollections(): Promise<boolean> {
   collectionChanged.invoke();
 
   return true;
+}
+
+export function getListsByKind(kind: PhotoListKind): PhotoListId[] {
+  let list: PhotoListId[] = [];
+  for (let [key, coll] of collectionMap) {
+    if (coll.wire.kind === kind) {
+      list.push(new PhotoListId(kind, coll.id));
+    }
+  }
+  return list;
 }
 
 function findCollection(pred: (coll: PhotoCollection) => boolean): PhotoCollection | null {
@@ -118,7 +131,7 @@ export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoL
   return list;
 }
 
-function createCollectionPhotoList(listId: PhotoListId) {
+export function createCollectionPhotoList(listId: PhotoListId) {
   let list = new PhotoList(listId, async (self: PhotoList) => {
     return queueOnLoaded(async () => {
 

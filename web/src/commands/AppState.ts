@@ -118,7 +118,7 @@ export function updateState(update: AppStateUpdate) {
 
   if (rebuildList) {
     setTimeout(async () => {
-      let photos: PhotoList = await loadPhotoList(state.navListId);
+      let photos: PhotoList = loadPhotoList(state.navListId);
 
       photos.setFilter((x: AlbumPhoto) => {
         if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
