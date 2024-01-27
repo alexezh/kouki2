@@ -3,21 +3,33 @@ import { SimpleEventSource } from "../lib/synceventsource";
 import { selectionManager } from "./SelectionManager";
 import { PhotoList } from "../photo/PhotoList";
 import { loadPhotoList } from "../photo/LoadPhotoList";
-import { getPhotoById } from "../photo/PhotoStore";
+import { getPhotoById, getStack } from "../photo/PhotoStore";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
-export interface AppState {
+/**
+ * general note. react useEffect/useState should only be used to manage state related to UI
+ * such as lambdas useEffect should not access variables defined by useState. 
+ * 
+ * AppState provides functionality similar to Rebux: data storage which maintains actual UI state
+ */
+export interface IAppState {
   readonly viewMode: ViewMode;
   readonly navListId: PhotoListId;
-  // list user navigated to
-  // normally the same as workList but can be different for stacks
+  /**
+   * list user navigated to
+   * normally the same as workList but can be different for stacks
+   */
   readonly navList: PhotoList;
+  /**
+   * rows displayed by nav
+   */
+  readonly navRows: AlbumRow[] | null;
+
   readonly workList: PhotoList;
   readonly filterFavorite: FilterFavorite;
   readonly filterDups: boolean;
   readonly filterStars: number;
-  readonly rows: AlbumRow[] | null;
   readonly years: YearEntry[];
   readonly viewDate?: { year: number, month: number };
 
@@ -32,7 +44,7 @@ export type AppStateUpdate = {
   filterFavorite?: FilterFavorite;
   filterDups?: boolean;
   filterStars?: number;
-  rows?: AlbumRow[];
+  navRows?: AlbumRow[];
   viewDate?: { year: number, month: number }
   dayRowHeight?: number;
   monthRowHeight?: number;
@@ -55,23 +67,23 @@ export enum ViewMode {
 }
 
 let list = new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([]));
-let state: AppState & {
+
+class AppState implements IAppState {
   // change id from List.onChange
-  listChangeId: number
-} = {
-  viewMode: ViewMode.measure,
-  navListId: new PhotoListId("unknown", 0),
-  navList: list,
-  workList: list,
-  listChangeId: 0,
-  filterFavorite: "all",
-  filterDups: false,
-  filterStars: 0,
-  rows: null,
-  years: [],
-  dayRowHeight: 0,
-  monthRowHeight: 0
+  listChangeId: number = 0;
+  viewMode: ViewMode = ViewMode.measure;
+  navListId = new PhotoListId("unknown", 0);
+  navList = list;
+  workList = list;
+  filterFavorite: FilterFavorite = "all";
+  filterDups = false;
+  filterStars = 0;
+  navRows = null;
+  years: YearEntry[] = [];
+  dayRowHeight = 0;
+  monthRowHeight = 0;
 }
+let state = new AppState();
 
 let initialized = false;
 let stateChanged = new SimpleEventSource();
@@ -84,7 +96,7 @@ export function removeOnStateChanged(id: number) {
   stateChanged.remove(id);
 }
 
-export function getState(): AppState {
+export function getAppState(): IAppState {
   return state;
 }
 
@@ -140,18 +152,18 @@ export function updateState(update: AppStateUpdate) {
       }
 
       // set both work and nav list
-      (state as any).navList = photos;
-      (state as any).workList = photos;
+      state.navList = photos;
+      state.workList = photos;
       state.listChangeId = state.navList.addOnChanged(() => {
         console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
-        (state as any).years = buildYears(photos);
-        (state as any).rows = null;
+        state.years = buildYears(photos);
+        state.navRows = null;
         stateChanged.invoke();
       });
 
-      (state as any).years = buildYears(photos);
-      (state as any).rows = null;
+      state.years = buildYears(photos);
+      state.navRows = null;
       selectionManager.clear();
       stateChanged.invoke();
     })
@@ -200,9 +212,10 @@ function buildYears(photos: PhotoList): YearEntry[] {
 
 export function openPhotoStack(photo: AlbumPhoto) {
   let photos: AlbumPhoto[] = [];
-  photos.push(photo);
-  if (photo.stack) {
-    for (let id of photo.stack!) {
+
+  if (photo.stackId) {
+    let stack = getStack(photo.stackId);
+    for (let id of stack!) {
       let sp = getPhotoById(id);
       if (!sp) {
         console.log('cannot find photo ' + id);
@@ -218,5 +231,5 @@ export function openPhotoStack(photo: AlbumPhoto) {
 }
 
 export function closePhotoStack() {
-  updateState({ workList: getState().navList, viewMode: ViewMode.grid });
+  updateState({ workList: getAppState().navList, viewMode: ViewMode.grid });
 }

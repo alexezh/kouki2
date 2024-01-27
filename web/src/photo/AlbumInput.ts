@@ -1,4 +1,4 @@
-import { ViewMode, getState, openPhotoStack, updateState } from "../commands/AppState";
+import { ViewMode, getAppState, openPhotoStack, updateState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
@@ -6,14 +6,14 @@ import { Command, invokeCommand } from "../commands/Commands";
 import { addQuickCollection } from "../commands/EditCommands";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-  let viewMode = getState().viewMode;
-  let list = getState().workList;
+  let viewMode = getAppState().viewMode;
+  let list = getAppState().workList;
 
   if (event.key === 'Escape') {
     invokeCommand(Command.NavigateBack);
     event.preventDefault();
   } else {
-    if (!getState().workList || !selectionManager.lastSelectedPhoto) {
+    if (!getAppState().workList || !selectionManager.lastSelectedPhoto) {
       return;
     }
 
@@ -115,7 +115,7 @@ let mouseController = new MouseController();
 export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) {
   if (mouseController.onClick(event)) {
     selectionManager.reset([photo]);
-    if (getState().viewMode === ViewMode.grid && photo.hasStack) {
+    if (getAppState().viewMode === ViewMode.grid && photo.hasStack) {
       console.log("handlePhotoClick: stack");
       openPhotoStack(photo);
     } else {
@@ -128,7 +128,7 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
       selectionManager.clear();
     }
     if (event.shiftKey) {
-      let list = getState().workList;
+      let list = getAppState().workList;
       let idxLastSelected = list.findPhotoPos(selectionManager.lastSelectedPhoto);
       let idxPhoto = list.findPhotoPos(photo);
 
@@ -147,10 +147,10 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
 
 export function handleDateSelected(val: boolean, row: AlbumRow) {
   let filtered = (row.kind === RowKind.month) ?
-    getState().workList.where((x: AlbumPhoto) => {
+    getAppState().workList.where((x: AlbumPhoto) => {
       return isEqualMonth(x.originalDate, row.dt!);
     })
-    : getState().workList.where((x: AlbumPhoto) => {
+    : getAppState().workList.where((x: AlbumPhoto) => {
       return isEqualDay(x.originalDate, row.dt!);
     });
   selectionManager.clear();

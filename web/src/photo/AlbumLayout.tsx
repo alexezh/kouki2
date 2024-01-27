@@ -3,7 +3,7 @@ import { AlbumPhoto, RowKind } from "./AlbumPhoto";
 import { DateRowLayout } from "./RowLayout";
 import { selectionManager } from "../commands/SelectionManager";
 import { Measure } from "../Measure";
-import { ViewMode, addOnStateChanged, getState, removeOnStateChanged, updateState } from "../commands/AppState";
+import { ViewMode, addOnStateChanged, getAppState, removeOnStateChanged, updateState } from "../commands/AppState";
 import { handleKeyDown } from "./AlbumInput";
 import { StripeLayout } from "./StripeLayout";
 import { PhotoViewer } from "./PhotoViewer";
@@ -17,15 +17,15 @@ type PhotoAlbumProps = {
 }
 
 export function AlbumLayout(props: PhotoAlbumProps) {
-  const [viewMode, setViewMode] = useState(getState().viewMode);
+  const [viewMode, setViewMode] = useState(getAppState().viewMode);
 
   useEffect(() => {
-    console.log("AlbumLayout: useEffect:" + getState().navList?.photoCount);
+    console.log("AlbumLayout: useEffect:" + getAppState().navList?.photoCount);
 
     // add listener for state changes
     let stateId = addOnStateChanged(() => {
-      if (viewMode !== getState().viewMode) {
-        setViewMode(getState().viewMode);
+      if (viewMode !== getAppState().viewMode) {
+        setViewMode(getAppState().viewMode);
       }
     });
 
@@ -34,8 +34,8 @@ export function AlbumLayout(props: PhotoAlbumProps) {
     }
   }, [viewMode]);
 
-  if (viewMode !== getState().viewMode) {
-    setViewMode(getState().viewMode);
+  if (viewMode !== getAppState().viewMode) {
+    setViewMode(getAppState().viewMode);
   }
 
   // we are keeping list at all time to avoid scrolling
@@ -53,7 +53,7 @@ export function AlbumLayout(props: PhotoAlbumProps) {
     } else {
       updateState({ dayRowHeight: height });
     }
-    if (getState().dayRowHeight && getState().monthRowHeight) {
+    if (getAppState().dayRowHeight && getAppState().monthRowHeight) {
       updateState({ viewMode: ViewMode.grid });
     }
   }
@@ -89,23 +89,7 @@ export function AlbumLayout(props: PhotoAlbumProps) {
         }
         {
           (viewMode === ViewMode.zoom) ? (
-            <PhotoViewer width={props.width} height={props.height} getImage={(offs: number): AlbumPhoto | null => {
-
-              let photos = getState().workList;
-              let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
-              console.log("preview: " + idx);
-              if (idx === -1) {
-                return null;
-              }
-
-              if (offs === -1) {
-                return photos.getItem(photos.getPrev(idx));
-              } else if (offs === 1) {
-                return photos.getItem(photos.getNext(idx));
-              } else {
-                return selectionManager.lastSelectedPhoto;
-              }
-            }} />
+            <PhotoViewer width={props.width} height={props.height} photos={getAppState().workList} />
           ) : null
         }
       </div >);

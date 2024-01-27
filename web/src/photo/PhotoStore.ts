@@ -1,10 +1,11 @@
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
-import { wireGetCorrelation, wireGetLibrary } from "../lib/photoclient";
+import { wireGetCorrelation, wireGetLibrary, wireUpdatePhotos } from "../lib/photoclient";
 import { IEventHandler, WeakEventSource } from "../lib/synceventsource";
 import { PhotoList } from "./PhotoList";
 
 let allPhotos: PhotoList | undefined;
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
+export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
 const duplicateByHashBuckets = new Map<string, PhotoId[]>();
 const photoChanged: WeakEventSource = new WeakEventSource();
 const loadQueue: (() => Promise<any>)[] = [];
@@ -134,14 +135,72 @@ function buildDuplicateBuckets() {
 function buildStacks() {
   for (let [key, photo] of photoLibraryMap) {
     if (photo.wire.stackId) {
-      let orig = photoLibraryMap.get(photo.wire.stackId as PhotoId);
-      if (orig) {
-        orig.addStack(photo);
-      } else {
-        console.log("updateStacks: cannot find photo");
+      let stack = stackMap.get(photo.wire.stackId as PhotoId);
+      if (!stack) {
+        stack = [];
+        stackMap.set(photo.wire.stackId as PhotoId, stack);
       }
+
+      // for build we can change values
+      (stack as PhotoId[]).push(photo.id);
     }
   }
+
+  for (let [stackId, stack] of stackMap) {
+    let orig = photoLibraryMap.get(stackId);
+    if (orig && orig.wire.stackId != stackId) {
+      (stack as PhotoId[]).push(orig.id);
+      orig.wire.stackId = stackId;
+      wireUpdatePhotos({ hash: orig.wire.hash, stackId: orig.wire.id })
+    } else {
+      console.log("buildStacks: cannot find photo");
+    }
+  }
+}
+
+export function addStack(stackId: PhotoId, photo: AlbumPhoto) {
+  let oldStack = stackMap.get(stackId);
+  let stack: PhotoId[];
+
+  // make a copy of stack
+  if (!oldStack) {
+    stack = [];
+  } else {
+    stack = [...oldStack];
+  }
+
+  stackMap.set(stackId, stack);
+
+  photo.wire.stackId = stackId;
+  stack.push(photo.id);
+
+  wireUpdatePhotos({ hash: photo.wire.hash, stackId: stackId })
+  photo.invokeOnChanged();
+}
+
+export function removeStack(photo: AlbumPhoto) {
+  if (!photo.hasStack) {
+    console.log('removeStack: photo is not in stack');
+    return;
+  }
+
+  let oldStack = stackMap.get(photo.stackId);
+  if (!oldStack) {
+    console.log('removeStack: no stack');
+    return;
+  }
+
+  let idx = oldStack.findIndex((id: PhotoId) => id === photo.id);
+  let stack = [...oldStack];
+  stack.splice(idx, 1);
+
+  wireUpdatePhotos({ hash: photo.wire.hash, stackId: 0 })
+  photo.invokeOnChanged();
+}
+
+export function getStack(stackId: PhotoId): ReadonlyArray<PhotoId> | undefined {
+  let stack = stackMap.get(stackId);
+  return stack;
 }
 
 export function filterPhotos(photos: Map<number, AlbumPhoto> | ReadonlyArray<AlbumPhoto>, pred: (x: AlbumPhoto) => boolean): AlbumPhoto[] {

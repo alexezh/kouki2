@@ -8,6 +8,7 @@ export enum Command {
   MarkRejected = 5,
   AddQuickCollection = 6,
   NavigateBack = 7,
+  RemoveStack = 8,
 }
 
 let anyCommandHandler = new SimpleEventSource();

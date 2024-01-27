@@ -3,11 +3,12 @@ import { AlbumPhoto, PhotoId } from "./AlbumPhoto"
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { PhotoLayout } from "./PhotoLayout";
 import { PhotoRowLayout } from "./RowLayout";
-import { ViewMode, getState } from "../commands/AppState";
+import { ViewMode, getAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { getCssIntVar } from "../lib/htmlutils";
 import { getPhotoById } from "./PhotoStore";
 import { PhotoViewer } from "./PhotoViewer";
+import { PhotoListPos } from "./PhotoList";
 
 export type PhotoStackProps = {
   width: number;
@@ -16,8 +17,7 @@ export type PhotoStackProps = {
 }
 
 export function StripeLayout(props: PhotoStackProps): JSX.Element {
-  let [currentPhotoIdx, setCurrentPhotoIdx] = useState<number>(0);
-  let [photos, setPhotos] = useState<AlbumPhoto[]>(getState().workList.asArray());
+  let [version, setVersion] = useState(0);
   const listRef = useRef(null);
 
   console.log("StripeLayout: render");
@@ -32,40 +32,41 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
 
       if (listRef.current) {
         if (selectionManager.lastSelectedPhoto) {
-          let idx = photos.findIndex((x) => x === selectionManager.lastSelectedPhoto);
+          let idx = getAppState().workList.findPhotoPos(selectionManager.lastSelectedPhoto);
           console.log("StripeLayout: scrollSelect to " + idx);
           if (idx !== -1) {
             // @ts-ignore
             listRef.current.scrollToItem(idx);
-            setCurrentPhotoIdx(idx);
+            setVersion(version + 1)
           }
         }
       }
     });
 
-    let collId = getState().workList.addOnChanged(() => {
-      setPhotos(getState().workList.asArray())
+    let collId = getAppState().workList.addOnChanged(() => {
+      setVersion(version + 1);
     });
 
     return () => {
-      getState().workList.removeOnChanged(collId);
+      getAppState().workList.removeOnChanged(collId);
       selectionManager.removeOnSelectionChanged(selectId);
     }
   });
 
   let stripeHeight = getCssIntVar("--photostripe-height");
+  let photoHeight = stripeHeight - 2 * props.padding;
 
   function getColumnWidth(idx: number): number {
-    let photo = photos[idx];
-    return photo?.width * (stripeHeight / photo.height) + 2 * props.padding;
+    let photo = getAppState().workList.getItem(idx as PhotoListPos);
+    return photo?.width * (photoHeight / photo.height) + props.padding * 2;
   }
 
   function handleClick(photoIdx: number) {
-    selectionManager.reset([photos[photoIdx]]);
+    selectionManager.reset([getAppState().workList.getItem(photoIdx as PhotoListPos)]);
   }
 
-  function renderPhoto(listProps: ListChildComponentProps): JSX.Element | null {
-    let photo = photos[listProps.index];
+  function renderStripePhoto(listProps: ListChildComponentProps): JSX.Element | null {
+    let photo = getAppState().workList.getItem(listProps.index as PhotoListPos);
     if (!photo) {
       console.log("renderPhoto: cannot find id");
       return null;
@@ -77,7 +78,7 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
         style={listProps.style}
         photo={photo}
         viewMode={ViewMode.stripe}
-        height={stripeHeight}
+        height={photoHeight}
         onClick={() => handleClick(listProps.index!)}
         selected={selectionManager.isSelected(photo)}
         padding={props.padding} />
@@ -89,30 +90,26 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
     height: props.height
   }
 
+  let workList = getAppState().workList;
   return (
     <div className="Photo-stack" style={stackStyle}>
-      {(photos.length > 0) ?
+      {(workList.photoCount > 0) ?
         (<PhotoViewer className="Photo-stack-viewer"
           width={props.width}
           height={props.height - stripeHeight}
-          getImage={(offs: number): AlbumPhoto | null => {
-            if (offs === -1 || offs === 1) {
-              return null;
-            }
-            return photos[currentPhotoIdx];
-          }} />
+          photos={getAppState().workList} />
         ) : null}
-      {(photos.length > 0) ?
+      {(workList.photoCount > 0) ?
         (<List
           ref={listRef}
           className="Photo-stack-stripe"
-          itemCount={photos.length}
+          itemCount={getAppState().workList.photoCount}
           width={props.width}
           height={stripeHeight}
           layout="horizontal"
           itemSize={getColumnWidth}
         >
-          {renderPhoto}
+          {renderStripePhoto}
         </List>) : null}
     </div>
   )

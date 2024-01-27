@@ -15,15 +15,19 @@ export type CollectionId = number & {
 
 export class PhotoCollection {
   public readonly wire: WireCollection;
-  public readonly updateDt: Date;
+  public readonly createDt: Date;
 
   public constructor(wire: WireCollection) {
     this.wire = wire;
-    this.updateDt = new Date(Date.parse(wire.name));
+    this.createDt = new Date(Date.parse(wire.createDt));
   }
 
   public get id(): CollectionId { return this.wire.id as CollectionId }
   public get kind(): PhotoListKind { return this.wire.kind }
+
+  public createListId(): PhotoListId {
+    return new PhotoListId(this.kind, this.id);
+  }
 }
 
 let collectionMap = new Map<CollectionId, PhotoCollection>();
@@ -72,11 +76,11 @@ export async function loadCollections(): Promise<boolean> {
   return true;
 }
 
-export function getListsByKind(kind: PhotoListKind): PhotoListId[] {
-  let list: PhotoListId[] = [];
+export function getCollectionsByKind(kind: PhotoListKind): PhotoCollection[] {
+  let list: PhotoCollection[] = [];
   for (let [key, coll] of collectionMap) {
-    if (coll.wire.kind === kind) {
-      list.push(new PhotoListId(kind, coll.id));
+    if (coll.kind === kind) {
+      list.push(coll);
     }
   }
   return list;
@@ -96,7 +100,7 @@ function findNewestCollection(kind: PhotoListKind): PhotoCollection | null {
   for (let [key, item] of collectionMap) {
     if (item.wire.kind === kind) {
       if (coll) {
-        if (coll.updateDt.valueOf() > item.updateDt.valueOf()) {
+        if (coll.createDt.valueOf() > item.createDt.valueOf()) {
           coll = item;
         }
       } else {

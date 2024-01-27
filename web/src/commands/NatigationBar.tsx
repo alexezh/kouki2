@@ -11,7 +11,7 @@ import { PhotoInfo } from "./PhotoInfo";
 import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
-import { addOnCollectionsChanged, getListsByKind, getQuickCollection } from "../photo/CollectionStore";
+import { addOnCollectionsChanged, getCollectionsByKind, getQuickCollection } from "../photo/CollectionStore";
 import { loadPhotoList } from "../photo/LoadPhotoList";
 import { CollectionItemLayout, CollectionListLayout } from "./CollectionItemLayout";
 
@@ -125,7 +125,7 @@ function renderCatalogs(): JSX.Element[] {
 
   items.push((<CollectionItemLayout text={"Quich collection"} id={new PhotoListId('quick', 0)} />))
   items.push((<CollectionItemLayout text={"All Photos"} id={new PhotoListId('all', 0)} />))
-  items.push((<CollectionListLayout text="Export" lists={getListsByKind('export')} />))
+  items.push((<CollectionListLayout text="Export" lists={getCollectionsByKind('export')} />))
   //catalogs.map((x) => { return () });
 
   return items;

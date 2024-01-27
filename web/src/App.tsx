@@ -14,7 +14,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './commands/NatigationBar';
 import { StatusBar } from './commands/StatusBar';
 import Typography from '@mui/material/Typography/Typography';
-import { addOnStateChanged, getState, removeOnStateChanged } from './commands/AppState';
+import { addOnStateChanged, getAppState, removeOnStateChanged } from './commands/AppState';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { CalendarBar } from './commands/CalendarBar';

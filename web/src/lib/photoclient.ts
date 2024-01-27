@@ -48,7 +48,7 @@ export type WireCollection = {
   name: string;
   // quick, device, user
   kind: PhotoListKind;
-  updateDt: string;
+  createDt: string;
 }
 
 export type WireAddCollectionRequest = {

@@ -1,25 +1,25 @@
-import { ViewMode, getState } from "../commands/AppState";
+import { ViewMode, getAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { AlbumPhoto } from "./AlbumPhoto";
 import { PhotoLayout } from "./PhotoLayout";
+import { PhotoList } from "./PhotoList";
 
 export type PhotoViewerProps = {
   className?: string,
   width: number,
   height: number,
-  getImage: (offs: number) => AlbumPhoto | null
+  photos: PhotoList
 }
 /**
  * render 2 photos; switches visibility between them
  */
 export function PhotoViewer(props: PhotoViewerProps): JSX.Element {
-  let photos = getState().workList;
-  let idx = photos.findPhotoPos(selectionManager.lastSelectedPhoto);
+  let idx = props.photos.findPhotoPos(selectionManager.lastSelectedPhoto);
   console.log("preview: " + idx);
 
-  let prevPhoto = props.getImage(-1);
-  let curPhoto = props.getImage(0);
-  let nextPhoto = props.getImage(1);
+  let prevPhoto = props.photos.getPrevPhoto(idx);
+  let curPhoto = props.photos.getItem(idx);
+  let nextPhoto = props.photos.getNextPhoto(idx);
 
   return (<div className="Photo-viewer">
     {

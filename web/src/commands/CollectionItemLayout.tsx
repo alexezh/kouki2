@@ -8,6 +8,7 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import Collapse from "@mui/material/Collapse/Collapse";
 import List from "@mui/material/List/List";
+import { PhotoCollection } from "../photo/CollectionStore";
 
 // catelog is either collection, or list of collections (like folder)
 export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
@@ -47,7 +48,7 @@ export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
     </ListItemButton>);
 }
 
-export function CollectionListLayout(props: { text: string, lists: PhotoListId[] }) {
+export function CollectionListLayout(props: { text: string, lists: PhotoCollection[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -58,7 +59,7 @@ export function CollectionListLayout(props: { text: string, lists: PhotoListId[]
       </ListItemButton >
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
-          {props.lists.map((x) => { return (<CollectionItemLayout text="ddd" id={x} />) })}
+          {props.lists.map((x) => { return (<CollectionItemLayout key={'list_' + x.id} text={x.createDt.toLocaleDateString()} id={x.createListId()} />) })}
         </List>
       </Collapse>
     </div>

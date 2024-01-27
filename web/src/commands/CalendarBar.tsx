@@ -1,7 +1,7 @@
 import Collapse from "@mui/material/Collapse/Collapse";
 import List from "@mui/material/List/List";
 import { useEffect, useState } from "react";
-import { YearEntry, addOnStateChanged, getState, removeOnStateChanged } from "./AppState";
+import { YearEntry, addOnStateChanged, getAppState, removeOnStateChanged } from "./AppState";
 import { Command, invokeCommand, scrollAlbumToDate } from "./Commands";
 
 const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -45,7 +45,7 @@ export function CalendarBar(props: { className: string }) {
   useEffect(() => {
     console.log("CalendarBar: useEffect");
     let id = addOnStateChanged(() => {
-      setYears(getState().years);
+      setYears(getAppState().years);
     });
     return () => {
       removeOnStateChanged(id);

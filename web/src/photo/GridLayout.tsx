@@ -1,6 +1,6 @@
 import { CSSProperties, PropsWithChildren, useEffect, useRef, useState } from "react";
 import { AlbumRow, RowKind } from "./AlbumPhoto";
-import { addOnStateChanged, getState, removeOnStateChanged, updateState } from "../commands/AppState";
+import { addOnStateChanged, getAppState, removeOnStateChanged, updateState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { Command, addAnyCommandHandler, removeAnyCommandHandler } from "../commands/Commands";
 import { makeByMonthRows } from "./MakeRows";
@@ -16,31 +16,23 @@ type GridAlbumProps = {
 }
 
 export function GridLayout(props: GridAlbumProps) {
-  // react-window has a bug with updates
-  // it caches height of items for variable height based on function object
-  // so we have to give it different function when photos change
-  const [rows, setRows] = useState<AlbumRow[] | null>(getState().rows);
-  // simple counter for refresh
+  let [version, setVersion] = useState(0);
   const ref = useRef(null);
   const listRef = useRef(null);
 
   useEffect(() => {
-    console.log("GridLayout: useEffect:" + getState().navList?.photoCount);
+    console.log("GridLayout: useEffect:" + getAppState().navList?.photoCount);
 
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {
 
-      // if we are not selecting in current list, ignore
-      // this feels strange. On one hand we have single selection manager
-      //if(getState().workList !== getState().navList) {
-      //  return;
-      //}
+      let rows = getAppState().navRows;
 
       console.log('Selection changed');
 
       if (listRef.current) {
         if (rows && rows.length > 0 && selectionManager.lastSelectedPhoto) {
-          let idx = getState().navList.getRow(selectionManager.lastSelectedPhoto);
+          let idx = getAppState().navList.getRow(selectionManager.lastSelectedPhoto);
           console.log("ScrollSelect to " + idx);
           if (idx !== -1) {
             // @ts-ignore
@@ -52,6 +44,8 @@ export function GridLayout(props: GridAlbumProps) {
 
     // add listener to commands
     let cmdId = addAnyCommandHandler((cmd: Command, ...args: any[]) => {
+      let rows = getAppState().navRows;
+
       if (cmd == Command.ScrollAlbum) {
         if (listRef.current) {
           if (rows) {
@@ -75,7 +69,9 @@ export function GridLayout(props: GridAlbumProps) {
 
     // add listener for state changes
     let stateId = addOnStateChanged(() => {
+      console.log('GridLayout: appstate');
       updateRows();
+      setVersion(version + 1);
     });
 
     return () => {
@@ -86,13 +82,15 @@ export function GridLayout(props: GridAlbumProps) {
   }, [props.width, ref]);
 
   function updateRows() {
-    let rows = getState().rows;
-    if (!rows) {
-      rows = makeByMonthRows(getState().navList, props.width, photoPadding);
-      console.log('updateRows:' + rows.length);
-      updateState({ rows: rows });
+    let app = getAppState();
+    let rows = app.navRows;
 
-      setRows(rows);
+    console.log('updateRows:' + rows?.length);
+
+    // if rows were reset, 
+    if (!rows) {
+      rows = makeByMonthRows(getAppState().navList, props.width, photoPadding);
+      updateState({ navRows: rows });
 
       // update layout when we navigate
       if (listRef.current) {
@@ -108,6 +106,8 @@ export function GridLayout(props: GridAlbumProps) {
   }
 
   function getRowHeight(idx: number): number {
+    let rows = getAppState().navRows;
+
     if (!rows || idx >= rows.length) {
       return 0;
     }
@@ -116,13 +116,15 @@ export function GridLayout(props: GridAlbumProps) {
     if (row.kind === RowKind.photos) {
       return rows![idx].height + rows![idx].padding * 2;
     } else if (row.kind === RowKind.month) {
-      return getState().monthRowHeight + 10;
+      return getAppState().monthRowHeight + 10;
     } else {
-      return getState().dayRowHeight + 10;
+      return getAppState().dayRowHeight + 10;
     }
   }
 
   function renderRow(props: ListChildComponentProps) {
+    let rows = getAppState().navRows;
+
     if (!rows) {
       return null;
     }
@@ -148,6 +150,8 @@ export function GridLayout(props: GridAlbumProps) {
     }
   }
 
+  // make sure we have rows if we render first time
+  // or if state was reset
   updateRows();
 
   return (<List
@@ -155,7 +159,7 @@ export function GridLayout(props: GridAlbumProps) {
     style={props.style}
     height={props.height}
     width={props.width}
-    itemCount={(rows) ? rows.length : 0}
+    itemCount={(getAppState().navRows) ? getAppState().navRows!.length : 0}
     itemSize={getRowHeight}
   >
     {renderRow}

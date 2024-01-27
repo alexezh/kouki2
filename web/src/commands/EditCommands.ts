@@ -1,8 +1,9 @@
 import { AlbumPhoto } from "../photo/AlbumPhoto";
-import { ViewMode, closePhotoStack, getState, updateState } from "./AppState";
+import { ViewMode, closePhotoStack, getAppState, updateState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler, invokeCommand } from "./Commands";
 import { getQuickCollection } from "../photo/CollectionStore";
+import { addStack, removeStack } from "../photo/PhotoStore";
 
 export function onMarkFavorite() {
   selectionManager.forEach((x) => { x.favorite = 1; });
@@ -23,7 +24,7 @@ export function onAddStack() {
     return;
   }
   else if (selectionManager.selectedPhotos.size === 1) {
-    let list = getState().workList;
+    let list = getAppState().workList;
     let photoIt = selectionManager.selectedPhotos.values();
     let photo = photoIt.next().value as AlbumPhoto;
     let pos = list.findPhotoPos(photo);
@@ -31,10 +32,13 @@ export function onAddStack() {
       return;
     }
     let prevPhoto = list.getItem(list.getPrev(pos));
-    //prevPhoto.originalId = photo.wire.id;
-    //getState().currentList.stackPhoto(prevPhoto, photo);
-    //prevPhoto
-    prevPhoto.addStack(photo);
+
+    if (prevPhoto.stackId) {
+      addStack(prevPhoto.stackId, photo);
+    } else {
+      addStack(prevPhoto.id, prevPhoto);
+      addStack(prevPhoto.id, photo);
+    }
 
     // move selection to next photo
     let nextPhoto = list.getNext(pos);
@@ -48,10 +52,30 @@ export function onAddStack() {
   }
 }
 
+export function onRemoveStack() {
+  //selectionManager.forEach((x))
+  if (selectionManager.selectedPhotos.size === 0) {
+    return;
+  }
+  else {
+    let list = getAppState().workList;
+    for (let [key, photo] of selectionManager.selectedPhotos) {
+      let pos = list.findPhotoPos(photo);
+      if (pos < 0) {
+        return;
+      }
+
+      removeStack(photo);
+    }
+
+    selectionManager.clear();
+  }
+}
+
 function onNavigateBack() {
-  if (getState().viewMode === ViewMode.stripe) {
+  if (getAppState().viewMode === ViewMode.stripe) {
     closePhotoStack();
-  } else if (getState().viewMode !== ViewMode.grid) {
+  } else if (getAppState().viewMode !== ViewMode.grid) {
     updateState({ viewMode: ViewMode.grid });
   }
 }
@@ -68,6 +92,7 @@ export function registerEditCommands() {
   addCommandHandler(Command.MarkFavorite, onMarkFavorite);
   addCommandHandler(Command.MarkRejected, onMarkRejected);
   addCommandHandler(Command.AddStack, onAddStack);
+  addCommandHandler(Command.RemoveStack, onRemoveStack);
   addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);
 }

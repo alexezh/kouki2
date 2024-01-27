@@ -2,14 +2,14 @@ import RadioGroup from "@mui/material/RadioGroup/RadioGroup";
 import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import FormControlLabel from "@mui/material/FormControlLabel/FormControlLabel";
 import Divider from "@mui/material/Divider/Divider";
-import { FilterFavorite, getState, updateState } from "./AppState";
+import { FilterFavorite, getAppState, updateState } from "./AppState";
 import { useState } from "react";
 import Radio from "@mui/material/Radio/Radio";
 import Checkbox from "@mui/material/Checkbox/Checkbox";
 
 export function FilterMenu(props: CommandMenuProps) {
-  const [filterFav, setFilterFav] = useState(getState().filterFavorite);
-  const [filterDups, setFilterDups] = useState(getState().filterDups);
+  const [filterFav, setFilterFav] = useState(getAppState().filterFavorite);
+  const [filterDups, setFilterDups] = useState(getAppState().filterDups);
 
   function filterFavChanged(event: React.ChangeEvent<HTMLInputElement>) {
     let value = (event.target as HTMLInputElement).value as FilterFavorite;

@@ -22,8 +22,3 @@ export function loadPhotoList(id: PhotoListId): PhotoList {
     return new PhotoList(id, () => Promise.resolve([]));
   }
 }
-
-export async function getPhotoListSize(id: PhotoListId): Promise<number> {
-  let list = loadPhotoList(id);
-  return list.photos.length;
-}

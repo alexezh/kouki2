@@ -7,7 +7,7 @@ import { EditMenu } from './SelectMenu';
 import { LibraryMenu } from './LibraryMenu';
 import { FilterMenu } from './FilterMenu';
 import { PhotoList } from '../photo/PhotoList';
-import { addOnStateChanged, getState, removeOnStateChanged } from './AppState';
+import { addOnStateChanged, getAppState, removeOnStateChanged } from './AppState';
 
 export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);

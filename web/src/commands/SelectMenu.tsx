@@ -10,13 +10,13 @@ import ListItemText from "@mui/material/ListItemText/ListItemText";
 import Typography from "@mui/material/Typography/Typography";
 import { MyMenuItem } from "./MyMenuItem";
 import { Command, invokeCommand } from "./Commands";
-import { getState } from "./AppState";
+import { getAppState } from "./AppState";
 
 export function EditMenu(props: CommandMenuProps) {
   const [openExport, setOpenExport] = useState(false);
 
   function handleSelectAll() {
-    selectionManager.add(getState().workList.asArray());
+    selectionManager.add(getAppState().workList.asArray());
     props.onMenuClose();
   }
 
@@ -27,7 +27,7 @@ export function EditMenu(props: CommandMenuProps) {
 
   function handleInvertSelect() {
     let select: AlbumPhoto[] = [];
-    for (let x of getState().workList.asArray()) {
+    for (let x of getAppState().workList.asArray()) {
       if (!selectionManager.items.get(x.wire.hash)) {
         select.push(x);
       }
@@ -77,6 +77,7 @@ export function EditMenu(props: CommandMenuProps) {
       <MyMenuItem key="mark_fav" command={Command.MarkFavorite} text="Mark Favorite" shortcut="A" />
       <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="P" />
       <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
+      <MyMenuItem key="remove_stack" command={Command.RemoveStack} text="Remove from Stack" shortcut="K" />
       <MenuItem key="export_selection" onClick={handleExportSelection}>Export</MenuItem>
     </CommandMenu >
   )

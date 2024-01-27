@@ -48,7 +48,8 @@ public static class CollectionsQueriesExt
         {
           id = (Int64)reader["id"],
           name = (string)reader["name"],
-          kind = (string)reader["kind"]
+          kind = (string)reader["kind"],
+          createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o")
         });
       }
     }

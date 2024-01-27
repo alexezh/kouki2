@@ -35,14 +35,6 @@ export class AlbumPhoto {
 
 
   /**
-  * if photo is stack, list of photo ids stacked
-  * this way we can switch between stack and unstack views quickly
-  * 
-  * ATT: we are keeping array as immutable so we can compare references
-  */
-  public stack: ReadonlyArray<PhotoId> | undefined;
-
-  /**
    * number of duplicates set by buildDuplicateBuckets
    */
   public dupCount: number = 1;
@@ -51,7 +43,7 @@ export class AlbumPhoto {
    * true if stack not empty
    */
   public get hasStack(): boolean {
-    return !!this.stack && this.stack.length > 0;
+    return !!this.stackId;
   }
 
   public get favorite(): number {
@@ -60,6 +52,10 @@ export class AlbumPhoto {
 
   public get id(): PhotoId {
     return this.wire.id as PhotoId;
+  }
+
+  public get stackId(): PhotoId {
+    return this.wire.stackId as PhotoId;
   }
 
   public set favorite(val: number) {
@@ -103,16 +99,6 @@ export class AlbumPhoto {
     return this.wire.fileName + this.wire.fileExt;
   }
 
-  public addStack(photo: AlbumPhoto) {
-    let stack: PhotoId[] = (this.stack) ? [...this.stack] : [];
-
-    stack.push(photo.id);
-    this.stack = stack;
-
-    wireUpdatePhotos({ hash: photo.wire.hash, stackId: this.id })
-    this.invokeOnChanged();
-  }
-
   public addOnChanged(func: (p: AlbumPhoto) => void) {
     let id = (this.onChanged.length > 0) ? this.onChanged[this.onChanged.length - 1].id + 1 : 1;
     this.onChanged.push({ id: id, func: func });
@@ -123,7 +109,7 @@ export class AlbumPhoto {
     this.onChanged = this.onChanged.filter(x => x.id !== id);
   }
 
-  private invokeOnChanged() {
+  public invokeOnChanged() {
     for (let x of this.onChanged) {
       x.func(this);
     }

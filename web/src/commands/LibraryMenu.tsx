@@ -1,7 +1,7 @@
 import MenuItem from "@mui/material/MenuItem/MenuItem";
 import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import { AddFolderDialog, ProgressDialog, RescanFolderDialog } from "./AddFolderDialog";
-import { getState } from "./AppState";
+import { getAppState } from "./AppState";
 import { useState } from "react";
 import { wireAddDevice } from "../lib/mobileclient";
 import { catchAll } from "../lib/error";
@@ -20,12 +20,12 @@ export function LibraryMenu(props: CommandMenuProps) {
       {
         (openRescanFolder) ? (<RescanFolderDialog
           onClose={() => setOpenRescanFolder(false)}
-          folderId={getState().navListId} />) : null
+          folderId={getAppState().navListId} />) : null
       }
       {
         (openBuildPHash) ? (<ProgressDialog
           onClose={() => setOpenBuildPHash(false)}
-          folderId={getState().navListId} />) : null
+          folderId={getAppState().navListId} />) : null
       }
     </div>)
   }
@@ -42,7 +42,7 @@ export function LibraryMenu(props: CommandMenuProps) {
 
   function handleRescanFolder() {
     props.onMenuClose();
-    let listId = getState().navListId;
+    let listId = getAppState().navListId;
     if (listId.kind === "folder") {
       setOpenRescanFolder(true);
     }
@@ -50,7 +50,7 @@ export function LibraryMenu(props: CommandMenuProps) {
 
   function handleBuildPHash() {
     props.onMenuClose();
-    let listId = getState().navListId;
+    let listId = getAppState().navListId;
     if (listId.kind === "folder") {
       setOpenBuildPHash(true);
     }
