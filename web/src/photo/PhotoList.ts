@@ -119,6 +119,19 @@ export class PhotoList {
     this.onChanged.invoke(ct, photos);
   }
 
+  public removePhoto(photo: AlbumPhoto) {
+    let idx = this._photos.findIndex((x) => x === photo);
+    if (idx === -1) {
+      return;
+    }
+
+    this._photos.splice(idx, 1);
+    this._filtered.splice(idx, 1);
+    this._idIndex.delete(photo.id);
+
+    this.onChanged.invoke(PhotoListChangeType.remove, [photo]);
+  }
+
   private hideStackPhotos(stackId: PhotoId, stack: ReadonlyArray<PhotoId>) {
     let currentStack = this._savedStacks.get(stackId);
     if (currentStack === stack) {

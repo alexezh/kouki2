@@ -28,5 +28,6 @@ export async function fetchResource(url: string): Promise<ArrayBuffer> {
 
 export type ResultResponse = {
   result: string;
+  message: string;
 }
 

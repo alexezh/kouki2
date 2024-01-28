@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { wireImportFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder } from "../lib/photoclient";
+import { wireImportFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder, ExportJobStatusResponse } from "../../lib/photoclient";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -8,11 +8,11 @@ import TextField from "@mui/material/TextField/TextField";
 import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
-import { sleep } from "../lib/sleep";
-import { triggerRefreshFolders } from "../photo/FolderStore";
-import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto } from "../photo/AlbumPhoto";
-import { getStandardCollection, triggerRefreshCollections } from "../photo/CollectionStore";
+import { sleep } from "../../lib/sleep";
+import { triggerRefreshFolders } from "../../photo/FolderStore";
+import { selectionManager } from "../SelectionManager";
+import { AlbumPhoto } from "../../photo/AlbumPhoto";
+import { getStandardCollection, triggerRefreshCollections } from "../../photo/CollectionStore";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
   const [path, setPath] = useState("");
@@ -39,7 +39,7 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
       }
 
       while (true) {
-        let jobInfo = await wireGetJobStatus(exportResponse.jobId);
+        let jobInfo = await wireGetJobStatus<ExportJobStatusResponse>(exportResponse.jobId);
         if (jobInfo.result !== 'Processing') {
           break;
         } else {

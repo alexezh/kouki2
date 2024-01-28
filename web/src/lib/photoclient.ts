@@ -41,7 +41,7 @@ export type WireCollectionItem = {
   updateDt: string;
 }
 
-export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'runtime' | 'unknown';
+export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'stack' | 'unknown';
 
 export type WireCollection = {
   id: number;
@@ -130,9 +130,7 @@ export type ImportFolderRequest = {
   importCollection: number;
 }
 
-export type AddFolderResponse = {
-  jobId: string;
-  result: string;
+export type AddFolderResponse = JobResponse & {
 }
 
 export type RescanFolderRequest = {
@@ -155,14 +153,26 @@ export async function wireRescanFolder(folderId: number): Promise<RescanFolderRe
   return response;
 }
 
-export type GetJobInfoResponse = {
+export type GetJobStatusResponse = {
+  result: string;
+  message: string;
+}
+
+export type ImportJobStatusResponse = GetJobStatusResponse & {
   addedFiles: number;
   updatedFiles: number;
   processedFiles: number;
-  result: string;
 }
 
-export async function wireGetJobStatus(id: string): Promise<GetJobInfoResponse> {
+export type PHashJobStatusResponse = GetJobStatusResponse & {
+  processedFiles: number;
+}
+
+export type ExportJobStatusResponse = GetJobStatusResponse & {
+  addedFiles: number;
+}
+
+export async function wireGetJobStatus<T>(id: string): Promise<T> {
   let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${id}`)).json();
   return response;
 }

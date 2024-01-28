@@ -79,6 +79,9 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
       case 'k':
         invokeCommand(Command.AddStack);
         break;
+      case 'u':
+        invokeCommand(Command.RemoveStack);
+        break;
       case 'p':
         invokeCommand(Command.MarkFavorite);
         break;

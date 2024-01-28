@@ -41,6 +41,16 @@ if (devicesPath == null)
     devicesPath = Path.GetFullPath("devices", koukiPath);
 }
 
+try
+{
+    Directory.CreateDirectory(koukiPath);
+}
+catch (Exception e)
+{
+    Console.Error.WriteLine("Cannot create folder " + koukiPath);
+    return;
+}
+
 Console.WriteLine($"Using {koukiPath} for Kouki database and directories");
 Console.WriteLine($"You can change it by running 'kouki2 <path_to_db> <path_to_export_dir> <path_to_device_dir>'");
 var app = builder.Build();
@@ -73,4 +83,6 @@ MobileSyncController.RegisterRoutes(app);
 app.MapFallbackToFile("index.html"); ;
 //app.MapHub<RctHub>("/updates");
 
-app.Run();
+app.Start();
+BrowserHelper.OpenBrowser("http://localhost:5054");
+app.WaitForShutdown();

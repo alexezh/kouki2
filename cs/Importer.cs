@@ -1,15 +1,11 @@
 
 using System.Drawing;
-using System.Numerics;
 using ImageMagick;
-using Shipwreck.Phash;
-using Shipwreck.Phash.Imaging;
 
-public class ImportJobResponse
+public class ImportJobResponse : GetJobStatusResponse
 {
   public int addedFiles { get; set; }
   public int updatedFiles { get; set; }
-  public string result { get; set; }
 }
 
 public class ImportJob : IJob
@@ -18,18 +14,57 @@ public class ImportJob : IJob
   {
     _status.result = "Processing";
 
-    Importer.ScanFiles(
-      PhotoFs.Instance.PhotoDb,
-      PhotoFs.Instance.ThumbnailDb,
-      new FolderName(_path),
-      (ScanStatus status) =>
-      {
-        _status.addedFiles = status.Added;
-        _status.updatedFiles = status.Updated;
-      });
+    try
+    {
 
-    _status.result = "Done";
-    _completed = true;
+      string path = this._path.TrimStart();
+      if (path.Length == 0)
+      {
+        throw new ArgumentException("Path should not be empty");
+      }
+
+      string fullPath;
+      if (path[0] == '~')
+      {
+        var profilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var relPath = path.Substring(1);
+        if (relPath.Length >= 1 && (relPath[0] == '/' || relPath[0] == '\\'))
+        {
+          relPath = relPath.Substring(1);
+        }
+        path = Path.Combine(profilePath, relPath);
+      }
+      else
+      {
+        path = Path.GetFullPath(path);
+      }
+      Console.WriteLine("ImportJob: importing " + path);
+
+      if (!Directory.Exists(path))
+      {
+        throw new ArgumentException("Folder does not exist");
+      }
+
+      Importer.ScanFiles(
+        PhotoFs.Instance.PhotoDb,
+        PhotoFs.Instance.ThumbnailDb,
+        new FolderName(path),
+        (ScanStatus status) =>
+        {
+          _status.addedFiles = status.Added;
+          _status.updatedFiles = status.Updated;
+        });
+
+      _status.result = "Done";
+      _completed = true;
+    }
+    catch (Exception e)
+    {
+      Console.Error.WriteLine("ImportJob: exception " + e.Message);
+      _status.result = "Failed";
+      _status.message = e.Message;
+      _completed = true;
+    }
   }
 
   private bool _completed = false;

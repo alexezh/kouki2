@@ -39,12 +39,17 @@ export class SelectionManager {
   }
 
   public add(photos: ReadonlyArray<AlbumPhoto>) {
+    let lastSelected: AlbumPhoto | null = null;
     for (let p of photos) {
+      if (!p) {
+        continue;
+      }
       this._selected.set(p.wire.hash, p);
       this.invokeOnSelected(p, true);
+      lastSelected = p;
     }
-    if (photos.length) {
-      this._lastSelectedPhoto = photos[photos.length - 1];
+    if (lastSelected) {
+      this._lastSelectedPhoto = lastSelected;
     } else {
       this._lastSelectedPhoto = null;
     }

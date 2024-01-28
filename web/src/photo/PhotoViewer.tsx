@@ -35,14 +35,17 @@ export function PhotoViewer(props: PhotoViewerProps): JSX.Element {
           selected={true}></PhotoLayout>) : null
     }
 
-    <PhotoLayout
-      visibility="visible"
-      photo={curPhoto!}
-      padding={0}
-      viewMode={ViewMode.zoom}
-      width={props.width}
-      height={props.height}
-      selected={true}></PhotoLayout>
+    {
+      (curPhoto) ?
+        (<PhotoLayout
+          visibility="visible"
+          photo={curPhoto!}
+          padding={0}
+          viewMode={ViewMode.zoom}
+          width={props.width}
+          height={props.height}
+          selected={true}></PhotoLayout>) : null
+    }
 
     {
       (nextPhoto) ?

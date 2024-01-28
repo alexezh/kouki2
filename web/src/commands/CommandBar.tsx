@@ -3,9 +3,9 @@ import Toolbar from '@mui/material/Toolbar/Toolbar';
 import { AlbumPhoto } from '../photo/AlbumPhoto';
 import { useEffect, useState } from 'react';
 import React from 'react';
-import { EditMenu } from './SelectMenu';
-import { LibraryMenu } from './LibraryMenu';
-import { FilterMenu } from './FilterMenu';
+import { EditMenu } from './menus/SelectMenu';
+import { LibraryMenu } from './menus/LibraryMenu';
+import { FilterMenu } from './menus/FilterMenu';
 import { PhotoList } from '../photo/PhotoList';
 import { addOnStateChanged, getAppState, removeOnStateChanged } from './AppState';
 

@@ -16,6 +16,12 @@ public class BackgroundJobResponse
   public string result { get; set; }
 }
 
+public class GetJobStatusResponse
+{
+  public string result { get; set; }
+  public string message { get; set; }
+}
+
 public class CollectionItem
 {
   public Int64 photoId { get; set; }

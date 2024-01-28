@@ -10,22 +10,22 @@ import { setFocusAlbum } from './Commands';
 
 const acceptedActive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/smiley.svg" />
+    <img className='Status-bar-icon' src="./assets/smiley.svg" />
   </Icon >);
 
 const acceptedInactive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/smiley-inactive.svg" />
+    <img className='Status-bar-icon' src="./assets/smiley-inactive.svg" />
   </Icon >);
 
 const rejectedActive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/smiley-sad.svg" />
+    <img className='Status-bar-icon' src="./assets/smiley-sad.svg" />
   </Icon >);
 
 const rejectedInactive = (
   <Icon>
-    <img className='StatusBarIcon' src="./assets/smiley-sad-inactive.svg" />
+    <img className='Status-bar-icon' src="./assets/smiley-sad-inactive.svg" />
   </Icon >);
 
 export function StatusBar(props: { className?: string }) {

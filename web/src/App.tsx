@@ -158,8 +158,8 @@ function App() {
               </AutoSizer>
             </div>
             <CommandBar className="CommandBar"></CommandBar>
-            <StatusBar className="StatusBar"></StatusBar>
-            <CalendarBar className="CalendarBar"></CalendarBar>
+            <StatusBar className="Status-bar"></StatusBar>
+            <CalendarBar className="Calendar-bar"></CalendarBar>
           </div>
         </div>
       </LocalizationProvider >

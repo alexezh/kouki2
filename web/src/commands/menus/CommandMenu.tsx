@@ -4,6 +4,7 @@ import Menu from "@mui/material/Menu/Menu";
 import { PropsWithChildren } from "react";
 
 export type CommandMenuProps = PropsWithChildren<{
+  menuClassName?: string,
   open: boolean,
   anchorEl: HTMLElement | null,
   label: string,
@@ -23,8 +24,9 @@ export function CommandMenu(props: CommandMenuProps) {
         sx={{ p: 0 }}>{props.label}
       </Button>
       <Menu
+        className={props.menuClassName}
         id={props.id}
-        sx={{ mt: '0px' }}
+        sx={{ mt: '0px', width: '400px' }}
         anchorEl={props.anchorEl}
         anchorOrigin={{
           vertical: 'bottom',

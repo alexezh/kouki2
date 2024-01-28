@@ -58,17 +58,30 @@ export function onRemoveStack() {
     return;
   }
   else {
-    let list = getAppState().workList;
+    let photos = getAppState().workList;
+    // if we are removing from stack, update the list
+    if (photos.id.kind !== 'stack') {
+      console.log('onRemoveStack: not stack list');
+      return;
+    }
+
     for (let [key, photo] of selectionManager.selectedPhotos) {
-      let pos = list.findPhotoPos(photo);
+      let pos = photos.findPhotoPos(photo);
       if (pos < 0) {
         return;
       }
 
       removeStack(photo);
-    }
 
-    selectionManager.clear();
+      let nextSelect = photos.getNext(photo);
+      if (nextSelect !== -1) {
+        nextSelect = photos.getPrev(photo);
+      }
+      photos.removePhoto(photo);
+      if (nextSelect !== -1) {
+        selectionManager.reset([photos.getItem(nextSelect)]);
+      }
+    }
   }
 }
 

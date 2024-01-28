@@ -1,16 +1,16 @@
 import MenuItem from "@mui/material/MenuItem/MenuItem";
 import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import Divider from "@mui/material/Divider/Divider";
-import { ExportSelectionDialog } from "./ExportSelectionDialog";
-import { selectionManager } from "./SelectionManager";
-import { AlbumPhoto } from "../photo/AlbumPhoto";
+import { ExportSelectionDialog } from "../dialogs/ExportSelectionDialog";
+import { selectionManager } from "../SelectionManager";
+import { AlbumPhoto } from "../../photo/AlbumPhoto";
 import { useState } from "react";
-import { PhotoList } from "../photo/PhotoList";
+import { PhotoList } from "../../photo/PhotoList";
 import ListItemText from "@mui/material/ListItemText/ListItemText";
 import Typography from "@mui/material/Typography/Typography";
 import { MyMenuItem } from "./MyMenuItem";
-import { Command, invokeCommand } from "./Commands";
-import { getAppState } from "./AppState";
+import { Command, invokeCommand } from "../Commands";
+import { getAppState } from "../AppState";
 
 export function EditMenu(props: CommandMenuProps) {
   const [openExport, setOpenExport] = useState(false);
@@ -66,7 +66,7 @@ export function EditMenu(props: CommandMenuProps) {
   }
 
   return (
-    <CommandMenu {...props} extra={renderDialogs}>
+    <CommandMenu {...props} menuClassName="Select-menu" extra={renderDialogs}>
       <MenuItem key="edit_all" onClick={handleSelectAll}>
         <ListItemText>Select All</ListItemText>
         <Typography variant="body2" color="text.secondary">A</Typography>
@@ -77,7 +77,7 @@ export function EditMenu(props: CommandMenuProps) {
       <MyMenuItem key="mark_fav" command={Command.MarkFavorite} text="Mark Favorite" shortcut="A" />
       <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="P" />
       <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
-      <MyMenuItem key="remove_stack" command={Command.RemoveStack} text="Remove from Stack" shortcut="K" />
+      <MyMenuItem key="remove_stack" command={Command.RemoveStack} text="Remove from Stack" shortcut="U" />
       <MenuItem key="export_selection" onClick={handleExportSelection}>Export</MenuItem>
     </CommandMenu >
   )

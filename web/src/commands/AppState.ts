@@ -225,7 +225,7 @@ export function openPhotoStack(photo: AlbumPhoto) {
     }
   }
 
-  let list = new PhotoList(new PhotoListId('runtime', 1), photos, false);
+  let list = new PhotoList(new PhotoListId('stack', 1), photos, false);
 
   updateState({ workList: list, viewMode: ViewMode.stripe });
 }

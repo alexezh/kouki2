@@ -1,4 +1,2 @@
 - done: fix pick for zoom selection, actually select item
-- add imports
 - add code to read and set favs.. form photo lib?
-- add code to display stacks
