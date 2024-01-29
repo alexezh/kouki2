@@ -2,7 +2,7 @@ import { WireFolder, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, FolderId, PhotoListId } from "./AlbumPhoto";
 import { PhotoList } from "./PhotoList";
-import { filterPhotos, photoLibraryMap, sortByDate } from "./PhotoStore";
+import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
   public wire: WireFolder | null;
@@ -36,7 +36,10 @@ export function removeOnFoldersChanged(id: number) {
 
 export function triggerRefreshFolders() {
   setTimeout(async () => {
-    await loadFolders();
+    await loadLibrary(async () => {
+      await loadFolders();
+      return true;
+    })
   });
 }
 

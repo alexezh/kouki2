@@ -116,7 +116,7 @@ public class MobileSync
 
       return new ConnectDeviceResponse()
       {
-        result = "ok",
+        result = ResultResponse.Ok,
         archiveFolderId = devices[0].archiveFolderId,
         deviceCollectionId = devices[0].deviceCollectionId
       };
@@ -126,7 +126,7 @@ public class MobileSync
       Console.Error.WriteLine("ConnectDevice failed: " + e.Message);
       return new ConnectDeviceResponse()
       {
-        result = "failed"
+        result = ResultResponse.Failed
       };
     }
   }
@@ -149,7 +149,7 @@ public class MobileSync
       return new UploadFileResponse()
       {
         hash = hash,
-        result = "ok"
+        result = ResultResponse.Ok
       };
     }
     catch (Exception e)
@@ -157,7 +157,7 @@ public class MobileSync
       Console.Error.WriteLine("UploadFile: " + e.ToString());
       return new UploadFileResponse()
       {
-        result = "failed"
+        result = ResultResponse.Failed
       };
     }
   }
@@ -180,7 +180,7 @@ public class MobileSync
         if (entries[0].hash == request.hash)
         {
           Console.WriteLine("Duplicate hash");
-          return new ResultResponse() { result = "ok" };
+          return new ResultResponse() { result = ResultResponse.Ok };
         }
       }
 
@@ -195,8 +195,10 @@ public class MobileSync
         stream.CopyTo(destStm);
       }
 
+      var importer = new FileImporter(fs.PhotoDb, fs.ThumbnailDb);
+
       // add file to archive folder
-      var photoId = Importer.AddFile(folder.id, destPath, request.favorite, fs.PhotoDb, fs.ThumbnailDb);
+      var photoId = importer.AddFile(folder.id, destPath, request.favorite);
       if (!photoId.HasValue)
       {
         return new ResultResponse() { result = "cannot_add_photo" };
@@ -206,11 +208,11 @@ public class MobileSync
       // and now add to collection
       fs.PhotoDb.AddCollectionItem(request.deviceCollectionId, photoId.Value, dt.ToBinary());
 
-      return new ResultResponse() { result = "ok" };
+      return new ResultResponse() { result = ResultResponse.Ok };
     }
     catch (Exception e)
     {
-      return new ResultResponse() { result = "failed" };
+      return new ResultResponse() { result = ResultResponse.Failed };
     }
   }
 

@@ -53,7 +53,7 @@ public class BuildPHashJob : IJob
 
   public async void Run()
   {
-    _status.result = "Processing";
+    _status.result = ResultResponse.Processing;
 
     // Int64[] photos;
     // if (_request.photos != null)
@@ -106,7 +106,7 @@ public class BuildPHashJob : IJob
     //   correlation.Add(CrossCorrelation.GetCrossCorrelation(digest0.Coefficients, digest.Coefficients));
     // }
 
-    _status.result = "Done";
+    _status.result = ResultResponse.Done;
     _completed = true;
   }
 
@@ -178,7 +178,7 @@ public class SimilarityController : Controller
 
       var id = JobRunner.Instance.RunJob(new BuildPHashJob(request));
 
-      return new BuildPHashResponse() { jobId = id, result = "Ok" };
+      return new BuildPHashResponse() { jobId = id, result = ResultResponse.Ok };
     }
   }
 
@@ -208,12 +208,12 @@ public class SimilarityController : Controller
           }
         }
 
-        return new GetCorrelationResponse() { result = "Ok", corrections = correlations.ToArray() };
+        return new GetCorrelationResponse() { result = ResultResponse.Ok, corrections = correlations.ToArray() };
       }
     }
     catch (Exception e)
     {
-      return new GetCorrelationResponse() { result = "Failed" };
+      return new GetCorrelationResponse() { result = ResultResponse.Failed };
     }
   }
 }

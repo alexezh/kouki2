@@ -3,6 +3,6 @@ cd "$(dirname "$0")"
 koukidir=$(pwd)
 osascript << EOD
 tell app "Terminal" 
-    do script "echo hello && cd ${koukidir} && ./bin/koukisrv"
+    do script "cd ${koukidir}/bin && ./koukisrv"
 end tell
 EOD

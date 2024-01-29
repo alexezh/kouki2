@@ -2,6 +2,13 @@
 using System.Drawing;
 using ImageMagick;
 
+public class ImportFolderRequest
+{
+  public string folder { get; set; }
+  public Int64 importCollection { get; set; }
+  public bool dryRun { get; set; }
+}
+
 public class ImportJobResponse : GetJobStatusResponse
 {
   public int addedFiles { get; set; }
@@ -12,12 +19,11 @@ public class ImportJob : IJob
 {
   public void Run()
   {
-    _status.result = "Processing";
+    _status.result = ResultResponse.Processing;
 
     try
     {
-
-      string path = this._path.TrimStart();
+      string path = this._request.folder.TrimStart();
       if (path.Length == 0)
       {
         throw new ArgumentException("Path should not be empty");
@@ -45,23 +51,34 @@ public class ImportJob : IJob
         throw new ArgumentException("Folder does not exist");
       }
 
-      Importer.ScanFiles(
-        PhotoFs.Instance.PhotoDb,
-        PhotoFs.Instance.ThumbnailDb,
+      IFileImporter importer;
+      if (_request.dryRun)
+      {
+        importer = new FileImportedDry();
+      }
+      else
+      {
+        importer = new FileImporter(
+          PhotoFs.Instance.PhotoDb,
+          PhotoFs.Instance.ThumbnailDb);
+      }
+      FolderImporter.ScanFiles(
         new FolderName(path),
+        importer,
         (ScanStatus status) =>
         {
           _status.addedFiles = status.Added;
           _status.updatedFiles = status.Updated;
         });
 
-      _status.result = "Done";
+      Console.WriteLine("Import completed");
+      _status.result = ResultResponse.Done;
       _completed = true;
     }
     catch (Exception e)
     {
       Console.Error.WriteLine("ImportJob: exception " + e.Message);
-      _status.result = "Failed";
+      _status.result = ResultResponse.Failed;
       _status.message = e.Message;
       _completed = true;
     }
@@ -69,11 +86,11 @@ public class ImportJob : IJob
 
   private bool _completed = false;
   private ImportJobResponse _status = new ImportJobResponse();
-  private string _path;
+  private ImportFolderRequest _request;
 
-  public ImportJob(string path)
+  public ImportJob(ImportFolderRequest request)
   {
-    _path = path;
+    _request = request;
   }
 
   public bool Completed => _completed;
@@ -85,9 +102,9 @@ public class RescanJob : IJob
 {
   public void Run()
   {
-    _status.result = "Processing";
+    _status.result = ResultResponse.Processing;
 
-    Importer.RescanFolder(
+    FolderImporter.RescanFolder(
       PhotoFs.Instance.PhotoDb,
       PhotoFs.Instance.ThumbnailDb,
       _folderId,
@@ -97,7 +114,7 @@ public class RescanJob : IJob
         _status.updatedFiles = status.Updated;
       });
 
-    _status.result = "Done";
+    _status.result = ResultResponse.Done;
     _completed = true;
   }
 
@@ -122,87 +139,90 @@ public class ScanStatus
   public int Updated;
 }
 
-public class Importer
+public interface IFileImporter
 {
-  private static System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
+  bool HasPhoto(Int64 folderId, string fileName, string fileExt);
 
-  public static string ComputeHash(Stream stm)
+  public void UpdatePhoto(Int64? folderId,
+    string filePath,
+    string fileName,
+    string fileExt);
+
+  public bool AddPhoto(
+    Int64? folderId,
+    string filePath,
+    string fileName,
+    string fileExt);
+
+  public Int64? GetFolderId(string path);
+}
+
+public class FileImporter : IFileImporter
+{
+  private PhotoDb db;
+  private ThumbnailDb thumbnailDb;
+
+  public FileImporter(PhotoDb db_, ThumbnailDb thumbnailDb_)
   {
-    stm.Position = 0;
-    var hash = sha1.ComputeHash(stm);
-    return Convert.ToHexString(hash);
+    db = db_;
+    thumbnailDb = thumbnailDb_;
   }
 
-  public static void RescanFolder(PhotoDb db, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
+  public Int64? GetFolderId(string path)
   {
-    var status = new ScanStatus();
-    var folder = db.GetFolder(folderId);
-    ScanFolder(db, thumbnailDb, new FolderName(folder.path), folderId, onProgress, status);
-  }
-
-  public static void ScanFiles(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Action<ScanStatus> onProgress, ScanStatus status = null)
-  {
-    status = status ?? new ScanStatus();
-    foreach (var dir in Directory.EnumerateDirectories(folder.Path))
+    var folderId = db.GetFolderId(path);
+    if (folderId == null)
     {
-      ScanFiles(db, thumbnailDb, new FolderName(dir), onProgress, status);
+      var temp = db.AddSourceFolder(path);
+      if (temp == null)
+      {
+        throw new ArgumentException("Cannot create folder");
+      }
+      folderId = temp.Value;
     }
 
-    ScanFolder(db, thumbnailDb, folder, null, onProgress, status);
+    return folderId;
   }
 
-  private static void ScanFolder(PhotoDb db, ThumbnailDb thumbnailDb, FolderName folder, Int64? folderId, Action<ScanStatus> onProgress, ScanStatus status)
+  public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
-    var e = Directory.EnumerateFiles(folder.Path);
-    foreach (var file in e)
+    return db.HasPhoto(folderId, fileName, fileExt);
+  }
+
+  public void UpdatePhoto(
+    Int64? folderId,
+    string filePath,
+    string fileName,
+    string fileExt)
+  {
+    PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
+    if (entry != null)
     {
-      if (folderId == null)
-      {
-        folderId = db.GetFolderId(folder.Path);
-        if (folderId == null)
-        {
-          var temp = db.AddSourceFolder(folder.Path);
-          if (temp == null)
-          {
-            throw new ArgumentException("Cannot create folder");
-          }
-          folderId = temp.Value;
-        }
-      }
-
-      var fileName = Path.GetFileNameWithoutExtension(file);
-      var fileExt = Path.GetExtension(file);
-
-      if (db.HasPhoto(folderId.Value, fileName, fileExt))
-      {
-        PhotoEntry entry = BuildEntryFromFile(folderId, file, fileName, fileExt, thumbnailDb);
-        if (entry != null)
-        {
-          db.UpdatePhotoFileInfo(entry);
-        }
-
-        status.Updated++;
-        onProgress(status);
-      }
-      else
-      {
-        PhotoEntry entry = BuildEntryFromFile(folderId, file, fileName, fileExt, thumbnailDb);
-        if (entry != null)
-        {
-          db.AddPhoto(entry);
-          status.Added++;
-          onProgress(status);
-        }
-      }
+      db.UpdatePhotoFileInfo(entry);
     }
   }
 
-  public static Int64? AddFile(Int64 folderId, string filePath, bool favorite, PhotoDb db, ThumbnailDb thumbnailDb)
+  public bool AddPhoto(
+    Int64? folderId,
+    string filePath,
+    string fileName,
+    string fileExt)
+  {
+    PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
+    if (entry != null)
+    {
+      db.AddPhoto(entry);
+      return true;
+    }
+    return false;
+  }
+
+  public Int64? AddFile(Int64 folderId, string filePath, bool favorite)
   {
     var fileName = Path.GetFileNameWithoutExtension(filePath);
     var fileExt = Path.GetExtension(filePath);
 
-    PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt, thumbnailDb);
+    PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
     if (entry == null)
     {
       return null;
@@ -213,12 +233,11 @@ public class Importer
     return db.AddPhoto(entry);
   }
 
-  private static PhotoEntry BuildEntryFromFile(
+  private PhotoEntry BuildEntryFromFile(
     Int64? folderId,
     string filePath,
     string fileName,
-    string fileExt,
-    ThumbnailDb thumbnailDb)
+    string fileExt)
   {
     using (var stm = File.OpenRead(filePath))
     {
@@ -256,7 +275,7 @@ public class Importer
             ReadExif(image, entry);
             try
             {
-              GenerateThumbnail(image, thumbnailDb, hash);
+              GenerateThumbnail(image, hash);
             }
             catch (Exception e)
             {
@@ -281,7 +300,7 @@ public class Importer
     }
   }
 
-  private static void ReadExif(MagickImage image, PhotoEntry entry)
+  private void ReadExif(MagickImage image, PhotoEntry entry)
   {
     var profile = image.GetExifProfile();
 
@@ -323,7 +342,7 @@ public class Importer
     }
   }
 
-  private static void GenerateThumbnail(MagickImage image, ThumbnailDb db, string hash)
+  private void GenerateThumbnail(MagickImage image, string hash)
   {
     // if (image.Orientation != OrientationType.Undefined)
     // {
@@ -338,7 +357,122 @@ public class Importer
     {
       image.Write(stm);
       var imageBytes = stm.ToArray();
-      db.AddThumbnail(hash, thumbSize.Width, thumbSize.Height, imageBytes);
+      thumbnailDb.AddThumbnail(hash, thumbSize.Width, thumbSize.Height, imageBytes);
+    }
+  }
+
+  private static System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
+
+  public static string ComputeHash(Stream stm)
+  {
+    stm.Position = 0;
+    var hash = sha1.ComputeHash(stm);
+    return Convert.ToHexString(hash);
+  }
+}
+
+public class FileImportedDry : IFileImporter
+{
+  public bool AddPhoto(long? folderId, string filePath, string fileName, string fileExt)
+  {
+    return true;
+  }
+
+  public long? GetFolderId(string path)
+  {
+    return 1;
+  }
+
+  public bool HasPhoto(long folderId, string fileName, string fileExt)
+  {
+    return false;
+  }
+
+  public void UpdatePhoto(long? folderId, string filePath, string fileName, string fileExt)
+  {
+  }
+}
+
+public class FolderImporter
+{
+  public static void RescanFolder(PhotoDb db, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
+  {
+    var status = new ScanStatus();
+    var folder = db.GetFolder(folderId);
+    ScanFolder(new FolderName(folder.path), folderId, new FileImporter(db, thumbnailDb), onProgress, status);
+  }
+
+  public static void ScanFiles(
+    FolderName folder,
+    IFileImporter importer,
+    Action<ScanStatus> onProgress,
+    ScanStatus status = null)
+  {
+    try
+    {
+      status = status ?? new ScanStatus();
+      foreach (var dir in Directory.EnumerateDirectories(folder.Path))
+      {
+        ScanFiles(new FolderName(dir), importer, onProgress, status);
+      }
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("ScanFiles: exception " + e.Message);
+    }
+
+    ScanFolder(folder, null, importer, onProgress, status);
+  }
+
+  private static void ScanFolder(
+    FolderName folder,
+    Int64? folderId,
+    IFileImporter importer,
+    Action<ScanStatus> onProgress,
+    ScanStatus status)
+  {
+    try
+    {
+      var fileEnum = Directory.EnumerateFiles(folder.Path);
+      foreach (var file in fileEnum)
+      {
+        try
+        {
+          if (folderId == null)
+          {
+            folderId = importer.GetFolderId(folder.Path);
+          }
+
+          var fileName = Path.GetFileNameWithoutExtension(file);
+          var fileExt = Path.GetExtension(file);
+
+          if (importer.HasPhoto(folderId.Value, fileName, fileExt))
+          {
+            importer.UpdatePhoto(folderId, file, fileName, fileExt);
+
+            status.Updated++;
+            onProgress(status);
+          }
+          else
+          {
+            if (importer.AddPhoto(folderId, file, fileName, fileExt))
+            {
+              status.Added++;
+              onProgress(status);
+            }
+          }
+        }
+        catch (Exception e)
+        {
+          Console.WriteLine("ScanFolder: exception " + e.Message);
+          status.Skipped++;
+          onProgress(status);
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("ScanFolder: folder exception " + e.Message);
     }
   }
 }

@@ -14,14 +14,18 @@ import reportWebVitals from './reportWebVitals';
 import { setFetchAdapter, setSessionId } from './lib/fetchadapter';
 import { FetchAdapterWeb } from './lib/fetchadapterweb';
 import { loadFolders } from './photo/FolderStore';
-import { loadLibrary } from './photo/PhotoStore';
+import { getAllPhotos, loadLibrary, photoLibraryMap } from './photo/PhotoStore';
 import { loadDevices } from './photo/Device';
 import { loadCollections } from './photo/CollectionStore';
 import { registerEditCommands } from './commands/EditCommands';
+import { DialogProps, showDialog } from './commands/dialogs/DialogManager';
+import { WelcomeDialog } from './commands/dialogs/WelcomeDialog';
+import { registerLibraryCommands } from './commands/LibraryCommands';
 
 setFetchAdapter(new FetchAdapterWeb());
 setSessionId('42')
 registerEditCommands();
+registerLibraryCommands();
 
 // start load of library
 setTimeout(async () => {
@@ -31,6 +35,13 @@ setTimeout(async () => {
     return true;
   });
   await loadDevices();
+  if (photoLibraryMap.size === 0) {
+    showDialog((props: DialogProps) => {
+      return (
+        <WelcomeDialog onClose={props.onClose} />
+      )
+    })
+  }
 });
 
 const root = ReactDOM.createRoot(

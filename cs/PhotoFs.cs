@@ -86,10 +86,10 @@ public class PhotoFs
     }
     catch (Exception e)
     {
-      return "failed";
+      return ResultResponse.Failed;
     }
 
-    return "ok";
+    return ResultResponse.Ok;
   }
 
   public FileStreamResult GetImageFile(string key)

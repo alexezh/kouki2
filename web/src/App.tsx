@@ -1,9 +1,5 @@
-// compute filler
-// https://codepen.io/sosuke/pen/Pjoqqp
-
-import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CSSProperties, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
-import { AlbumPhoto, PhotoListId } from "./photo/AlbumPhoto";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { AlbumLayout } from './photo/AlbumLayout';
 import { CommandBar } from './commands/CommandBar';
@@ -14,24 +10,16 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './commands/NatigationBar';
 import { StatusBar } from './commands/StatusBar';
 import Typography from '@mui/material/Typography/Typography';
-import { addOnStateChanged, getAppState, removeOnStateChanged } from './commands/AppState';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { CalendarBar } from './commands/CalendarBar';
-import { PhotoList } from './photo/PhotoList';
+import { DialogAnchor } from './commands/dialogs/DialogManager';
 
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
   },
 });
-
-enum CanvasViewKind {
-  Folder,
-  Album,
-  Collection,
-  Device
-}
 
 function updateVars(width: number, height: number): Size {
   let root = document.documentElement;
@@ -63,25 +51,6 @@ export type Size = {
   height: number
 }
 
-function MyAutoSizer(props: { className: string, render: (size: Size) => JSX.Element }) {
-  const ref = useRef(null);
-  const [size, setSize] = useState<Size | null>(null);
-  useLayoutEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-    // @ts-ignore
-    let newSize = { width: ref.current.offsetWidth, height: ref.current.offsetHeight }
-    if (size === null || newSize.width !== size.width || newSize.height !== size.height) {
-      setSize(newSize);
-    }
-  });
-
-  return (
-    <div className={props.className} ref={ref}>{(size) ? props.render(size) : null}</div>
-  )
-}
-
 function App() {
   const size = useWindowSize();
 
@@ -89,25 +58,6 @@ function App() {
     'width': size.width, 'height': size.height
   } as CSSProperties;
 
-  // .AppFrame {
-  //   text-align: left;
-  //   display: grid;
-  //   grid-template-columns: var(--sidebar-width) auto var(--calendarbar-width);
-  //   grid-template-rows: var(--header-height) auto var(--header-height);
-  //   width: 100%;
-  //   height: 100%;
-  // }
-
-  // we want to compute row heights to avoid scaling to content
-  // grid-template-rows: var(--header-height) auto var(--header-height);
-  // let appFrameStyle: CSSProperties = {
-  //   textAlign: 'left',
-  //   display: 'grid',
-  //   gridTemplateColumns: `var(--sidebar-width) auto var(--calendarbar-width)`,
-  //   gridTemplateRows: `var(--header-height) calc(${size[1]} - var(--header-height) - var(--header-height)) var(--header-height)`,
-  //   width: '100%',
-  //   height: '100%',
-  // }
   return (
     <ThemeProvider theme={darkTheme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -160,6 +110,7 @@ function App() {
             <CommandBar className="CommandBar"></CommandBar>
             <StatusBar className="Status-bar"></StatusBar>
             <CalendarBar className="Calendar-bar"></CalendarBar>
+            <DialogAnchor className="Dialog-anchor" />
           </div>
         </div>
       </LocalizationProvider >

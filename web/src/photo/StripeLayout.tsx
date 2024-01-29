@@ -37,14 +37,14 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
           if (idx !== -1) {
             // @ts-ignore
             listRef.current.scrollToItem(idx);
-            setVersion(version + 1)
+            setVersion(getAppState().version)
           }
         }
       }
     });
 
     let collId = getAppState().workList.addOnChanged(() => {
-      setVersion(version + 1);
+      setVersion(getAppState().version);
     });
 
     return () => {

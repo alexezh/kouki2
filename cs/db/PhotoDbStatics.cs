@@ -22,7 +22,7 @@ public class PhotoDbStatics
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS Devices (id integer primary key, name TEXT, archiveFolderId INTEGER, deviceCollectionId INTEGER, metadata TEXT)");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `DeviceName` ON `Devices` (`name` ASC);");
 
-      CreateTable(connection, "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT)");
+      CreateTable(connection, "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT, kind TEXT)");
       CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);");
 
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)");

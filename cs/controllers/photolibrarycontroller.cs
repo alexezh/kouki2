@@ -62,10 +62,6 @@ public class PhotoLibraryController : Controller
         pattern: "/api/{controller=PhotoLibrary}/{action=RescanSourceFolder}");
 
     app.MapControllerRoute(
-        name: "CheckSourceFolder",
-        pattern: "/api/{controller=PhotoLibrary}/{action=CheckSourceFolder}");
-
-    app.MapControllerRoute(
         name: "UpdatePhotos",
         pattern: "/api/{controller=PhotoLibrary}/{action=UpdatePhotos}");
   }
@@ -78,9 +74,9 @@ public class PhotoLibraryController : Controller
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<ImportFolderRequest>(content);
 
-      var id = JobRunner.Instance.RunJob(new ImportJob(request.folder));
+      var id = JobRunner.Instance.RunJob(new ImportJob(request));
 
-      return new ImportFolderResponse() { result = "Ok", jobId = id };
+      return new ImportFolderResponse() { result = ResultResponse.Ok, jobId = id };
     }
   }
 
@@ -94,21 +90,7 @@ public class PhotoLibraryController : Controller
 
       var id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
 
-      return new ImportFolderResponse() { result = "Ok", jobId = id };
-    }
-  }
-
-  [HttpPost]
-  public async Task<ResultResponse> CheckSourceFolder()
-  {
-    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
-    {
-      string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<ImportFolderRequest>(content);
-
-      bool exists = PhotoFs.Instance.CheckSourceFolder(new FolderName(request.folder));
-
-      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
+      return new ImportFolderResponse() { result = ResultResponse.Ok, jobId = id };
     }
   }
 
@@ -146,7 +128,7 @@ public class PhotoLibraryController : Controller
 
       bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
 
-      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
+      return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
     }
   }
 
@@ -160,7 +142,7 @@ public class PhotoLibraryController : Controller
 
       bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
 
-      return new ResultResponse() { result = (exists) ? "Ok" : "NotFound" };
+      return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
     }
   }
 
@@ -181,11 +163,11 @@ public class PhotoLibraryController : Controller
       CollectionEntry coll = PhotoFs.Instance.AddCollection(request);
       if (coll != null)
       {
-        return new AddCollectionResponse() { collection = coll, result = "Ok" };
+        return new AddCollectionResponse() { collection = coll, result = ResultResponse.Ok };
       }
       else
       {
-        return new AddCollectionResponse() { collection = null, result = "Failed" };
+        return new AddCollectionResponse() { collection = null, result = ResultResponse.Failed };
       }
     }
   }
@@ -209,7 +191,7 @@ public class PhotoLibraryController : Controller
 
       PhotoFs.Instance.UpdatePhotos(request);
 
-      return new UpdatePhotoResponse() { error = "ok" };
+      return new UpdatePhotoResponse() { error = ResultResponse.Ok };
     }
   }
 

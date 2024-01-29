@@ -110,12 +110,6 @@ export async function wireAddCollectionItems(id: number, items: WireCollectionIt
   return response;
 }
 
-export async function wireCheckFolder(name: string): Promise<boolean> {
-  let request = { folder: name };
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/checksourcefolder`, JSON.stringify(request))).json();
-  return response.result === "Ok";
-}
-
 let photoUpdateQueue = new BatchDelayedQueue<WirePhotoUpdate>(1000, async (items: WirePhotoUpdate[]) => {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/updatephotos`, JSON.stringify(items))).json();
 });
@@ -127,10 +121,11 @@ export function wireUpdatePhotos(wire: WirePhotoUpdate) {
 // ------------- add source folder ----------------
 export type ImportFolderRequest = {
   folder: string;
+  dryRun: boolean;
   importCollection: number;
 }
 
-export type AddFolderResponse = JobResponse & {
+export type ImportFolderResponse = JobResponse & {
 }
 
 export type RescanFolderRequest = {
@@ -142,7 +137,11 @@ export type RescanFolderResponse = {
   result: string;
 }
 
-export async function wireImportFolder(request: ImportFolderRequest): Promise<AddFolderResponse> {
+export type GetFolderInfoRequest = {
+  folder: string;
+}
+
+export async function wireImportFolder(request: ImportFolderRequest): Promise<ImportFolderResponse> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
   return response;
 }
@@ -153,9 +152,7 @@ export async function wireRescanFolder(folderId: number): Promise<RescanFolderRe
   return response;
 }
 
-export type GetJobStatusResponse = {
-  result: string;
-  message: string;
+export type GetJobStatusResponse = ResultResponse & {
 }
 
 export type ImportJobStatusResponse = GetJobStatusResponse & {
@@ -172,9 +169,14 @@ export type ExportJobStatusResponse = GetJobStatusResponse & {
   addedFiles: number;
 }
 
-export async function wireGetJobStatus<T>(id: string): Promise<T> {
-  let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${id}`)).json();
-  return response;
+export async function wireGetJobStatus<T extends ResultResponse>(id: string): Promise<T> {
+  try {
+    let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${id}`)).json();
+    return response;
+  }
+  catch (e: any) {
+    return { result: 'Failed', message: e.toString() } as T;
+  }
 }
 
 export type ExportPhotosRequest = {

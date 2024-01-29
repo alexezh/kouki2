@@ -30,7 +30,7 @@ public class ExportController : Controller
       //PhotoFs.Instance.ExportPhotos(request);
       var id = JobRunner.Instance.RunJob(new ExportJob(request));
 
-      return new ExportPhotosResponse() { result = "ok", jobId = id };
+      return new ExportPhotosResponse() { result = ResultResponse.Ok, jobId = id };
     }
   }
 }

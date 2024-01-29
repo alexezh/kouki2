@@ -14,6 +14,7 @@ export type FilterFavorite = "all" | "favorite" | "rejected";
  * AppState provides functionality similar to Rebux: data storage which maintains actual UI state
  */
 export interface IAppState {
+  readonly version: number;
   readonly viewMode: ViewMode;
   readonly navListId: PhotoListId;
   /**
@@ -70,6 +71,7 @@ let list = new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([]
 
 class AppState implements IAppState {
   // change id from List.onChange
+  version: number = 1;
   listChangeId: number = 0;
   viewMode: ViewMode = ViewMode.measure;
   navListId = new PhotoListId("unknown", 0);
@@ -100,7 +102,7 @@ export function getAppState(): IAppState {
   return state;
 }
 
-export function updateState(update: AppStateUpdate) {
+export function updateAppState(update: AppStateUpdate) {
   let rebuildList = false;
 
   if (!initialized) {
@@ -123,10 +125,13 @@ export function updateState(update: AppStateUpdate) {
     rebuildList = true;
   }
 
+  // update our internal state
   for (let x of Object.keys(update)) {
     // @ts-ignore
     state[x] = update[x];
   }
+
+  state.version++;
 
   if (rebuildList) {
     setTimeout(async () => {
@@ -227,9 +232,9 @@ export function openPhotoStack(photo: AlbumPhoto) {
 
   let list = new PhotoList(new PhotoListId('stack', 1), photos, false);
 
-  updateState({ workList: list, viewMode: ViewMode.stripe });
+  updateAppState({ workList: list, viewMode: ViewMode.stripe });
 }
 
 export function closePhotoStack() {
-  updateState({ workList: getAppState().navList, viewMode: ViewMode.grid });
+  updateAppState({ workList: getAppState().navList, viewMode: ViewMode.grid });
 }

@@ -88,11 +88,11 @@ export class PhotoList {
     }
   }
 
-  public addPhotos(photos: AlbumPhoto[]) {
+  public addPhotos(photos: ReadonlyArray<AlbumPhoto>) {
     this.addPhotosWorker(photos, PhotoListChangeType.add);
   }
 
-  private addPhotosWorker(photos: AlbumPhoto[], ct: PhotoListChangeType) {
+  private addPhotosWorker(photos: ReadonlyArray<AlbumPhoto>, ct: PhotoListChangeType) {
     let idx = this._filtered.length;
     this._photos.push(...photos);
 
@@ -130,6 +130,13 @@ export class PhotoList {
     this._idIndex.delete(photo.id);
 
     this.onChanged.invoke(PhotoListChangeType.remove, [photo]);
+  }
+
+  public reloadPhotos(photos: ReadonlyArray<AlbumPhoto>) {
+    this._photos.length = 0;
+    this._filtered.length = 0;
+    this._idIndex.clear();
+    this.addPhotosWorker(photos, PhotoListChangeType.load);
   }
 
   private hideStackPhotos(stackId: PhotoId, stack: ReadonlyArray<PhotoId>) {

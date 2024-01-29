@@ -1,6 +1,6 @@
 import { CSSProperties, PropsWithChildren, useEffect, useRef, useState } from "react";
 import { AlbumRow, RowKind } from "./AlbumPhoto";
-import { addOnStateChanged, getAppState, removeOnStateChanged, updateState } from "../commands/AppState";
+import { addOnStateChanged, getAppState, removeOnStateChanged, updateAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { Command, addAnyCommandHandler, removeAnyCommandHandler } from "../commands/Commands";
 import { makeByMonthRows } from "./MakeRows";
@@ -70,8 +70,9 @@ export function GridLayout(props: GridAlbumProps) {
     // add listener for state changes
     let stateId = addOnStateChanged(() => {
       console.log('GridLayout: appstate');
-      updateRows();
-      setVersion(version + 1);
+      if (updateRows()) {
+        setVersion(getAppState().version);
+      }
     });
 
     return () => {
@@ -81,29 +82,34 @@ export function GridLayout(props: GridAlbumProps) {
     }
   }, [props.width, ref]);
 
-  function updateRows() {
+  function updateRows(): boolean {
     let app = getAppState();
     let rows = app.navRows;
 
     console.log('updateRows:' + rows?.length);
 
     // if rows were reset, 
-    if (!rows) {
-      rows = makeByMonthRows(getAppState().navList, props.width, photoPadding);
-      updateState({ navRows: rows });
+    if (rows) {
+      return false;
+    }
 
-      // update layout when we navigate
-      if (listRef.current) {
-        console.log("GridLayout.updateRows: reset scroll");
+    rows = makeByMonthRows(getAppState().navList, props.width, photoPadding);
+    updateAppState({ navRows: rows });
+
+    // update layout when we navigate
+    if (listRef.current) {
+      console.log("GridLayout.updateRows: reset scroll");
+      // @ts-ignore
+      listRef.current.resetAfterIndex(0);
+      if (rows && rows.length > 0) {
         // @ts-ignore
-        listRef.current.resetAfterIndex(0);
-        if (rows && rows.length > 0) {
-          // @ts-ignore
-          listRef.current.scrollToItem(0);
-        }
+        listRef.current.scrollToItem(0);
       }
     }
+
+    return true;
   }
+
 
   function getRowHeight(idx: number): number {
     let rows = getAppState().navRows;
@@ -153,6 +159,8 @@ export function GridLayout(props: GridAlbumProps) {
   // make sure we have rows if we render first time
   // or if state was reset
   updateRows();
+
+  console.log('render grid:' + getAppState()?.navRows?.length);
 
   return (<List
     ref={listRef}

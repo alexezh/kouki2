@@ -1,5 +1,5 @@
 import ListItemButton from "@mui/material/ListItemButton/ListItemButton";
-import { updateState } from "./AppState";
+import { updateAppState } from "./AppState";
 import { useEffect, useMemo, useState } from "react";
 import { PhotoListId } from "../photo/AlbumPhoto";
 import { loadPhotoList } from "../photo/LoadPhotoList";
@@ -36,7 +36,7 @@ export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
   }, [props.id.id]);
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    updateState({ navListId: props.id });
+    updateAppState({ navListId: props.id });
   }
 
   return (

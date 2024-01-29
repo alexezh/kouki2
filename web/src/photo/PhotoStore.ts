@@ -22,6 +22,10 @@ export function invokeOnPhotoChanged(photo: AlbumPhoto) {
   photoChanged.invoke(photo);
 }
 
+/**
+ * when we boot app, we create lists before things are loaded
+ * lists synchronize with load by queuing completion via queueOnLoaded call
+ */
 export function queueOnLoaded<T>(func: () => Promise<T>): Promise<T> {
   let promise = new Promise<T>((resolve) => {
     if (loaded) {
@@ -53,9 +57,7 @@ function completeLoad() {
 }
 
 export async function loadLibrary(loadParts: () => Promise<boolean>) {
-  if (loaded) {
-    return;
-  }
+  console.log("loadLibrary");
   let wirePhotos = await wireGetLibrary();
 
   let pairs: { left: PhotoId, right: PhotoId }[] = [];
@@ -103,6 +105,12 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
 
   await loadParts();
 
+  if (allPhotos) {
+    let uniquePhotos = filterUnique(photoLibraryMap);
+    sortByDate(uniquePhotos);
+    allPhotos.reloadPhotos(uniquePhotos)
+  }
+
   completeLoad();
 }
 
@@ -133,6 +141,7 @@ function buildDuplicateBuckets() {
 }
 
 function buildStacks() {
+  stackMap.clear();
   for (let [key, photo] of photoLibraryMap) {
     if (photo.wire.stackId) {
       let stack = stackMap.get(photo.wire.stackId as PhotoId);

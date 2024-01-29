@@ -1,16 +1,6 @@
-
-using System.Numerics;
 using ImageMagick;
-using Shipwreck.Phash;
-using Shipwreck.Phash.Imaging;
 
-public class ImportFolderRequest
-{
-  public string folder { get; set; }
-  public Int64 importCollection { get; set; }
-}
-
-public class ImportFolderResponse : BackgroundJobResponse
+public class ImportFolderResponse : JobResponse
 {
 }
 
@@ -19,7 +9,7 @@ public class RescanFolderRequest
   public Int64 folderId { get; set; }
 }
 
-public class RescanFolderResponse : BackgroundJobResponse
+public class RescanFolderResponse : JobResponse
 {
 }
 
@@ -34,7 +24,7 @@ public class ExportPhotosRequest
   public Int64 exportCollection { get; set; }
 }
 
-public class ExportPhotosResponse : BackgroundJobResponse
+public class ExportPhotosResponse : JobResponse
 {
 }
 
@@ -58,7 +48,7 @@ public class ExportJob : IJob
 
   public void Run()
   {
-    _status.result = "Processing";
+    _status.result = ResultResponse.Processing;
 
     Exporter.ExportPhotos(
       PhotoFs.Instance.PhotoDb,
@@ -70,7 +60,7 @@ public class ExportJob : IJob
       _status.skippedFiles = status.Skipped;
     });
 
-    _status.result = "Done";
+    _status.result = ResultResponse.Done;
     _completed = true;
   }
 

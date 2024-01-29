@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 public class UpdateString
 {
@@ -7,19 +8,23 @@ public class UpdateString
 
 public class ResultResponse
 {
-  public string result { get; set; }
-}
+  public const string Ok = "Ok";
+  public const string Done = "Done";
+  public const string Failed = "Failed";
+  public const string NotFound = "NotFound";
+  public const string Processing = "Processing";
 
-public class BackgroundJobResponse
-{
-  public string jobId { get; set; }
-  public string result { get; set; }
-}
-
-public class GetJobStatusResponse
-{
   public string result { get; set; }
   public string message { get; set; }
+}
+
+public class JobResponse : ResultResponse
+{
+  public string jobId { get; set; }
+}
+
+public class GetJobStatusResponse : ResultResponse
+{
 }
 
 public class CollectionItem

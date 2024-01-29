@@ -3,7 +3,7 @@ import { AlbumPhoto, RowKind } from "./AlbumPhoto";
 import { DateRowLayout } from "./RowLayout";
 import { selectionManager } from "../commands/SelectionManager";
 import { Measure } from "../Measure";
-import { ViewMode, addOnStateChanged, getAppState, removeOnStateChanged, updateState } from "../commands/AppState";
+import { ViewMode, addOnStateChanged, getAppState, removeOnStateChanged, updateAppState } from "../commands/AppState";
 import { handleKeyDown } from "./AlbumInput";
 import { StripeLayout } from "./StripeLayout";
 import { PhotoViewer } from "./PhotoViewer";
@@ -49,12 +49,12 @@ export function AlbumLayout(props: PhotoAlbumProps) {
   function onMeasureDateHeader(height: number, kind: RowKind) {
     console.log("Measure: " + height);
     if (kind === RowKind.month) {
-      updateState({ monthRowHeight: height });
+      updateAppState({ monthRowHeight: height });
     } else {
-      updateState({ dayRowHeight: height });
+      updateAppState({ dayRowHeight: height });
     }
     if (getAppState().dayRowHeight && getAppState().monthRowHeight) {
-      updateState({ viewMode: ViewMode.grid });
+      updateAppState({ viewMode: ViewMode.grid });
     }
   }
 

@@ -9,7 +9,7 @@ import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, AlbumRow, FolderId, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
 import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
-import { updateState } from "./AppState";
+import { updateAppState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
 import { addOnCollectionsChanged, getCollectionsByKind, getQuickCollection } from "../photo/CollectionStore";
 import { loadPhotoList } from "../photo/LoadPhotoList";
@@ -80,7 +80,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);
-    updateState({ navListId: new PhotoListId('folder', props.folder.wire!.id as FolderId) });
+    updateAppState({ navListId: new PhotoListId('folder', props.folder.wire!.id as FolderId) });
   }
 
   if (props.folder.children.length > 0) {
@@ -171,7 +171,7 @@ export function NavigationBar() {
     // initially, open "All collection"
     setFolders(getFolders());
     setDevices(getDevices());
-    updateState({ navListId: new PhotoListId('all', 0) });
+    updateAppState({ navListId: new PhotoListId('all', 0) });
 
     return () => {
       removeOnFoldersChanged(idFolders);

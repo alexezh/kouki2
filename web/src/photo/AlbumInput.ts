@@ -1,4 +1,4 @@
-import { ViewMode, getAppState, openPhotoStack, updateState } from "../commands/AppState";
+import { ViewMode, getAppState, openPhotoStack, updateAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
@@ -20,7 +20,7 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     switch (event.key) {
       case 'Enter': {
         if (viewMode === ViewMode.grid) {
-          updateState({ viewMode: ViewMode.zoom });
+          updateAppState({ viewMode: ViewMode.zoom });
         }
         break;
       }
@@ -123,7 +123,7 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
       openPhotoStack(photo);
     } else {
       console.log("handlePhotoClick: zoom");
-      updateState({ viewMode: ViewMode.zoom });
+      updateAppState({ viewMode: ViewMode.zoom });
     }
     event.preventDefault();
   } else {

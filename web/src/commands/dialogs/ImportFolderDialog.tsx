@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -6,20 +6,25 @@ import DialogContentText from "@mui/material/DialogContentText/DialogContentText
 import TextField from "@mui/material/TextField/TextField";
 import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
-import Typography from "@mui/material/Typography/Typography";
-import { sleep } from "../../lib/sleep";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
-import { catchAll, catchAllAsync } from "../../lib/error";
-import { wireImportFolder, wireGetJobStatus, wireRescanFolder, wireBuildPHash, JobResponse, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
-import { PhotoListId } from "../../photo/AlbumPhoto";
+import { catchAllAsync } from "../../lib/error";
+import { wireImportFolder, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
 import { getStandardCollection } from "../../photo/CollectionStore";
 import { runJob } from "./BackgroundJobs";
+import { DialogProps, showDialog } from "./DialogManager";
+import { showConfirmationDialog } from "./ConfirmationDialog";
+
+export function onImportFolder() {
+  showDialog((props: DialogProps) => {
+    return (
+      <ImportFolderDialog onClose={props.onClose} />)
+  })
+}
 
 export function ImportFolderDialog(props: { onClose: () => void }) {
   const [value, setValue] = useState("~/Pictures");
   const [statusText, setStatusText] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [processedFiles, setProcessedFiles] = useState(0);
 
   function handleClose() {
     props.onClose();
@@ -29,20 +34,58 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
     setProcessing(true);
 
     catchAllAsync(async () => {
+      let importList = await getStandardCollection('import');
+
+      setStatusText("Scanning...");
+
+      let dryRunResult = await runJob<ImportJobStatusResponse>("dry_" + value,
+        {
+
+          worker: async () => {
+            let addResponse = await wireImportFolder({
+              folder: value,
+              dryRun: true,
+              importCollection: importList.id.id
+            });
+            return addResponse;
+          },
+          onStatus: (status: GetJobStatusResponse) => {
+            let importStatus = status as ImportJobStatusResponse;
+            setStatusText('Scanned: ' + importStatus.addedFiles + ' files')
+          },
+          onComplete: (status: GetJobStatusResponse) => { }
+        });
+
+      if (dryRunResult?.result !== 'Done') {
+        setStatusText(dryRunResult ? dryRunResult.message : 'unknown error');
+        setProcessing(false);
+        return;
+      }
+
+      let res = await showConfirmationDialog('Import photos', `Do you want to import ${dryRunResult?.addedFiles} files?`);
+      if (!res) {
+        setStatusText("");
+        setProcessing(false);
+        return;
+      }
+
+      // now start background job
       runJob("import_" + value,
         {
           worker: async () => {
-            let importList = await getStandardCollection('import');
-
-            let addResponse = await wireImportFolder({ folder: value, importCollection: importList.id.id });
+            let addResponse = await wireImportFolder({
+              folder: value,
+              dryRun: false,
+              importCollection: importList.id.id
+            });
             return addResponse;
           },
-          onStatus: () => (status: GetJobStatusResponse) => {
+          onStatus: (status: GetJobStatusResponse) => {
             let importStatus = status as ImportJobStatusResponse;
-            setProcessedFiles(importStatus.addedFiles)
+            setStatusText('Added: ' + importStatus.addedFiles + ' files');
           },
           onComplete: (status: GetJobStatusResponse) => {
-            if (status.result === "Ok") {
+            if (status.result === "Done") {
               triggerRefreshFolders();
               props.onClose();
             } else {
@@ -68,7 +111,7 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
         <DialogContentText>
           Enter folder path to import.
         </DialogContentText>
-        {!processing ? (<TextField
+        <TextField
           autoFocus
           margin="dense"
           id="name"
@@ -76,18 +119,19 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
           type="text"
           fullWidth
           variant="standard"
+          disabled={processing}
           value={value}
           onChange={handleChanged}
-        />) : (<Typography variant="body1">{'Added: ' + processedFiles + ' files'}</Typography>)}
+        />
         <DialogContentText color="common.red">
           {statusText}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button disabled={processing} onClick={handleClose}>Cancel</Button>
         <Button disabled={processing} onClick={handleAdd}>Add</Button>
+        <Button disabled={processing} onClick={handleClose}>Cancel</Button>
       </DialogActions>
-    </Dialog>
+    </Dialog >
   );
 }
 

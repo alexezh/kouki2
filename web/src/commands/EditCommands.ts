@@ -1,5 +1,5 @@
 import { AlbumPhoto } from "../photo/AlbumPhoto";
-import { ViewMode, closePhotoStack, getAppState, updateState } from "./AppState";
+import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler, invokeCommand } from "./Commands";
 import { getQuickCollection } from "../photo/CollectionStore";
@@ -89,7 +89,7 @@ function onNavigateBack() {
   if (getAppState().viewMode === ViewMode.stripe) {
     closePhotoStack();
   } else if (getAppState().viewMode !== ViewMode.grid) {
-    updateState({ viewMode: ViewMode.grid });
+    updateAppState({ viewMode: ViewMode.grid });
   }
 }
 

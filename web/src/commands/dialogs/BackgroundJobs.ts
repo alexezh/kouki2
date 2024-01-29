@@ -14,46 +14,49 @@ export interface IBackgroundJob<T extends GetJobStatusResponse> {
  */
 export function runJob<T extends GetJobStatusResponse>(
   key: string,
-  job: IBackgroundJob<T>): boolean {
+  job: IBackgroundJob<T>): Promise<T | null> {
 
   let hasJob = jobMap.get(key);
   if (hasJob) {
-    return false;
+    return Promise.resolve(null);
   }
 
-  setTimeout(async () => {
-    let jobInfo: GetJobStatusResponse | null = null;
-    try {
-      jobMap.set(key, true);
-      console.log("start job " + key);
+  let promise = new Promise<T | null>((resolve) => {
+    setTimeout(async () => {
+      let jobInfo: T | null = null;
+      try {
+        jobMap.set(key, true);
+        console.log("start job " + key);
 
-      let jobResponse = await job.worker();
-      if (jobResponse.result !== 'Ok') {
-        job.onComplete(jobResponse);
-        return;
-      }
-
-      while (true) {
-        jobInfo = await wireGetJobStatus<GetJobStatusResponse>(jobResponse.jobId);
-        if (jobInfo.result !== 'Processing') {
-          break;
-        } else {
-          job.onStatus(jobInfo);
+        let jobResponse = await job.worker();
+        if (jobResponse.result !== 'Ok') {
+          job.onComplete(jobResponse);
+          return;
         }
-        await sleep(1);
+
+        while (true) {
+          jobInfo = await wireGetJobStatus<GetJobStatusResponse>(jobResponse.jobId) as T;
+          if (jobInfo.result !== 'Processing') {
+            break;
+          } else {
+            job.onStatus(jobInfo);
+          }
+          await sleep(1);
+        }
       }
-    }
-    catch (e) {
-      jobInfo = {
-        result: 'Failed',
-        message: 'Unknown failure'
+      catch (e) {
+        jobInfo = {
+          result: 'Failed',
+          message: 'Unknown failure'
+        } as T;
       }
-    }
-    finally {
-      jobMap.delete(key);
-      job.onComplete(jobInfo);
-    }
+      finally {
+        jobMap.delete(key);
+        job.onComplete(jobInfo);
+        resolve(jobInfo);
+      }
+    });
   });
 
-  return true;
+  return promise;
 }

@@ -9,6 +9,7 @@ export enum Command {
   AddQuickCollection = 6,
   NavigateBack = 7,
   RemoveStack = 8,
+  ImportFolder,
 }
 
 let anyCommandHandler = new SimpleEventSource();

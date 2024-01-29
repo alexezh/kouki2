@@ -8,17 +8,14 @@ import { catchAll } from "../../lib/error";
 import { Divider } from "@mui/material";
 import { RescanFolderDialog } from "../dialogs/RescanFolderDialog";
 import { ProgressDialog } from "../dialogs/ProgressDialog";
+import { Command, invokeCommand } from "../Commands";
 
 export function LibraryMenu(props: CommandMenuProps) {
-  const [openAddFolder, setOpenAddFolder] = useState(false);
   const [openRescanFolder, setOpenRescanFolder] = useState(false);
   const [openBuildPHash, setOpenBuildPHash] = useState(false);
 
   function renderDialogs() {
     return (<div>
-      {
-        (openAddFolder) ? (<ImportFolderDialog onClose={() => setOpenAddFolder(false)} />) : null
-      }
       {
         (openRescanFolder) ? (<RescanFolderDialog
           onClose={() => setOpenRescanFolder(false)}
@@ -32,9 +29,9 @@ export function LibraryMenu(props: CommandMenuProps) {
     </div>)
   }
 
-  function handleAddFolder() {
+  function handleImportFolder() {
     props.onMenuClose();
-    setOpenAddFolder(true);
+    invokeCommand(Command.ImportFolder);
   }
 
   async function handleAddDevice() {
@@ -64,7 +61,7 @@ export function LibraryMenu(props: CommandMenuProps) {
 
   return (
     <CommandMenu {...props} extra={renderDialogs}>
-      <MenuItem key="lib_addfolder" onClick={handleAddFolder}>Import Folder</MenuItem>
+      <MenuItem key="lib_addfolder" onClick={handleImportFolder}>Import Folder</MenuItem>
       <Divider />
       <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
       <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>

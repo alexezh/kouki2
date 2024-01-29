@@ -43,7 +43,7 @@ public class MobileSyncController : Controller
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<AddDeviceRequest>(content);
 
-      result = MobileSync.AddDevice(PhotoFs.Instance, request) ? "ok" : "failed";
+      result = MobileSync.AddDevice(PhotoFs.Instance, request) ? ResultResponse.Ok : ResultResponse.Failed;
     }
 
     return new ResultResponse() { result = result };
@@ -77,7 +77,7 @@ public class MobileSyncController : Controller
 
       var files = MobileSync.GetSyncList(PhotoFs.Instance.PhotoDb, request);
 
-      return new GetSyncListResponse() { result = "ok", files = files };
+      return new GetSyncListResponse() { result = ResultResponse.Ok, files = files };
     }
   }
 

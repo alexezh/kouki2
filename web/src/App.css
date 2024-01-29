@@ -163,6 +163,12 @@
   z-index: 3;
 }
 
+.Dialog-anchor {
+  visibility: hidden;
+  grid-column: 1;
+  grid-row: 1;
+}
+
 .Calendar-bar {
   width: var(--calendarbar-width);
   height: var(--middlerow-height);
