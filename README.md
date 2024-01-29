@@ -7,7 +7,7 @@ I've been using Lightroom for photo management since Lightroom v1. As I moved to
 Key features I am looking to build in Kouki2 are:
 
 - Experience centered around camera roll view. [Camera roll](https://github.com/alexezh/kouki2/wiki/CameraRoll)
-- Import/export and quick collection with history. [Collection with history](https://github.com/alexezh/kouki2/wiki/CollectionHistory)
+- Import/export and quick collection with history. [Collection with history](https://github.com/alexezh/kouki2/wiki/Collections-with-history)
 - coming soon. Support for external editor - use whatever tool you want for editing photos. Kouki2 will save versions of photos as needed.
 - coming soon. Support for custom metadata provides - plugin your own ML based photo processing.
 - coming soon. One click transfer from and to phone. [Phone integration](https://github.com/alexezh/kouki2/wiki/Phone)
