@@ -4,6 +4,8 @@ import { selectionManager } from "./SelectionManager";
 import { PhotoList } from "../photo/PhotoList";
 import { loadPhotoList } from "../photo/LoadPhotoList";
 import { getPhotoById, getStack } from "../photo/PhotoStore";
+import { StaticPhotoSource } from "../photo/FolderStore";
+import { CollectionId } from "../photo/CollectionStore";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -67,14 +69,14 @@ export enum ViewMode {
   zoom
 }
 
-let list = new PhotoList(new PhotoListId('unknown', 0), () => Promise.resolve([]));
+let list = new PhotoList(new PhotoListId('unknown', 0 as CollectionId), new StaticPhotoSource([]));
 
 class AppState implements IAppState {
   // change id from List.onChange
   version: number = 1;
   listChangeId: number = 0;
   viewMode: ViewMode = ViewMode.measure;
-  navListId = new PhotoListId("unknown", 0);
+  navListId = new PhotoListId("unknown", 0 as CollectionId);
   navList = list;
   workList = list;
   filterFavorite: FilterFavorite = "all";
@@ -230,7 +232,7 @@ export function openPhotoStack(photo: AlbumPhoto) {
     }
   }
 
-  let list = new PhotoList(new PhotoListId('stack', 1), photos, false);
+  let list = new PhotoList(new PhotoListId('stack', 0 as CollectionId), new StaticPhotoSource(photos), false);
 
   updateAppState({ workList: list, viewMode: ViewMode.stripe });
 }

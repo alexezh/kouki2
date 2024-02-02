@@ -1,6 +1,6 @@
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
 import { createCollectionPhotoList, getQuickCollection, getStandardCollection, loadCollections } from "./CollectionStore";
-import { getFolderList } from "./FolderStore";
+import { StaticPhotoSource, getFolderList } from "./FolderStore";
 import { PhotoList } from "./PhotoList";
 import { filterPhotos, getAllPhotos } from "./PhotoStore";
 
@@ -19,6 +19,6 @@ export function loadPhotoList(id: PhotoListId): PhotoList {
   } else if (id.kind === 'export') {
     return createCollectionPhotoList(id);
   } else {
-    return new PhotoList(id, () => Promise.resolve([]));
+    return new PhotoList(id, new StaticPhotoSource([]));
   }
 }

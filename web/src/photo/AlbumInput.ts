@@ -142,6 +142,7 @@ export function handlePhotoClick(event: React.MouseEvent<HTMLImageElement>, phot
         selectionManager.add([photo]);
       }
     } else {
+      console.log("handleClick: select " + photo.id);
       selectionManager.add([photo]);
     }
     event.preventDefault();

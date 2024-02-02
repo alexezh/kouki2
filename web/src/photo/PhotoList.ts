@@ -18,6 +18,13 @@ class PhotoListEventHandler implements IEventHandler {
   }
 }
 
+export interface IPhotoListSource {
+  setChangeHandler(func: () => void): void;
+  getItems(): ReadonlyArray<AlbumPhoto>;
+  addItems(items: AlbumPhoto[]): void;
+  removeItems(items: AlbumPhoto[]): void;
+}
+
 /**
  * arbitrary collection of AlbumPhotos backed by either folder or collection
  * photos do not have to be unique. In quick collection, we might have a lot
@@ -58,6 +65,7 @@ export class PhotoList {
    * used to compare if things changed
    */
   private _savedStacks: Map<PhotoId, ReadonlyArray<PhotoId>> = new Map<PhotoId, ReadonlyArray<PhotoId>>();
+  private readonly _source: IPhotoListSource;
   private _handler: PhotoListEventHandler;
 
   /**
@@ -67,25 +75,24 @@ export class PhotoList {
 
   public constructor(
     id: PhotoListId,
-    getPhotos: ((self: PhotoList) => Promise<AlbumPhoto[]>) | AlbumPhoto[],
+    source: IPhotoListSource,
     hideStack: boolean = true) {
     this.id = id;
     this._photos = [];
     this._filtered = [];
+    this._source = source;
     this._handler = new PhotoListEventHandler(this);
     this._hideStack = hideStack;
+
+    let photos = this._source.getItems();
+    if (photos.length) {
+      this.addPhotosWorker(photos, PhotoListChangeType.load);
+    }
 
     // register handler for any photo change
     addOnPhotoChanged(this._handler);
 
-    if (Array.isArray(getPhotos)) {
-      this.addPhotosWorker(getPhotos, PhotoListChangeType.load);
-    } else {
-      setTimeout(async () => {
-        let photos = await getPhotos(this);
-        this.addPhotosWorker(photos, PhotoListChangeType.load);
-      });
-    }
+    this._source.setChangeHandler(this.onListChanged.bind(this));
   }
 
   public addPhotos(photos: ReadonlyArray<AlbumPhoto>) {
@@ -130,13 +137,6 @@ export class PhotoList {
     this._idIndex.delete(photo.id);
 
     this.onChanged.invoke(PhotoListChangeType.remove, [photo]);
-  }
-
-  public reloadPhotos(photos: ReadonlyArray<AlbumPhoto>) {
-    this._photos.length = 0;
-    this._filtered.length = 0;
-    this._idIndex.clear();
-    this.addPhotosWorker(photos, PhotoListChangeType.load);
   }
 
   private hideStackPhotos(stackId: PhotoId, stack: ReadonlyArray<PhotoId>) {
@@ -406,6 +406,14 @@ export class PhotoList {
     }
 
     return row;
+  }
+
+  private onListChanged() {
+    console.log('onListChanged');
+    this._photos.length = 0;
+    this._filtered.length = 0;
+    this._idIndex.clear();
+    this.addPhotosWorker(this._source.getItems(), PhotoListChangeType.load);
   }
 
   /**

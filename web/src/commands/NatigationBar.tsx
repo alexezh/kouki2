@@ -11,7 +11,7 @@ import { PhotoInfo } from "./PhotoInfo";
 import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateAppState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
-import { addOnCollectionsChanged, getCollectionsByKind, getQuickCollection } from "../photo/CollectionStore";
+import { CollectionId, addOnCollectionsChanged, getCollectionsByKind, getQuickCollection } from "../photo/CollectionStore";
 import { loadPhotoList } from "../photo/LoadPhotoList";
 import { CollectionItemLayout, CollectionListLayout } from "./CollectionItemLayout";
 
@@ -67,7 +67,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
       return;
     }
 
-    let list = getFolderList(new PhotoListId('folder', props.folder.wire!.id));
+    let list = getFolderList(new PhotoListId('folder', props.folder.wire!.id as FolderId));
     setCount(list.photoCount);
     let collId = list.addOnChanged(() => {
       setCount(list.photoCount);
@@ -114,17 +114,17 @@ function FolderLayout(props: { folder: PhotoFolder }) {
 
 let catalogs: { name: string, id: PhotoListId }[] =
   [
-    { name: 'Quick collection', id: new PhotoListId('quick', 0) },
-    { name: 'All Photos', id: new PhotoListId('all', 0) },
-    { name: 'Import', id: new PhotoListId('import', 0) },
-    { name: 'Export', id: new PhotoListId('export', 0) },
+    { name: 'Quick collection', id: new PhotoListId('quick', 0 as CollectionId) },
+    { name: 'All Photos', id: new PhotoListId('all', 0 as CollectionId) },
+    { name: 'Import', id: new PhotoListId('import', 0 as CollectionId) },
+    { name: 'Export', id: new PhotoListId('export', 0 as CollectionId) },
   ];
 
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
-  items.push((<CollectionItemLayout text={"Quich collection"} id={new PhotoListId('quick', 0)} />))
-  items.push((<CollectionItemLayout text={"All Photos"} id={new PhotoListId('all', 0)} />))
+  items.push((<CollectionItemLayout text={"Quich collection"} id={new PhotoListId('quick', 0 as CollectionId)} />))
+  items.push((<CollectionItemLayout text={"All Photos"} id={new PhotoListId('all', 0 as CollectionId)} />))
   items.push((<CollectionListLayout text="Export" lists={getCollectionsByKind('export')} />))
   //catalogs.map((x) => { return () });
 
@@ -171,7 +171,7 @@ export function NavigationBar() {
     // initially, open "All collection"
     setFolders(getFolders());
     setDevices(getDevices());
-    updateAppState({ navListId: new PhotoListId('all', 0) });
+    updateAppState({ navListId: new PhotoListId('all', 0 as CollectionId) });
 
     return () => {
       removeOnFoldersChanged(idFolders);

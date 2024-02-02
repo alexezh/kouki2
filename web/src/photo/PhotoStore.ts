@@ -1,14 +1,15 @@
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
 import { wireGetCorrelation, wireGetLibrary, wireUpdatePhotos } from "../lib/photoclient";
 import { IEventHandler, WeakEventSource } from "../lib/synceventsource";
-import { PhotoList } from "./PhotoList";
+import { IPhotoListSource, PhotoList } from "./PhotoList";
+import { CollectionId } from "./CollectionStore";
 
 let allPhotos: PhotoList | undefined;
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
 const duplicateByHashBuckets = new Map<string, PhotoId[]>();
 const photoChanged: WeakEventSource = new WeakEventSource();
-const loadQueue: (() => Promise<any>)[] = [];
+const libraryChanged: WeakEventSource = new WeakEventSource();
 let loaded = false;
 
 /**
@@ -22,37 +23,11 @@ export function invokeOnPhotoChanged(photo: AlbumPhoto) {
   photoChanged.invoke(photo);
 }
 
-/**
- * when we boot app, we create lists before things are loaded
- * lists synchronize with load by queuing completion via queueOnLoaded call
- */
-export function queueOnLoaded<T>(func: () => Promise<T>): Promise<T> {
-  let promise = new Promise<T>((resolve) => {
-    if (loaded) {
-      setTimeout(async () => {
-        let result = await func();
-        resolve(result);
-      });
-    } else {
-      loadQueue.push(async () => {
-        let result = await func();
-        resolve(result);
-      });
-    }
-  });
-  return promise;
-}
-
 function completeLoad() {
   loaded = true;
 
   setTimeout(async () => {
-    for (let func of loadQueue) {
-      await func();
-    }
-
-    // clear the queue
-    loadQueue.splice(0, loadQueue.length);
+    libraryChanged.invoke();
   });
 }
 
@@ -104,12 +79,6 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
   }
 
   await loadParts();
-
-  if (allPhotos) {
-    let uniquePhotos = filterUnique(photoLibraryMap);
-    sortByDate(uniquePhotos);
-    allPhotos.reloadPhotos(uniquePhotos)
-  }
 
   completeLoad();
 }
@@ -283,13 +252,38 @@ export function getAllPhotos(): PhotoList {
     return allPhotos;
   }
 
-  allPhotos = new PhotoList(new PhotoListId('all', 0), () => {
-    return queueOnLoaded((): Promise<AlbumPhoto[]> => {
-      let uniquePhotos = filterUnique(photoLibraryMap);
-      sortByDate(uniquePhotos);
-      return Promise.resolve(uniquePhotos);
-    });
-  });
+  allPhotos = new PhotoList(new PhotoListId('all', 0 as CollectionId), new AllPhotosSource());
 
   return allPhotos;
+}
+
+export class AllPhotosSource implements IPhotoListSource, IEventHandler {
+  private changeHandler: (() => void) | null = null;
+
+  public constructor() {
+    libraryChanged.add(this);
+  }
+
+  invoke(...args: any[]): void {
+    this.changeHandler?.call(this);
+  }
+
+  public setChangeHandler(func: () => void): void {
+    this.changeHandler = func;
+  }
+
+  addItems(items: AlbumPhoto[]): void {
+  }
+
+  removeItems(items: AlbumPhoto[]): void {
+  }
+
+  public getItems(): ReadonlyArray<AlbumPhoto> {
+    if (photoLibraryMap.size === 0) {
+      return [];
+    }
+    let uniquePhotos = filterUnique(photoLibraryMap);
+    sortByDate(uniquePhotos);
+    return uniquePhotos;
+  }
 }

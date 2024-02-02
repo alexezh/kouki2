@@ -6,8 +6,8 @@ import {
 } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
-import { PhotoList, PhotoListChangeType } from "./PhotoList";
-import { getPhotoById, queueOnLoaded } from "./PhotoStore";
+import { IPhotoListSource, PhotoList } from "./PhotoList";
+import { getPhotoById } from "./PhotoStore";
 
 export type CollectionId = number & {
   __tag_collection: boolean;
@@ -124,7 +124,7 @@ export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoL
     collectionMap.set(response.collection.id as CollectionId, coll);
   }
 
-  let listId = new PhotoListId(kind, coll.wire.id);
+  let listId = new PhotoListId(kind, coll.wire.id as CollectionId);
   list = collectionLists.get(new PhotoListId(kind, listId.id).toString());
   if (list) {
     return list;
@@ -136,34 +136,7 @@ export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoL
 }
 
 export function createCollectionPhotoList(listId: PhotoListId) {
-  let list = new PhotoList(listId, async (self: PhotoList) => {
-    return queueOnLoaded(async () => {
-
-      let items: WireCollectionItem[] = await wireGetCollectionItems(listId.id);
-      let photos: AlbumPhoto[] = [];
-
-      for (let item of items) {
-        let photo = getPhotoById(item.photoId as PhotoId);
-        if (!photo) {
-          console.error('Collection: cannot find photo ' + item.photoId);
-          continue;
-        }
-        photos.push(photo);
-      }
-
-      self.addOnChanged((ct: PhotoListChangeType, items: AlbumPhoto[]) => {
-        if (ct === PhotoListChangeType.load) {
-          return;
-        }
-
-        wireAddCollectionItems(listId.id, items.map((x) => {
-          return { photoId: x.wire.id, updateDt: nowAsISOString() }
-        }));
-      });
-
-      return photos;
-    });
-  });
+  let list = new PhotoList(listId, new CollectionPhotoSource(listId.id as CollectionId));
 
   return list;
 }
@@ -178,48 +151,85 @@ export function getQuickCollection(): PhotoList {
     return quickList;
   }
 
-  let quickListId = new PhotoListId('quick', 0);
-  quickList = new PhotoList(quickListId, async (self: PhotoList) => {
-    return queueOnLoaded(async () => {
-
-      // at this point we have collection list; find default quick and map to it
-      // get the current quick and other collections
-      let quickColl: PhotoCollection | null = findNewestCollection('quick');
-
-      // ensure that we have quick collection
-      if (!quickColl) {
-        let response = await wireAddCollection({ kind: quickListId.kind, name: '', createDt: nowAsISOString() });
-        quickColl = new PhotoCollection(response.collection);
-        collectionMap.set(response.collection.id as CollectionId, quickColl);
-      }
-
-      let items: WireCollectionItem[] = await wireGetCollectionItems(quickColl.wire.id);
-      let photos: AlbumPhoto[] = [];
-
-      for (let item of items) {
-        let photo = getPhotoById(item.photoId as PhotoId);
-        if (!photo) {
-          console.error('Collection: cannot find photo ' + item.photoId);
-          continue;
-        }
-        photos.push(photo);
-      }
-
-      self.addOnChanged((ct: PhotoListChangeType, items: AlbumPhoto[]) => {
-        if (ct === PhotoListChangeType.load) {
-          return;
-        }
-
-        wireAddCollectionItems(quickColl!.wire.id, items.map((x) => {
-          return { photoId: x.wire.id, updateDt: nowAsISOString() }
-        }));
-      });
-
-      return photos;
-    });
-  });
+  let quickListId = new PhotoListId('quick', 0 as CollectionId);
+  quickList = new PhotoList(quickListId, new QuickCollectionSource(quickListId.id as CollectionId));
 
   collectionLists.set('quick', quickList);
 
   return quickList;
+}
+
+export class CollectionPhotoSource implements IPhotoListSource {
+  private photos: AlbumPhoto[] = [];
+  private collId: CollectionId | undefined = undefined;
+
+  public constructor(collId: CollectionId) {
+    this.collId = collId;
+    setTimeout(async () => {
+      await this.loadPhotos();
+    })
+  }
+
+  protected async getOrCreateCollection(): Promise<CollectionId> {
+    if (!this.collId) {
+      throw new Error('Unknown collection id');
+    }
+    return this.collId;
+  }
+
+  private async loadPhotos(): Promise<AlbumPhoto[]> {
+    this.collId = await this.getOrCreateCollection();
+
+    let items: WireCollectionItem[] = await wireGetCollectionItems(this.collId);
+    let photos: AlbumPhoto[] = [];
+
+    for (let item of items) {
+      let photo = getPhotoById(item.photoId as PhotoId);
+      if (!photo) {
+        console.error('Collection: cannot find photo ' + item.photoId);
+        continue;
+      }
+      photos.push(photo);
+    }
+
+    return photos;
+  }
+
+  public addItems(items: AlbumPhoto[]) {
+    wireAddCollectionItems(this.collId!, items.map((x) => {
+      return { photoId: x.wire.id, updateDt: nowAsISOString() }
+    }));
+
+  }
+
+  public removeItems(items: AlbumPhoto[]) {
+  }
+
+  public setChangeHandler(func: () => void): void {
+  }
+
+  public getItems(): ReadonlyArray<AlbumPhoto> {
+    return this.photos;
+  }
+}
+
+class QuickCollectionSource extends CollectionPhotoSource {
+  public constructor(collId: CollectionId) {
+    super(collId);
+  }
+
+  protected override async getOrCreateCollection(): Promise<CollectionId> {
+    // at this point we have collection list; find default quick and map to it
+    // get the current quick and other collections
+    let quickColl: PhotoCollection | null = findNewestCollection('quick');
+
+    // ensure that we have quick collection
+    if (!quickColl) {
+      let response = await wireAddCollection({ kind: 'quick', name: '', createDt: nowAsISOString() });
+      quickColl = new PhotoCollection(response.collection);
+      collectionMap.set(response.collection.id as CollectionId, quickColl);
+    }
+
+    return quickColl.id;
+  }
 }

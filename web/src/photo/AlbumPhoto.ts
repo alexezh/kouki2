@@ -1,6 +1,7 @@
 import { Key } from "react";
 import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 import { invokeOnPhotoChanged } from "./PhotoStore";
+import { CollectionId } from "./CollectionStore";
 
 export type FolderId = number & {
   __tag_folder: boolean;
@@ -12,9 +13,9 @@ export type PhotoId = number & {
 
 export class PhotoListId {
   public kind: PhotoListKind;
-  public id: number;
+  public id: FolderId | CollectionId;
 
-  public constructor(kind: PhotoListKind, id: number) {
+  public constructor(kind: PhotoListKind, id: FolderId | CollectionId) {
     this.kind = kind;
     this.id = id;
   }

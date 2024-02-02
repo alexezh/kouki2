@@ -1,7 +1,7 @@
 import { WireFolder, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, FolderId, PhotoListId } from "./AlbumPhoto";
-import { PhotoList } from "./PhotoList";
+import { IPhotoListSource, PhotoList } from "./PhotoList";
 import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
@@ -35,6 +35,8 @@ export function removeOnFoldersChanged(id: number) {
 }
 
 export function triggerRefreshFolders() {
+  console.log('triggerRefreshFolders');
+
   setTimeout(async () => {
     await loadLibrary(async () => {
       await loadFolders();
@@ -147,8 +149,30 @@ export function getFolderList(folderId: PhotoListId): PhotoList {
   let folderPhotos = filterPhotos(photoLibraryMap, (x: AlbumPhoto) => { return x.wire.folderId === folderId.id })
   sortByDate(folderPhotos);
 
-  folderList = new PhotoList(folderId, () => Promise.resolve(folderPhotos));
+  console.log('getFolderList: ' + folderPhotos.length);
+
+  folderList = new PhotoList(folderId, new StaticPhotoSource(folderPhotos));
   folderLists.set(folderId.id as FolderId, folderList);
 
   return folderList;
+}
+
+export class StaticPhotoSource implements IPhotoListSource {
+  private photos: AlbumPhoto[];
+
+  public constructor(photos: AlbumPhoto[]) {
+    this.photos = photos;
+  }
+  addItems(items: AlbumPhoto[]): void {
+  }
+
+  removeItems(items: AlbumPhoto[]): void {
+  }
+
+  public setChangeHandler(func: () => void): void {
+  }
+
+  public getItems(): ReadonlyArray<AlbumPhoto> {
+    return this.photos;
+  }
 }
