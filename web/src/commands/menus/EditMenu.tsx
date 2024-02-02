@@ -67,17 +67,17 @@ export function EditMenu(props: CommandMenuProps) {
 
   return (
     <CommandMenu {...props} menuClassName="Select-menu" extra={renderDialogs}>
-      <MenuItem key="edit_all" onClick={handleSelectAll}>
-        <ListItemText>Select All</ListItemText>
-        <Typography variant="body2" color="text.secondary">A</Typography>
-      </MenuItem>
+      <MyMenuItem key="edit_all" command={Command.MarkFavorite} text="Select All" shortcut="A" />
       <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
       <MyMenuItem key="mark_fav" command={Command.MarkFavorite} text="Mark Favorite" shortcut="A" />
       <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="P" />
+      <Divider />
+      <MyMenuItem key="add_quick" command={Command.AddQuickCollection} text="Add quick collection" shortcut="B" />
       <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
       <MyMenuItem key="remove_stack" command={Command.RemoveStack} text="Remove from Stack" shortcut="U" />
+      <Divider />
       <MenuItem key="export_selection" onClick={handleExportSelection}>Export</MenuItem>
     </CommandMenu >
   )

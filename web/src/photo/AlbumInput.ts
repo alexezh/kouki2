@@ -3,7 +3,6 @@ import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { Command, invokeCommand } from "../commands/Commands";
-import { addQuickCollection } from "../commands/EditCommands";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   let viewMode = getAppState().viewMode;
@@ -89,7 +88,7 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         invokeCommand(Command.MarkRejected);
         break;
       case 'b':
-        addQuickCollection([...selectionManager.items.values()]);
+        invokeCommand(Command.AddQuickCollection);
         break;
     }
   }

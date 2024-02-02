@@ -94,10 +94,7 @@ function onNavigateBack() {
 }
 
 function onAddQuickCollection() {
-
-}
-
-export function addQuickCollection(photos: AlbumPhoto[]) {
+  let photos = [...selectionManager.items.values()];
   getQuickCollection().addPhotos(photos);
 }
 

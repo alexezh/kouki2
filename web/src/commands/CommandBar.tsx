@@ -3,7 +3,7 @@ import Toolbar from '@mui/material/Toolbar/Toolbar';
 import { AlbumPhoto } from '../photo/AlbumPhoto';
 import { useEffect, useState } from 'react';
 import React from 'react';
-import { EditMenu } from './menus/SelectMenu';
+import { EditMenu } from './menus/EditMenu';
 import { LibraryMenu } from './menus/LibraryMenu';
 import { FilterMenu } from './menus/FilterMenu';
 import { PhotoList } from '../photo/PhotoList';
