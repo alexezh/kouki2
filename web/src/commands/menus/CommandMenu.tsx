@@ -1,3 +1,4 @@
+import { Paper } from "@mui/material";
 import Box from "@mui/material/Box/Box";
 import Button from "@mui/material/Button/Button";
 import Menu from "@mui/material/Menu/Menu";
@@ -40,7 +41,9 @@ export function CommandMenu(props: CommandMenuProps) {
         open={props.open}
         onClose={props.onMenuClose}
       >
-        {props.children}
+        <Paper sx={{ width: 320, maxWidth: '100%' }}>
+          {props.children}
+        </Paper>
       </Menu>
       {props.extra ? props.extra() : null}
     </Box>

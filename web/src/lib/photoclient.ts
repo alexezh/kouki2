@@ -11,6 +11,8 @@ export type WirePhotoEntry = {
   fileSize: number;
   favorite: number;
   stars: number;
+  // indicates that photo is hidden from "all phptos" collection
+  hidden: boolean;
   color: string;
   width: number;
   height: number;
@@ -25,6 +27,7 @@ export type WirePhotoEntry = {
 export type WirePhotoUpdate = {
   hash: string;
   favorite?: number;
+  hidden?: boolean;
   stars?: number;
   color?: UpdateString;
   originalHash?: UpdateString;
@@ -41,7 +44,7 @@ export type WireCollectionItem = {
   updateDt: string;
 }
 
-export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'stack' | 'unknown';
+export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'stack' | 'unknown' | 'hidden';
 
 export type WireCollection = {
   id: number;
@@ -114,7 +117,11 @@ let photoUpdateQueue = new BatchDelayedQueue<WirePhotoUpdate>(1000, async (items
   let response = await (await fetchAdapter!.post(`/api/photolibrary/updatephotos`, JSON.stringify(items))).json();
 });
 
-export function wireUpdatePhotos(wire: WirePhotoUpdate) {
+export function wireUpdatePhotos(wire: WirePhotoUpdate[]) {
+  photoUpdateQueue.queue(wire);
+}
+
+export function wireUpdatePhoto(wire: WirePhotoUpdate) {
   photoUpdateQueue.queue(wire);
 }
 

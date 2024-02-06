@@ -1,4 +1,3 @@
-
 /**
  * stores list of callbacks in a weak way
  */
@@ -63,23 +62,39 @@ export class SimpleEventSource {
   }
 }
 
-export interface IEventHandler {
-  invoke(...args: any[]): void;
+export interface IEventHandler<T1> {
+  invoke(arg: T1): void;
 }
-export class WeakEventSource {
-  private handlers: WeakRef<IEventHandler>[] = [];
 
-  public add(handler: IEventHandler): void {
-    this.handlers.push(new WeakRef<IEventHandler>(handler));
+/**
+ * manages array of weak references
+ */
+export class WeakEventSource<T1> {
+  private handlers: WeakRef<IEventHandler<T1>>[] = [];
+  private gaps = 0;
+
+  public add(handler: IEventHandler<T1>): void {
+    if (this.gaps > 0) {
+      for (let i = 0; i < this.handlers.length; i++) {
+        if (!this.handlers[i].deref()) {
+          this.handlers[i] = new WeakRef<IEventHandler<T1>>(handler);
+          this.gaps--;
+          return;
+        }
+      }
+    } else {
+      this.handlers.push(new WeakRef<IEventHandler<T1>>(handler));
+    }
   }
 
-  public invoke(...args: any[]) {
+  public invoke(arg: T1) {
     for (let x of this.handlers) {
       let handler = x.deref();
       if (handler) {
-        handler.invoke(...args);
+        handler.invoke(arg);
+      } else {
+        this.gaps++;
       }
-      // TODO: add cleanup code
     }
   }
 }

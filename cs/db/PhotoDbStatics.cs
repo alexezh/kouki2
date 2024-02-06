@@ -50,6 +50,8 @@ public class PhotoDbStatics
 
       CreateTable(connection, $"CREATE TABLE IF NOT EXISTS Photos ({String.Join(',', fields)})");
 
+      AddColumn(connection, "Photos", "hidden", "INTEGER");
+
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoHash` ON `Photos` (`hash` ASC);");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoFolder` ON `Photos` (`folder` ASC);");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoName` ON `Photos` ('filename' ASC);");
@@ -74,6 +76,24 @@ public class PhotoDbStatics
       // TODO: check error
     }
   }
+
+  private static bool AddColumn(SqliteConnection connection, string table, string column, string type)
+  {
+    try
+    {
+      var command = connection.CreateCommand();
+      command.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {type}";
+
+      var val = command.ExecuteNonQuery();
+
+      return true;
+    }
+    catch (Exception e)
+    {
+      return false;
+    }
+  }
+
 
   private static void CreateIndex(SqliteConnection connection, string commandText)
   {

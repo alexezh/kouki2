@@ -6,6 +6,7 @@ import {
 } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { HiddenPhotoSource } from "./HiddenPhotoSource";
 import { IPhotoListSource, PhotoList } from "./PhotoList";
 import { getPhotoById } from "./PhotoStore";
 
@@ -138,6 +139,11 @@ export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoL
 export function createCollectionPhotoList(listId: PhotoListId) {
   let list = new PhotoList(listId, new CollectionPhotoSource(listId.id as CollectionId));
 
+  return list;
+}
+
+export function createHiddenCollection(listId: PhotoListId) {
+  let list = new PhotoList(listId, new HiddenPhotoSource());
   return list;
 }
 

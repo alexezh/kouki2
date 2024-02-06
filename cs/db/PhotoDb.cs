@@ -17,6 +17,7 @@ public class PhotoEntry
   public string fileExt { get; set; }
   public Int64 fileSize { get; set; }
   public int favorite { get; set; }
+  public bool hidden { get; set; }
   public int stars { get; set; }
   public string color { get; set; }
   public int width { get; set; }
@@ -34,6 +35,7 @@ public class UpdatePhotoRequest
 {
   public string hash { get; set; }
   public int? favorite { get; set; }
+  public bool? hidden { get; set; }
   public int? stars { get; set; }
   public UpdateString? color { get; set; }
   public UpdateString? originalHash { get; set; }
@@ -91,6 +93,18 @@ public static class ReaderExt
       return (string)val;
     }
   }
+  public static bool ReadBoolean(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return false;
+    }
+    else
+    {
+      return ((Int64)val != 0) ? true : false;
+    }
+  }
   public static Int32 ReadInt32(this SqliteDataReader reader, string name)
   {
     var val = reader[name];
@@ -146,13 +160,14 @@ public class PhotoDb
   public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $fav, $width, $height, $format, $originalDt, $phash)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt, $phash)";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
     command.Parameters.AddWithValue("$filesize", entry.fileSize);
     AddBlobValue(command, "$phash", entry.phash);
     command.Parameters.AddWithValue("$hash", entry.hash);
+    command.Parameters.AddWithValue("$hidden", entry.hidden);
     command.Parameters.AddWithValue("$fav", entry.favorite);
     command.Parameters.AddWithValue("$width", entry.width);
     command.Parameters.AddWithValue("$height", entry.height);
@@ -216,6 +231,7 @@ public class PhotoDb
       fileName = (string)reader["filename"],
       fileExt = (string)reader["fileext"],
       fileSize = (Int64)reader["filesize"],
+      hidden = reader.ReadBoolean("hidden"),
       favorite = reader.ReadInt32("fav"),
       stars = reader.ReadInt32("stars"),
       color = reader.ReadString("color"),

@@ -7,6 +7,7 @@ import Icon from '@mui/material/Icon/Icon';
 import { useEffect, useState } from 'react';
 import { computeAggregatedFavs, selectionManager } from './SelectionManager';
 import { setFocusAlbum } from './Commands';
+import { UpdatePhotoContext } from '../photo/AlbumPhoto';
 
 const acceptedActive = (
   <Icon>
@@ -42,16 +43,20 @@ export function StatusBar(props: { className?: string }) {
 
   function handleAccept() {
     let val = (favorite !== 1) ? 1 : 0;
+    let ctx = new UpdatePhotoContext();
     for (let x of selectionManager.items) {
-      x[1].favorite = val;
+      x[1].setFavorite(val, ctx);
     }
+    ctx.commit();
     setFavorite(computeAggregatedFavs());
     setFocusAlbum();
   }
 
   function handleReject() {
     let val = (favorite !== -1) ? -1 : 0;
-    selectionManager.forEach((x) => { x.favorite = val; });
+    let ctx = new UpdatePhotoContext();
+    selectionManager.forEach((x) => { x.setFavorite(val, ctx); });
+    ctx.commit();
     setFavorite(computeAggregatedFavs());
     setFocusAlbum();
   }

@@ -1,3 +1,5 @@
 - done: fix pick for zoom selection, actually select item
 - add code to read and set favs.. form photo lib?
 - add photo count and times on folder
+- "more" item for photos, limit initial to 2 years; still show time?
+- hide photo 

@@ -118,14 +118,16 @@ let catalogs: { name: string, id: PhotoListId }[] =
     { name: 'All Photos', id: new PhotoListId('all', 0 as CollectionId) },
     { name: 'Import', id: new PhotoListId('import', 0 as CollectionId) },
     { name: 'Export', id: new PhotoListId('export', 0 as CollectionId) },
+    { name: 'Hidden', id: new PhotoListId('hidden', 0 as CollectionId) },
   ];
 
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
-  items.push((<CollectionItemLayout text={"Quich collection"} id={new PhotoListId('quick', 0 as CollectionId)} />))
-  items.push((<CollectionItemLayout text={"All Photos"} id={new PhotoListId('all', 0 as CollectionId)} />))
-  items.push((<CollectionListLayout text="Export" lists={getCollectionsByKind('export')} />))
+  items.push((<CollectionItemLayout key='quick' text="Quich collection" id={new PhotoListId('quick', 0 as CollectionId)} />))
+  items.push((<CollectionItemLayout key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
+  items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export')} />))
+  items.push((<CollectionItemLayout key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))
   //catalogs.map((x) => { return () });
 
   return items;

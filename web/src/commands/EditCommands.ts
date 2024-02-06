@@ -1,4 +1,4 @@
-import { AlbumPhoto } from "../photo/AlbumPhoto";
+import { AlbumPhoto, UpdatePhotoContext } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler, invokeCommand } from "./Commands";
@@ -6,11 +6,21 @@ import { getQuickCollection } from "../photo/CollectionStore";
 import { addStack, removeStack } from "../photo/PhotoStore";
 
 export function onMarkFavorite() {
-  selectionManager.forEach((x) => { x.favorite = 1; });
+  let ctx = new UpdatePhotoContext();
+  selectionManager.forEach((x) => { x.setFavorite(1, ctx); });
+  ctx.commit();
 }
 
 export function onMarkRejected() {
-  selectionManager.forEach((x) => { x.favorite = -1; });
+  let ctx = new UpdatePhotoContext();
+  selectionManager.forEach((x) => { x.setFavorite(-1, ctx); });
+  ctx.commit();
+}
+
+export function onMarkHidden() {
+  let ctx = new UpdatePhotoContext();
+  selectionManager.forEach((x) => { x.setHidden(true, ctx); });
+  ctx.commit();
 }
 
 /**
@@ -102,6 +112,7 @@ export function registerEditCommands() {
   addCommandHandler(Command.MarkFavorite, onMarkFavorite);
   addCommandHandler(Command.MarkRejected, onMarkRejected);
   addCommandHandler(Command.AddStack, onAddStack);
+  addCommandHandler(Command.MarkHidden, onMarkHidden);
   addCommandHandler(Command.RemoveStack, onRemoveStack);
   addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);

@@ -6,18 +6,6 @@ export type PhotoListPos = number & {
   __tag_pos: boolean;
 }
 
-class PhotoListEventHandler implements IEventHandler {
-  private owner: PhotoList;
-
-  public constructor(owner: PhotoList) {
-    this.owner = owner;
-  }
-
-  invoke(...args: any[]): void {
-    this.owner.onPhotoChanged(args[0] as AlbumPhoto);
-  }
-}
-
 export interface IPhotoListSource {
   setChangeHandler(func: () => void): void;
   getItems(): ReadonlyArray<AlbumPhoto>;
@@ -66,7 +54,7 @@ export class PhotoList {
    */
   private _savedStacks: Map<PhotoId, ReadonlyArray<PhotoId>> = new Map<PhotoId, ReadonlyArray<PhotoId>>();
   private readonly _source: IPhotoListSource;
-  private _handler: PhotoListEventHandler;
+  private _handler: IEventHandler<AlbumPhoto[]>;
 
   /**
    * total number of photos in the list
@@ -81,7 +69,14 @@ export class PhotoList {
     this._photos = [];
     this._filtered = [];
     this._source = source;
-    this._handler = new PhotoListEventHandler(this);
+
+    let self = this;
+    this._handler = {
+      invoke(photos: AlbumPhoto[]): void {
+        self.onPhotoChanged(photos);
+      }
+    }
+
     this._hideStack = hideStack;
 
     let photos = this._source.getItems();
@@ -419,28 +414,30 @@ export class PhotoList {
   /**
    * called if any photo changed; we only care about stacks
    */
-  public onPhotoChanged(photo: AlbumPhoto) {
+  public onPhotoChanged(photos: AlbumPhoto[]) {
     try {
-      if (!this._idIndex.get(photo.id)) {
-        return;
-      }
+      for (let photo of photos) {
+        if (!this._idIndex.get(photo.id)) {
+          return;
+        }
 
-      let oldStack = this._savedStacks.get(photo.id);
-      if (oldStack !== getStack(photo.stackId)) {
-        console.log("PhotoList: stack changed");
-        if (oldStack) {
-          for (let id of oldStack!) {
-            let idx = this._idIndex.get(id);
-            this._filtered[idx!] = (this._filter) ? this._filter(this._photos[idx!]) : true;
+        let oldStack = this._savedStacks.get(photo.id);
+        if (oldStack !== getStack(photo.stackId)) {
+          console.log("PhotoList: stack changed");
+          if (oldStack) {
+            for (let id of oldStack!) {
+              let idx = this._idIndex.get(id);
+              this._filtered[idx!] = (this._filter) ? this._filter(this._photos[idx!]) : true;
+            }
           }
-        }
 
-        let stack = getStack(photo.stackId);
-        if (stack) {
-          this.hideStackPhotos(photo.stackId, stack);
-        }
+          let stack = getStack(photo.stackId);
+          if (stack) {
+            this.hideStackPhotos(photo.stackId, stack);
+          }
 
-        this.onChanged.invoke(PhotoListChangeType.hide);
+          this.onChanged.invoke(PhotoListChangeType.hide);
+        }
       }
     }
     catch (e: any) {

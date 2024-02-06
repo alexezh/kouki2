@@ -14,7 +14,7 @@ import reportWebVitals from './reportWebVitals';
 import { setFetchAdapter, setSessionId } from './lib/fetchadapter';
 import { FetchAdapterWeb } from './lib/fetchadapterweb';
 import { loadFolders } from './photo/FolderStore';
-import { getAllPhotos, loadLibrary, photoLibraryMap } from './photo/PhotoStore';
+import { loadLibrary, photoLibraryMap } from './photo/PhotoStore';
 import { loadDevices } from './photo/Device';
 import { loadCollections } from './photo/CollectionStore';
 import { registerEditCommands } from './commands/EditCommands';

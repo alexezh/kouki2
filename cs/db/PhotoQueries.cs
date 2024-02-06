@@ -98,6 +98,11 @@ public static class PhotoQueriesExt
       setFields += "fav = $fav";
       command.Parameters.AddWithValue("$fav", updateReqest.favorite);
     }
+    if (updateReqest.hidden != null)
+    {
+      setFields += "hidden = $hidden";
+      command.Parameters.AddWithValue("$hidden", updateReqest.hidden);
+    }
     if (updateReqest.stars != null)
     {
       setFields += "stars = $stars";

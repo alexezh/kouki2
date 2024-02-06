@@ -3,23 +3,39 @@ import { CommandMenu, CommandMenuProps } from "./CommandMenu";
 import FormControlLabel from "@mui/material/FormControlLabel/FormControlLabel";
 import Divider from "@mui/material/Divider/Divider";
 import { FilterFavorite, getAppState, updateAppState } from "../AppState";
-import { useState } from "react";
+import { MouseEventHandler, useState } from "react";
 import Radio from "@mui/material/Radio/Radio";
 import Checkbox from "@mui/material/Checkbox/Checkbox";
+import ListItemIcon from "@mui/material/ListItemIcon/ListItemIcon";
+import Check from '@mui/icons-material/Check';
+import ListItemText from "@mui/material/ListItemText/ListItemText";
+import MenuItem from "@mui/material/MenuItem/MenuItem";
+
+function MenuItemCheck(props: { checked: boolean, text: string, onClick: MouseEventHandler<HTMLElement> }) {
+  return props.checked ?
+    (<MenuItem onClick={props.onClick}>
+      <ListItemIcon>
+        <Check />
+      </ListItemIcon>
+      {props.text}
+    </MenuItem>) :
+    (<MenuItem onClick={props.onClick}>
+      <ListItemText inset>{props.text}</ListItemText>
+    </MenuItem>);
+}
 
 export function FilterMenu(props: CommandMenuProps) {
   const [filterFav, setFilterFav] = useState(getAppState().filterFavorite);
   const [filterDups, setFilterDups] = useState(getAppState().filterDups);
 
-  function filterFavChanged(event: React.ChangeEvent<HTMLInputElement>) {
-    let value = (event.target as HTMLInputElement).value as FilterFavorite;
+  function onFilterFav(value: FilterFavorite) {
     setFilterFav(value);
     updateAppState({ filterFavorite: value })
     props.onMenuClose();
   };
 
-  function filterDupsChanged(event: React.ChangeEvent<HTMLInputElement>) {
-    let value = (event.target as HTMLInputElement).checked;
+  function onFilterDups() {
+    let value = !filterDups;
     setFilterDups(value);
     updateAppState({ filterDups: value })
     props.onMenuClose();
@@ -27,13 +43,11 @@ export function FilterMenu(props: CommandMenuProps) {
 
   return (
     <CommandMenu {...props} >
-      <RadioGroup value={filterFav} onChange={filterFavChanged}>
-        <FormControlLabel control={<Radio />} label="All" value="all" />
-        <FormControlLabel control={<Radio />} label="Favorite" value="favorite" />
-        <FormControlLabel control={<Radio />} label="Rejected" value="rejected" />
-      </RadioGroup>
+      <MenuItemCheck checked={filterFav === 'all'} text='All' onClick={() => onFilterFav('all')} />
+      <MenuItemCheck checked={filterFav === 'favorite'} text='Favorite' onClick={() => onFilterFav('favorite')} />
+      <MenuItemCheck checked={filterFav === 'rejected'} text='Rejected' onClick={() => onFilterFav('rejected')} />
       <Divider />
-      <FormControlLabel control={<Checkbox checked={filterDups} onChange={filterDupsChanged} />} label="Duplicate" />
-    </CommandMenu>
+      <MenuItemCheck checked={filterDups} text='Duplicates' onClick={() => onFilterDups()} />
+    </CommandMenu >
   )
 }

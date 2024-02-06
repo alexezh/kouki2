@@ -1,24 +1,21 @@
-import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
-import { createCollectionPhotoList, getQuickCollection, getStandardCollection, loadCollections } from "./CollectionStore";
+import { PhotoListId } from "./AlbumPhoto";
+import { getAllPhotos } from "./AllPhotosSource";
+import { createCollectionPhotoList, createHiddenCollection, getQuickCollection } from "./CollectionStore";
 import { StaticPhotoSource, getFolderList } from "./FolderStore";
 import { PhotoList } from "./PhotoList";
-import { filterPhotos, getAllPhotos } from "./PhotoStore";
 
 /**
  * it is easier for us to keep lists and invalidate them as we go
  */
 export function loadPhotoList(id: PhotoListId): PhotoList {
-  if (id.kind === 'folder') {
-    return getFolderList(id);
-  } else if (id.kind === 'all') {
-    return getAllPhotos();
-  } else if (id.kind === 'quick') {
-    return getQuickCollection();
-  } else if (id.kind === 'import') {
-    return getQuickCollection();
-  } else if (id.kind === 'export') {
-    return createCollectionPhotoList(id);
-  } else {
-    return new PhotoList(id, new StaticPhotoSource([]));
+  switch (id.kind) {
+    case 'folder': return getFolderList(id);
+    case 'all': return getAllPhotos();
+    case 'quick': return getQuickCollection();
+    case 'import': return getQuickCollection();
+    case 'export': return createCollectionPhotoList(id);
+    case 'hidden': return createHiddenCollection(id);
+    default:
+      return new PhotoList(id, new StaticPhotoSource([]));
   }
 }

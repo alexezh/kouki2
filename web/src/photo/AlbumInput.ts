@@ -87,6 +87,9 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
       case 'x':
         invokeCommand(Command.MarkRejected);
         break;
+      case 'h':
+        invokeCommand(Command.MarkHidden);
+        break;
       case 'b':
         invokeCommand(Command.AddQuickCollection);
         break;

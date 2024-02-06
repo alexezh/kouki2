@@ -1,26 +1,25 @@
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
-import { wireGetCorrelation, wireGetLibrary, wireUpdatePhotos } from "../lib/photoclient";
+import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto, wireUpdatePhotos } from "../lib/photoclient";
 import { IEventHandler, WeakEventSource } from "../lib/synceventsource";
 import { IPhotoListSource, PhotoList } from "./PhotoList";
 import { CollectionId } from "./CollectionStore";
 
-let allPhotos: PhotoList | undefined;
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
 const duplicateByHashBuckets = new Map<string, PhotoId[]>();
-const photoChanged: WeakEventSource = new WeakEventSource();
-const libraryChanged: WeakEventSource = new WeakEventSource();
+export const photoChanged = new WeakEventSource<AlbumPhoto[]>();
+export const libraryChanged = new WeakEventSource<void>();
 let loaded = false;
 
 /**
  * invoked when any photo is changed
  */
-export function addOnPhotoChanged(handler: IEventHandler) {
+export function addOnPhotoChanged(handler: IEventHandler<AlbumPhoto[]>) {
   photoChanged.add(handler);
 }
 
-export function invokeOnPhotoChanged(photo: AlbumPhoto) {
-  photoChanged.invoke(photo);
+export function invokeOnPhotoChanged(photos: AlbumPhoto[]) {
+  photoChanged.invoke(photos);
 }
 
 function completeLoad() {
@@ -129,7 +128,7 @@ function buildStacks() {
     if (orig && orig.wire.stackId != stackId) {
       (stack as PhotoId[]).push(orig.id);
       orig.wire.stackId = stackId;
-      wireUpdatePhotos({ hash: orig.wire.hash, stackId: orig.wire.id })
+      wireUpdatePhoto({ hash: orig.wire.hash, stackId: orig.wire.id })
     } else {
       console.log("buildStacks: cannot find photo");
     }
@@ -152,7 +151,7 @@ export function addStack(stackId: PhotoId, photo: AlbumPhoto) {
   photo.wire.stackId = stackId;
   stack.push(photo.id);
 
-  wireUpdatePhotos({ hash: photo.wire.hash, stackId: stackId })
+  wireUpdatePhoto({ hash: photo.wire.hash, stackId: stackId })
   photo.invokeOnChanged();
 }
 
@@ -172,7 +171,7 @@ export function removeStack(photo: AlbumPhoto) {
   let stack = [...oldStack];
   stack.splice(idx, 1);
 
-  wireUpdatePhotos({ hash: photo.wire.hash, stackId: 0 })
+  wireUpdatePhoto({ hash: photo.wire.hash, stackId: 0 })
   photo.invokeOnChanged();
 }
 
@@ -200,7 +199,7 @@ export function filterPhotos(photos: Map<number, AlbumPhoto> | ReadonlyArray<Alb
   return filtered;
 }
 
-function filterUnique(photos: Map<number, AlbumPhoto> | ReadonlyArray<AlbumPhoto>): AlbumPhoto[] {
+export function filterUnique(photos: Map<number, AlbumPhoto> | ReadonlyArray<AlbumPhoto>): AlbumPhoto[] {
   // make list of non-duplicate photos while including at least one into collection
   let dupPhotos = new Map<number, boolean>();
   let uniquePhotos = filterPhotos(photos, (x: AlbumPhoto) => {
@@ -247,43 +246,3 @@ export function getPhotoById(id: PhotoId): AlbumPhoto | undefined {
   return photoLibraryMap.get(id);
 }
 
-export function getAllPhotos(): PhotoList {
-  if (allPhotos) {
-    return allPhotos;
-  }
-
-  allPhotos = new PhotoList(new PhotoListId('all', 0 as CollectionId), new AllPhotosSource());
-
-  return allPhotos;
-}
-
-export class AllPhotosSource implements IPhotoListSource, IEventHandler {
-  private changeHandler: (() => void) | null = null;
-
-  public constructor() {
-    libraryChanged.add(this);
-  }
-
-  invoke(...args: any[]): void {
-    this.changeHandler?.call(this);
-  }
-
-  public setChangeHandler(func: () => void): void {
-    this.changeHandler = func;
-  }
-
-  addItems(items: AlbumPhoto[]): void {
-  }
-
-  removeItems(items: AlbumPhoto[]): void {
-  }
-
-  public getItems(): ReadonlyArray<AlbumPhoto> {
-    if (photoLibraryMap.size === 0) {
-      return [];
-    }
-    let uniquePhotos = filterUnique(photoLibraryMap);
-    sortByDate(uniquePhotos);
-    return uniquePhotos;
-  }
-}

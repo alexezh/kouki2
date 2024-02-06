@@ -42,8 +42,12 @@ export class BatchDelayedQueue<T> {
     this.func = func;
   }
 
-  public queue(item: T) {
-    this.batch.push(item);
+  public queue(items: T[] | T) {
+    if (Array.isArray(items)) {
+      this.batch.push(...items);
+    } else {
+      this.batch.push(items);
+    }
     if (this.pending) {
       return;
     }

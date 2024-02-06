@@ -23,6 +23,21 @@ export class PhotoListId {
   public toString() { return `${this.kind}!${this.id}` };
 }
 
+export class UpdatePhotoContext {
+  private photos: AlbumPhoto[] = [];
+  private updates: WirePhotoUpdate[] = [];
+
+  public addPhoto(photo: AlbumPhoto, update: WirePhotoUpdate) {
+    this.photos.push(photo);
+    this.updates.push(update);
+  }
+
+  public commit() {
+    invokeOnPhotoChanged(this.photos);
+    wireUpdatePhotos(this.updates);
+  }
+}
+
 export class AlbumPhoto {
   private onChanged: { id: number, func: (p: AlbumPhoto) => void }[] = [];
   public wire: WirePhotoEntry;
@@ -51,6 +66,20 @@ export class AlbumPhoto {
     return this.wire.favorite;
   }
 
+  public get hidden(): boolean {
+    return this.wire.hidden;
+  }
+
+  public setHidden(val: boolean, ctx: UpdatePhotoContext) {
+    this.wire.hidden = val;
+    this.invokeOnChanged();
+    ctx.addPhoto(this, {
+      hash: this.wire.hash,
+      hidden: val
+    });
+    //wireUpdatePhotos(upd);
+  }
+
   public get id(): PhotoId {
     return this.wire.id as PhotoId;
   }
@@ -59,14 +88,14 @@ export class AlbumPhoto {
     return this.wire.stackId as PhotoId;
   }
 
-  public set favorite(val: number) {
+  public setFavorite(val: number, ctx: UpdatePhotoContext) {
     this.wire.favorite = val;
     this.invokeOnChanged();
-    let upd: WirePhotoUpdate = {
+    ctx.addPhoto(this, {
       hash: this.wire.hash,
       favorite: val
-    }
-    wireUpdatePhotos(upd);
+    });
+    //wireUpdatePhotos(upd);
   }
 
   public get originalId(): number {
@@ -116,7 +145,7 @@ export class AlbumPhoto {
     }
 
     // invoke global handlers used by lists and so on
-    invokeOnPhotoChanged(this);
+    //invokeOnPhotoChanged(this);
   }
 }
 
