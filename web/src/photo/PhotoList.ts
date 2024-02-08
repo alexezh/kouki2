@@ -54,7 +54,7 @@ export class PhotoList {
    */
   private _savedStacks: Map<PhotoId, ReadonlyArray<PhotoId>> = new Map<PhotoId, ReadonlyArray<PhotoId>>();
   private readonly _source: IPhotoListSource;
-  private _handler: IEventHandler<AlbumPhoto[]>;
+  //private _handler: IEventHandler<AlbumPhoto[]>;
 
   /**
    * total number of photos in the list
@@ -71,11 +71,6 @@ export class PhotoList {
     this._source = source;
 
     let self = this;
-    this._handler = {
-      invoke(photos: AlbumPhoto[]): void {
-        self.onPhotoChanged(photos);
-      }
-    }
 
     this._hideStack = hideStack;
 
@@ -85,7 +80,12 @@ export class PhotoList {
     }
 
     // register handler for any photo change
-    addOnPhotoChanged(this._handler);
+    // this._handler = {
+    //   invoke(photos: AlbumPhoto[]): void {
+    //     self.onPhotoChanged(photos);
+    //   }
+    // }
+    // addOnPhotoChanged(this._handler);
 
     this._source.setChangeHandler(this.onListChanged.bind(this));
   }

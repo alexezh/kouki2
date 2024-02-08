@@ -1,39 +1,38 @@
 import { IEventHandler } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
 import { CollectionId } from "./CollectionStore";
+import { LibraryPhotoSource } from "./LibraryPhotoSource";
 import { IPhotoListSource, PhotoList } from "./PhotoList";
-import { filterUnique, libraryChanged, photoLibraryMap, sortByDate } from "./PhotoStore";
+import { filterPhotos, filterUnique, libraryChanged, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 let allPhotos: PhotoList | undefined;
 
-export class AllPhotosSource implements IPhotoListSource, IEventHandler<AlbumPhoto[]> {
-  private changeHandler: (() => void) | null = null;
+export class AllPhotosSource extends LibraryPhotoSource {
+  private uniquePhotos: AlbumPhoto[] | null = null;
 
   public constructor() {
-    libraryChanged.add(this);
+    super();
   }
 
-  invoke(...args: any[]): void {
-    this.changeHandler?.call(this);
+  protected override onLibraryChanged(): void {
+    this.uniquePhotos = null;
+    super.onLibraryChanged();
   }
-
-  public setChangeHandler(func: () => void): void {
-    this.changeHandler = func;
-  }
-
-  addItems(items: AlbumPhoto[]): void {
-  }
-
-  removeItems(items: AlbumPhoto[]): void {
-  }
-
   public getItems(): ReadonlyArray<AlbumPhoto> {
     if (photoLibraryMap.size === 0) {
       return [];
     }
-    let uniquePhotos = filterUnique(photoLibraryMap);
-    sortByDate(uniquePhotos);
-    return uniquePhotos;
+
+    if (!this.uniquePhotos) {
+      this.uniquePhotos = filterUnique(photoLibraryMap);
+      sortByDate(this.uniquePhotos);
+    }
+
+    let photos = filterPhotos(this.uniquePhotos, (x: AlbumPhoto) => {
+      return !x.hidden;
+    });
+
+    return photos;
   }
 }
 
