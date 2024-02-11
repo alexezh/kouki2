@@ -1,5 +1,5 @@
-import { CSSProperties, Key, useEffect, useState } from "react";
-import { AlbumPhoto, AlbumRow } from "./AlbumPhoto";
+import { CSSProperties, useEffect, useState } from "react";
+import { AlbumPhoto } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 import { ViewMode } from "../commands/AppState";
 import smiley from "../assets/smiley.svg"
@@ -40,6 +40,7 @@ export type PhotoPropTypes = {
   style?: CSSProperties;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
+  hideStackIcon?: boolean;
   padding: number;
   visibility?: CSS.Property.Visibility;
 
@@ -56,8 +57,8 @@ const imgWithClick = { cursor: 'pointer' };
 
 export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
-  let [fav, setFav] = useState(getFavIcon(props.photo.favorite));
-  let [stack, setStack] = useState(getStackIcon(props.photo.hasStack));
+  let [favIcon, setIconFav] = useState(getFavIcon(props.photo.favorite));
+  let [stackIcon, setStackIcon] = useState(getStackIcon(props.photo.hasStack));
 
   useEffect(() => {
     let idSelected = selectionManager.addOnSelected(props.photo, (x: AlbumPhoto, selected: boolean) => {
@@ -65,7 +66,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
     })
 
     let idChanged = props.photo.addOnChanged((photo: AlbumPhoto) => {
-      setFav(getFavIcon(photo.favorite));
+      setIconFav(getFavIcon(photo.favorite));
     });
     return () => {
       selectionManager.removeOnSelected(props.photo, idSelected);
@@ -150,20 +151,20 @@ export function PhotoLayout(props: PhotoPropTypes) {
 
   return (
     <div className="Photo-layout" key={props.photo.wire.hash} style={divStyle}>
-      {(fav) ?
+      {(favIcon) ?
         (<img
           className="Photo-layout-fav-icon"
           width={20}
           height={20}
-          src={fav}
+          src={favIcon}
         />) : null}
 
-      {(stack) ?
+      {(!props.hideStackIcon && stackIcon) ?
         (<img
           className="Photo-layout-stack-icon"
           width={20}
           height={20}
-          src={stack}
+          src={stackIcon}
         />) : null}
 
       <img

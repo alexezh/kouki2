@@ -1,9 +1,10 @@
 import { AlbumPhoto, UpdatePhotoContext } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
-import { Command, addCommandHandler, invokeCommand } from "./Commands";
+import { Command, addCommandHandler } from "./Commands";
 import { getQuickCollection } from "../photo/CollectionStore";
 import { addStack, removeStack } from "../photo/PhotoStore";
+import { PhotoList, PhotoListPos } from "../photo/PhotoList";
 
 export function onMarkFavorite() {
   let ctx = new UpdatePhotoContext();
@@ -18,9 +19,42 @@ export function onMarkRejected() {
 }
 
 export function onMarkHidden() {
+  console.log('onMarkHidden');
   let ctx = new UpdatePhotoContext();
+
+  let list = getAppState().workList;
+  let lastPhoto = selectionManager.lastSelectedPhoto;
+  if (lastPhoto === null) {
+    return;
+  }
+  let nextPhoto = list.getNext(lastPhoto);
+  let prevPhoto = list.getPrev(lastPhoto);
+
   selectionManager.forEach((x) => { x.setHidden(true, ctx); });
   ctx.commit();
+
+  // move selection to next photo
+  if (nextPhoto !== -1) {
+    selectionManager.reset([list.getItem(nextPhoto)]);
+  } else if (prevPhoto !== -1) {
+    selectionManager.reset([list.getItem(prevPhoto)]);
+  }
+}
+
+/**
+ * preserve selection around position
+ */
+function preserveSelection(list: PhotoList, pos: PhotoListPos) {
+  // move selection to next photo
+  let nextPhoto = list.getNext(pos);
+  if (nextPhoto !== -1) {
+    selectionManager.reset([list.getItem(nextPhoto)]);
+  } else {
+    let prevPhoto = list.getPrev(pos);
+    if (prevPhoto !== -1) {
+      selectionManager.reset([list.getItem(prevPhoto)]);
+    }
+  }
 }
 
 /**
@@ -43,20 +77,18 @@ export function onAddStack() {
     }
     let prevPhoto = list.getItem(list.getPrev(pos));
 
+    let ctx = new UpdatePhotoContext();
+    // if previous photo is stack, add to existing stack
+    // otherwise create new stack
     if (prevPhoto.stackId) {
-      addStack(prevPhoto.stackId, photo);
+      addStack(prevPhoto.stackId, photo, ctx);
     } else {
-      addStack(prevPhoto.id, prevPhoto);
-      addStack(prevPhoto.id, photo);
+      addStack(prevPhoto.id, prevPhoto, ctx);
+      addStack(prevPhoto.id, photo, ctx);
     }
+    ctx.commit();
 
-    // move selection to next photo
-    let nextPhoto = list.getNext(pos);
-    if (nextPhoto !== -1) {
-      selectionManager.reset([list.getItem(nextPhoto)]);
-    } else {
-      selectionManager.reset([prevPhoto]);
-    }
+    preserveSelection(list, pos);
   } else {
     console.log('onAddStack: missing multiple photo');
   }

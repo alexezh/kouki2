@@ -1,14 +1,12 @@
 import { AlbumPhoto, AlbumRow, PhotoListId } from "../photo/AlbumPhoto";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { selectionManager } from "./SelectionManager";
-import { PhotoList } from "../photo/PhotoList";
+import { FilterFavorite, PhotoList } from "../photo/PhotoList";
 import { loadPhotoList } from "../photo/LoadPhotoList";
 import { getPhotoById, getStack } from "../photo/PhotoStore";
 import { StaticPhotoSource } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
 import { RowCollection } from "../photo/RowCollection";
-
-export type FilterFavorite = "all" | "favorite" | "rejected";
 
 /**
  * general note. react useEffect/useState should only be used to manage state related to UI
@@ -121,12 +119,8 @@ export function updateAppState(update: AppStateUpdate) {
     rebuildList = true;
   }
 
-  if (update.filterFavorite && state.filterFavorite !== update.filterFavorite) {
-    rebuildList = true;
-  }
-
-  if (update.filterDups !== undefined && state.filterDups !== update.filterDups) {
-    rebuildList = true;
+  if (state.navList) {
+    state.navList.source.setAppFilter(update);
   }
 
   // update our internal state
@@ -141,33 +135,17 @@ export function updateAppState(update: AppStateUpdate) {
     setTimeout(async () => {
       let photos: PhotoList = loadPhotoList(state.navListId);
 
-      photos.setFilter((x: AlbumPhoto) => {
-        if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
-          return false;
-        }
-        else if (state.filterFavorite === 'rejected' && x.favorite >= 0) {
-          return false;
-        }
-
-        if (state.filterDups && x.similarId === 0) {
-          return false;
-        }
-
-        return true;
-      });
-
       if (state.navList) {
-        state.navList.removeOnChanged(state.listChangeId);
+        state.navList.removeOnListChanged(state.listChangeId);
       }
 
       // set both work and nav list
       state.navList = photos;
       state.workList = photos;
-      state.listChangeId = state.navList.addOnChanged(() => {
+      state.listChangeId = state.navList.addOnListChanged(() => {
         console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
         state.years = buildYears(photos);
-        state.navRows.load(state.navList);
         stateChanged.invoke();
       });
 
@@ -234,7 +212,7 @@ export function openPhotoStack(photo: AlbumPhoto) {
     }
   }
 
-  let list = new PhotoList(new PhotoListId('stack', 0 as CollectionId), new StaticPhotoSource(photos), false);
+  let list = new PhotoList(new PhotoListId('stack', 0 as CollectionId), new StaticPhotoSource(photos));
 
   updateAppState({ workList: list, viewMode: ViewMode.stripe });
 }

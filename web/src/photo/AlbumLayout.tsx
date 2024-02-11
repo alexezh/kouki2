@@ -84,6 +84,7 @@ export function AlbumLayout(props: PhotoAlbumProps) {
             <StripeLayout
               width={props.width}
               height={props.height}
+              hideStackIcon={true}
               padding={photoPadding} />
           ) : null
         }

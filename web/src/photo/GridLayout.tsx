@@ -68,12 +68,14 @@ export function GridLayout(props: GridAlbumProps) {
 
 
     // add listener for state changes
-    let rowsId = getAppState().navRows.addOnChanged((arg: { scrollPos?: number, invalidatePos: number }) => {
+    let rowsId = getAppState().navRows.addOnChanged((arg: { scrollPos?: number, invalidatePos?: number }) => {
       // update layout when we navigate
       if (listRef.current) {
         console.log("GridLayout: rows changed");
-        // @ts-ignore
-        listRef.current.resetAfterIndex(arg.invalidatePos);
+        if (arg.invalidatePos) {
+          // @ts-ignore
+          listRef.current.resetAfterIndex(arg.invalidatePos);
+        }
         if (arg.scrollPos !== undefined) {
           // @ts-ignore
           listRef.current.scrollToItem(arg.scrollPos);

@@ -6,7 +6,7 @@ import { photoPadding } from "./AlbumLayout";
 import { makeByMonthRows } from "./MakeRows";
 import { hashInt52, hashString } from "../lib/hash";
 
-export type RowCollectionChangedArg = { scrollPos?: number, invalidatePos: number };
+export type RowCollectionChangedArg = { scrollPos?: number, invalidatePos?: number };
 
 export class RowCollection {
   private rowsIt: IterableIterator<AlbumRow> | null = null;
@@ -98,10 +98,10 @@ export class RowCollection {
   public load(list: PhotoList) {
     console.log('RowCollection:load ' + list.id.toString())
     if (this.photoListChangedId !== 0) {
-      this.photoList!.removeOnChanged(this.photoListChangedId)
+      this.photoList!.removeOnListChanged(this.photoListChangedId)
     }
     this.photoList = list;
-    this.photoListChangedId = this.photoList.addOnChanged(this.onListChanged.bind(this))
+    this.photoListChangedId = this.photoList.addOnListChanged(this.onListChanged.bind(this))
     if (this.width > 0) {
       this.resetRows();
     }
@@ -111,7 +111,7 @@ export class RowCollection {
   private onListChanged(arg: PhotoListChangedArg) {
     // when list changes, we keep original and compare
     let oldRows = this.rows;
-    let invalidatePos = 0;
+    let invalidatePos: number | undefined;
     this.resetRows();
 
     // if new list has fewer items; we reset for sure

@@ -22,14 +22,14 @@ export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
     list = loadPhotoList(props.id);
     setCount(list.photoCount);
     if (collId !== -1) {
-      collId = list.addOnChanged(() => {
+      collId = list.addOnListChanged(() => {
         setCount(list!.photoCount);
       });
     }
 
     return () => {
       if (collId > 0) {
-        list!.removeOnChanged(collId);
+        list!.removeOnListChanged(collId);
       }
       collId = -1;
     }

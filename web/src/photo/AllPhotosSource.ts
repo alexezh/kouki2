@@ -1,23 +1,82 @@
-import { IEventHandler } from "../lib/synceventsource";
-import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoListId } from "./AlbumPhoto";
 import { CollectionId } from "./CollectionStore";
 import { LibraryPhotoSource } from "./LibraryPhotoSource";
-import { IPhotoListSource, PhotoList } from "./PhotoList";
-import { filterPhotos, filterUnique, libraryChanged, photoLibraryMap, sortByDate } from "./PhotoStore";
+import { AppFilter, FilterFavorite, PhotoList } from "./PhotoList";
+import { filterUnique, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 let allPhotos: PhotoList | undefined;
 
+/**
+ *       photos.setFilter((x: AlbumPhoto) => {
+        if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
+          return false;
+        }
+        else if (state.filterFavorite === 'rejected' && x.favorite >= 0) {
+          return false;
+        }
+
+        if (state.filterDups && x.similarId === 0) {
+          return false;
+        }
+
+        return true;
+      });
+
+
+ */
 export class AllPhotosSource extends LibraryPhotoSource {
   private uniquePhotos: AlbumPhoto[] | null = null;
+  private filterFavorite: FilterFavorite = 'all';
+  private filterDups: boolean = false;
 
   public constructor() {
     super();
   }
 
-  protected override onLibraryChanged(): void {
+  protected override onLibraryChanged(updates: LibraryUpdateRecord[]): void {
     this.uniquePhotos = null;
-    super.onLibraryChanged();
+    super.onLibraryChanged(updates);
   }
+
+  public setAppFilter(filter: AppFilter): void {
+    let updateFilter = false;
+    if (filter.filterDups !== undefined) {
+      this.filterDups = filter.filterDups;
+      updateFilter = true;
+    }
+    if (filter.filterFavorite !== undefined) {
+      this.filterFavorite = filter.filterFavorite;
+      updateFilter = true;
+    }
+
+    if (updateFilter) {
+      this.changeHandler?.call(this, [{ kind: LibraryUpdateRecordKind.filter }]);
+    }
+  }
+
+  public isHidden(photo: AlbumPhoto): boolean {
+    if (this.filterFavorite === 'favorite' && photo.favorite <= 0) {
+      return true;
+    }
+    else if (this.filterFavorite === 'rejected' && photo.favorite >= 0) {
+      return false;
+    }
+
+    if (this.filterDups && photo.similarId === 0) {
+      return false;
+    }
+
+    if (photo.stackHidden || photo.hidden) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * we want to do most of filtering in source since we have index
+   * and this allows us to preserve position of item. But it creates problem with customization
+   */
   public getItems(): ReadonlyArray<AlbumPhoto> {
     if (photoLibraryMap.size === 0) {
       return [];
@@ -28,11 +87,7 @@ export class AllPhotosSource extends LibraryPhotoSource {
       sortByDate(this.uniquePhotos);
     }
 
-    let photos = filterPhotos(this.uniquePhotos, (x: AlbumPhoto) => {
-      return !x.hidden;
-    });
-
-    return photos;
+    return this.uniquePhotos;
   }
 }
 

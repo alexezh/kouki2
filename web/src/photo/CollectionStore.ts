@@ -7,7 +7,7 @@ import {
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
 import { HiddenPhotoSource } from "./HiddenPhotoSource";
-import { IPhotoListSource, PhotoList } from "./PhotoList";
+import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
 import { getPhotoById } from "./PhotoStore";
 
 export type CollectionId = number & {
@@ -174,6 +174,13 @@ export class CollectionPhotoSource implements IPhotoListSource {
     setTimeout(async () => {
       await this.loadPhotos();
     })
+  }
+
+  public isHidden(photo: AlbumPhoto): boolean {
+    return false;
+  }
+  public setAppFilter(filter: AppFilter): void {
+
   }
 
   protected async getOrCreateCollection(): Promise<CollectionId> {

@@ -1,15 +1,12 @@
-import RadioGroup from "@mui/material/RadioGroup/RadioGroup";
 import { CommandMenu, CommandMenuProps } from "./CommandMenu";
-import FormControlLabel from "@mui/material/FormControlLabel/FormControlLabel";
 import Divider from "@mui/material/Divider/Divider";
-import { FilterFavorite, getAppState, updateAppState } from "../AppState";
+import { getAppState, updateAppState } from "../AppState";
 import { MouseEventHandler, useState } from "react";
-import Radio from "@mui/material/Radio/Radio";
-import Checkbox from "@mui/material/Checkbox/Checkbox";
 import ListItemIcon from "@mui/material/ListItemIcon/ListItemIcon";
 import Check from '@mui/icons-material/Check';
 import ListItemText from "@mui/material/ListItemText/ListItemText";
 import MenuItem from "@mui/material/MenuItem/MenuItem";
+import { FilterFavorite } from "../../photo/PhotoList";
 
 function MenuItemCheck(props: { checked: boolean, text: string, onClick: MouseEventHandler<HTMLElement> }) {
   return props.checked ?

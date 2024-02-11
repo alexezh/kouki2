@@ -1,27 +1,20 @@
 import { IEventHandler } from "../lib/synceventsource";
-import { AlbumPhoto } from "./AlbumPhoto";
-import { IPhotoListSource } from "./PhotoList";
-import { libraryChanged, photoChanged } from "./PhotoStore";
+import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind } from "./AlbumPhoto";
+import { AppFilter, IPhotoListSource } from "./PhotoList";
+import { libraryChanged } from "./PhotoStore";
 
 export abstract class LibraryPhotoSource implements IPhotoListSource {
-  private changeHandler: (() => void) | null = null;
-  private readonly photoChangedHandler: IEventHandler<AlbumPhoto[]>;
-  private readonly libraryChangedHandler: IEventHandler<void>;
+  protected changeHandler: ((update: LibraryUpdateRecord[]) => void) | null = null;
+  private readonly libraryChangedHandler: IEventHandler<LibraryUpdateRecord[]>;
 
   public constructor() {
     let self = this;
-    this.photoChangedHandler = {
-      invoke(args: AlbumPhoto[]): void {
-        return self.onPhotoChanged(args)
-      }
-    }
     this.libraryChangedHandler = {
-      invoke(): void {
-        return self.onLibraryChanged()
+      invoke(updates: LibraryUpdateRecord[]): void {
+        return self.onLibraryChanged(updates)
       }
     }
     libraryChanged.add(this.libraryChangedHandler);
-    photoChanged.add(this.photoChangedHandler);
   }
 
   public setChangeHandler(func: () => void): void {
@@ -34,12 +27,11 @@ export abstract class LibraryPhotoSource implements IPhotoListSource {
   removeItems(items: AlbumPhoto[]): void {
   }
 
-  protected onPhotoChanged(photos: AlbumPhoto[]) {
-    this.changeHandler?.call(this);
-  }
+  public abstract setAppFilter(filter: AppFilter): void;
+  public abstract isHidden(photo: AlbumPhoto): boolean;
 
-  protected onLibraryChanged() {
-    this.changeHandler?.call(this);
+  protected onLibraryChanged(updates: LibraryUpdateRecord[]) {
+    this.changeHandler?.call(this, updates);
   }
 
   abstract getItems(): readonly AlbumPhoto[];

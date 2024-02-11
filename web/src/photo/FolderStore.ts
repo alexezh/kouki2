@@ -1,7 +1,7 @@
 import { WireFolder, wireGetFolders } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, FolderId, PhotoListId } from "./AlbumPhoto";
-import { IPhotoListSource, PhotoList } from "./PhotoList";
+import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
 import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
@@ -163,10 +163,19 @@ export class StaticPhotoSource implements IPhotoListSource {
   public constructor(photos: AlbumPhoto[]) {
     this.photos = photos;
   }
+
   addItems(items: AlbumPhoto[]): void {
   }
 
   removeItems(items: AlbumPhoto[]): void {
+  }
+
+  public isHidden(photo: AlbumPhoto): boolean {
+    return false;
+  }
+
+  public setAppFilter(filter: AppFilter): void {
+
   }
 
   public setChangeHandler(func: () => void): void {

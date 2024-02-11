@@ -69,12 +69,12 @@ function FolderLayout(props: { folder: PhotoFolder }) {
 
     let list = getFolderList(new PhotoListId('folder', props.folder.wire!.id as FolderId));
     setCount(list.photoCount);
-    let collId = list.addOnChanged(() => {
+    let collId = list.addOnListChanged(() => {
       setCount(list.photoCount);
     });
 
     return () => {
-      list.removeOnChanged(collId);
+      list.removeOnListChanged(collId);
     }
   }, [props.folder]);
 

@@ -69,25 +69,25 @@ export interface IEventHandler<T1> {
 /**
  * manages array of weak references
  */
-export class WeakEventSource<T1> {
-  private handlers: WeakRef<IEventHandler<T1>>[] = [];
+export class WeakEventSource<T> {
+  private handlers: WeakRef<IEventHandler<T>>[] = [];
   private gaps = 0;
 
-  public add(handler: IEventHandler<T1>): void {
+  public add(handler: IEventHandler<T>): void {
     if (this.gaps > 0) {
       for (let i = 0; i < this.handlers.length; i++) {
         if (!this.handlers[i].deref()) {
-          this.handlers[i] = new WeakRef<IEventHandler<T1>>(handler);
+          this.handlers[i] = new WeakRef<IEventHandler<T>>(handler);
           this.gaps--;
           return;
         }
       }
     } else {
-      this.handlers.push(new WeakRef<IEventHandler<T1>>(handler));
+      this.handlers.push(new WeakRef<IEventHandler<T>>(handler));
     }
   }
 
-  public invoke(arg: T1) {
+  public invoke(arg: T) {
     for (let x of this.handlers) {
       let handler = x.deref();
       if (handler) {

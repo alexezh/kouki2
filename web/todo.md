@@ -3,3 +3,4 @@
 - add photo count and times on folder
 - "more" item for photos, limit initial to 2 years; still show time?
 - hide photo 
+- fix quick collection to have history

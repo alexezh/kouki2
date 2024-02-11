@@ -10,13 +10,14 @@ import { getPhotoById } from "./PhotoStore";
 import { PhotoViewer } from "./PhotoViewer";
 import { PhotoListPos } from "./PhotoList";
 
-export type PhotoStackProps = {
+export type StripeLayoutProps = {
   width: number;
   height: number;
   padding: number;
+  hideStackIcon?: boolean;
 }
 
-export function StripeLayout(props: PhotoStackProps): JSX.Element {
+export function StripeLayout(props: StripeLayoutProps): JSX.Element {
   let [version, setVersion] = useState(0);
   const listRef = useRef(null);
 
@@ -43,12 +44,12 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
       }
     });
 
-    let collId = getAppState().workList.addOnChanged(() => {
+    let collId = getAppState().workList.addOnListChanged(() => {
       setVersion(getAppState().version);
     });
 
     return () => {
-      getAppState().workList.removeOnChanged(collId);
+      getAppState().workList.removeOnListChanged(collId);
       selectionManager.removeOnSelectionChanged(selectId);
     }
   });
@@ -77,6 +78,7 @@ export function StripeLayout(props: PhotoStackProps): JSX.Element {
         key={photo.wire.hash}
         style={listProps.style}
         photo={photo}
+        hideStackIcon={props.hideStackIcon}
         viewMode={ViewMode.stripe}
         height={photoHeight}
         onClick={() => handleClick(listProps.index!)}

@@ -1,32 +1,25 @@
-import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
-import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto, wireUpdatePhotos } from "../lib/photoclient";
-import { IEventHandler, WeakEventSource } from "../lib/synceventsource";
-import { IPhotoListSource, PhotoList } from "./PhotoList";
-import { CollectionId } from "./CollectionStore";
+import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId, UpdatePhotoContext } from "./AlbumPhoto";
+import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto } from "../lib/photoclient";
+import { WeakEventSource } from "../lib/synceventsource";
 
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
 const duplicateByHashBuckets = new Map<string, PhotoId[]>();
-export const photoChanged = new WeakEventSource<AlbumPhoto[]>();
-export const libraryChanged = new WeakEventSource<void>();
+export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
+
+export function invokeLibraryChanged(updates: LibraryUpdateRecord[]) {
+  libraryChanged.invoke(updates);
+}
 
 /**
  * invoked when any photo is changed
  */
-export function addOnPhotoChanged(handler: IEventHandler<AlbumPhoto[]>) {
-  photoChanged.add(handler);
-}
-
-export function invokeOnPhotoChanged(photos: AlbumPhoto[]) {
-  photoChanged.invoke(photos);
-}
-
 function completeLoad() {
   loaded = true;
 
   setTimeout(async () => {
-    libraryChanged.invoke();
+    libraryChanged.invoke([{ kind: LibraryUpdateRecordKind.load }]);
   });
 }
 
@@ -123,19 +116,39 @@ function buildStacks() {
     }
   }
 
+  // update stack cover
+  let ctx = new UpdatePhotoContext(false);
   for (let [stackId, stack] of stackMap) {
-    let orig = photoLibraryMap.get(stackId);
-    if (orig && orig.wire.stackId != stackId) {
-      (stack as PhotoId[]).push(orig.id);
-      orig.wire.stackId = stackId;
-      wireUpdatePhoto({ hash: orig.wire.hash, stackId: orig.wire.id })
-    } else {
-      console.log("buildStacks: cannot find photo");
-    }
+    updateStackCover(stack, ctx);
+    // this is hack for old version which did not store stackId
+    // no longer needed
+    // if (orig && orig.wire.stackId != stackId) {
+    //   (stack as PhotoId[]).push(orig.id);
+    //   orig.wire.stackId = stackId;
+    //   wireUpdatePhoto({ hash: orig.wire.hash, stackId: orig.wire.id })
+    // } else {
+    //   console.log("buildStacks: cannot find photo");
+    // }
+  }
+  // we do not have to generate update
+}
+
+function updateStackCover(stack: ReadonlyArray<PhotoId>, ctx: UpdatePhotoContext) {
+  let cover: PhotoId | undefined = undefined;
+
+  let favIdx = stack.findIndex((x: PhotoId) => getPhotoById(x)!.favorite);
+  if (favIdx === -1) {
+    cover = stack[0];
+  } else {
+    cover = stack[favIdx];
+  }
+
+  for (let photo of stack) {
+    getPhotoById(photo)!.setStackHidden(photo !== cover, ctx);
   }
 }
 
-export function addStack(stackId: PhotoId, photo: AlbumPhoto) {
+export function addStack(stackId: PhotoId, photo: AlbumPhoto, ctx: UpdatePhotoContext) {
   let oldStack = stackMap.get(stackId);
   let stack: PhotoId[];
 
@@ -147,6 +160,7 @@ export function addStack(stackId: PhotoId, photo: AlbumPhoto) {
   }
 
   stackMap.set(stackId, stack);
+  updateStackCover(stack, ctx);
 
   photo.wire.stackId = stackId;
   stack.push(photo.id);

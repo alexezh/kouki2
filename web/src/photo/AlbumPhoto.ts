@@ -1,7 +1,7 @@
 import { Key } from "react";
 import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
-import { invokeOnPhotoChanged } from "./PhotoStore";
 import { CollectionId } from "./CollectionStore";
+import { invokeLibraryChanged } from "./PhotoStore";
 
 export type FolderId = number & {
   __tag_folder: boolean;
@@ -23,18 +23,75 @@ export class PhotoListId {
   public toString() { return `${this.kind}!${this.id}` };
 }
 
-export class UpdatePhotoContext {
-  private photos: AlbumPhoto[] = [];
-  private updates: WirePhotoUpdate[] = [];
+export enum LibraryUpdateRecordKind {
+  load,
+  add,
+  remove,
+  update,
+  filter,
+}
 
-  public addPhoto(photo: AlbumPhoto, update: WirePhotoUpdate) {
-    this.photos.push(photo);
+export type PhotoUpdateRecord = {
+  kind: LibraryUpdateRecordKind.update;
+  photo: AlbumPhoto;
+  favorite?: number;
+  hidden?: boolean;
+  stars?: number;
+  stackId?: number;
+  stackHidden?: boolean;
+}
+
+export type LibraryLoadRecord = {
+  kind: LibraryUpdateRecordKind.load;
+}
+
+export type LibraryFilterRecord = {
+  kind: LibraryUpdateRecordKind.filter;
+}
+
+export type LibraryAddRecord = {
+  kind: LibraryUpdateRecordKind.add;
+  photos: AlbumPhoto[];
+}
+
+export type LibraryRemoveRecord = {
+  kind: LibraryUpdateRecordKind.remove;
+  photos: AlbumPhoto[];
+}
+
+export type LibraryUpdateRecord =
+  PhotoUpdateRecord |
+  LibraryLoadRecord |
+  LibraryAddRecord |
+  LibraryRemoveRecord |
+  LibraryFilterRecord;
+
+export class UpdatePhotoContext {
+  private updates: PhotoUpdateRecord[] = [];
+  private wireUpdates: WirePhotoUpdate[] = [];
+  private sendWire: boolean;
+
+  public constructor(sendWire: boolean = true) {
+    this.sendWire = sendWire;
+  }
+
+  public addPhoto(update: PhotoUpdateRecord) {
     this.updates.push(update);
+    if (this.sendWire) {
+      let wireUpdate: WirePhotoUpdate = {
+        hash: update.photo.wire.hash,
+        hidden: update.hidden,
+        favorite: update.favorite
+      }
+      this.wireUpdates.push(wireUpdate);
+    }
   }
 
   public commit() {
-    invokeOnPhotoChanged(this.photos);
-    wireUpdatePhotos(this.updates);
+    invokeLibraryChanged(this.updates);
+    if (this.sendWire) {
+      wireUpdatePhotos(this.wireUpdates);
+    }
   }
 }
 
@@ -44,6 +101,7 @@ export class AlbumPhoto {
   public width: number = 0;
   public height: number = 0;
   public scale: number = 1;
+  private _stackHidden: boolean = false;
 
   // ID of first similar
   public similarId: PhotoId = 0 as PhotoId;
@@ -55,15 +113,18 @@ export class AlbumPhoto {
    */
   public dupCount: number = 1;
 
-  /**
-   * true if stack not empty
-   */
-  public get hasStack(): boolean {
-    return !!this.stackId;
-  }
-
   public get favorite(): number {
     return this.wire.favorite;
+  }
+
+  public setFavorite(val: number, ctx: UpdatePhotoContext) {
+    this.wire.favorite = val;
+    this.invokeOnChanged();
+    ctx.addPhoto({
+      kind: LibraryUpdateRecordKind.update,
+      photo: this,
+      favorite: val
+    });
   }
 
   public get hidden(): boolean {
@@ -73,11 +134,32 @@ export class AlbumPhoto {
   public setHidden(val: boolean, ctx: UpdatePhotoContext) {
     this.wire.hidden = val;
     this.invokeOnChanged();
-    ctx.addPhoto(this, {
-      hash: this.wire.hash,
+    ctx.addPhoto({
+      kind: LibraryUpdateRecordKind.update,
+      photo: this,
       hidden: val
     });
-    //wireUpdatePhotos(upd);
+  }
+
+  /**
+   * true if stack not empty
+   */
+  public get hasStack(): boolean {
+    return !!this.stackId;
+  }
+
+  public get stackHidden(): boolean {
+    return this._stackHidden;
+  }
+
+  public setStackHidden(val: boolean, ctx: UpdatePhotoContext) {
+    this._stackHidden = val;
+    this.invokeOnChanged();
+    ctx.addPhoto({
+      kind: LibraryUpdateRecordKind.update,
+      photo: this,
+      stackHidden: val
+    });
   }
 
   public get id(): PhotoId {
@@ -86,16 +168,6 @@ export class AlbumPhoto {
 
   public get stackId(): PhotoId {
     return this.wire.stackId as PhotoId;
-  }
-
-  public setFavorite(val: number, ctx: UpdatePhotoContext) {
-    this.wire.favorite = val;
-    this.invokeOnChanged();
-    ctx.addPhoto(this, {
-      hash: this.wire.hash,
-      favorite: val
-    });
-    //wireUpdatePhotos(upd);
   }
 
   public get originalId(): number {

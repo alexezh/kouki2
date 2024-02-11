@@ -1,8 +1,7 @@
-import { IEventHandler } from "../lib/synceventsource";
-import { AlbumPhoto } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord } from "./AlbumPhoto";
 import { LibraryPhotoSource } from "./LibraryPhotoSource";
-import { IPhotoListSource } from "./PhotoList";
-import { filterPhotos, libraryChanged, photoChanged, photoLibraryMap, sortByDate } from "./PhotoStore";
+import { AppFilter } from "./PhotoList";
+import { filterPhotos, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 
 export class HiddenPhotoSource extends LibraryPhotoSource {
@@ -11,12 +10,16 @@ export class HiddenPhotoSource extends LibraryPhotoSource {
     super();
   }
 
-  protected override onPhotoChanged(photos: AlbumPhoto[]) {
-    super.onPhotoChanged(photos);
+  protected override onLibraryChanged(updates: LibraryUpdateRecord[]) {
+    super.onLibraryChanged(updates);
   }
 
-  protected override onLibraryChanged() {
-    super.onLibraryChanged();
+  public isHidden(photo: AlbumPhoto): boolean {
+    return false;
+  }
+
+  public setAppFilter(filter: AppFilter): void {
+
   }
 
   public getItems(): ReadonlyArray<AlbumPhoto> {
