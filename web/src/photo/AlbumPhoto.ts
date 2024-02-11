@@ -159,8 +159,9 @@ export enum RowKind {
 }
 
 export type AlbumRow = {
-  key: Key;
+  key: string;
   kind: RowKind,
+  hash: number;
   photos?: AlbumPhoto[];
   dt?: Date;
   height: number;

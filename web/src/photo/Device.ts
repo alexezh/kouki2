@@ -36,7 +36,7 @@ export class Device {
 }
 
 let devices: Device[] = [];
-let deviceChanged = new SimpleEventSource();
+let deviceChanged = new SimpleEventSource<void>();
 
 export function addOnDeviceChanged(func: () => void): number {
   return deviceChanged.add(func);

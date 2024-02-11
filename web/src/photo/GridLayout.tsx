@@ -1,10 +1,8 @@
-import { CSSProperties, PropsWithChildren, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { AlbumRow, RowKind } from "./AlbumPhoto";
-import { addOnStateChanged, getAppState, removeOnStateChanged, updateAppState } from "../commands/AppState";
+import { getAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
-import { Command, addAnyCommandHandler, removeAnyCommandHandler } from "../commands/Commands";
-import { makeByMonthRows } from "./MakeRows";
-import { photoPadding } from "./AlbumLayout";
+import { Command, addCommandHandler } from "../commands/Commands";
 import { DateRowLayout, PhotoRowLayout } from "./RowLayout";
 import { handleDateSelected, handlePhotoClick } from "./AlbumInput";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
@@ -20,6 +18,8 @@ export function GridLayout(props: GridAlbumProps) {
   const ref = useRef(null);
   const listRef = useRef(null);
 
+  getAppState().navRows.setRowWidth(props.width);
+
   useEffect(() => {
     console.log("GridLayout: useEffect:" + getAppState().navList?.photoCount);
 
@@ -31,8 +31,8 @@ export function GridLayout(props: GridAlbumProps) {
       console.log('Selection changed');
 
       if (listRef.current) {
-        if (rows && rows.length > 0 && selectionManager.lastSelectedPhoto) {
-          let idx = getAppState().navList.getRow(selectionManager.lastSelectedPhoto);
+        if (selectionManager.lastSelectedPhoto) {
+          let idx = getAppState().navRows.getRowByPhoto(selectionManager.lastSelectedPhoto);
           console.log("ScrollSelect to " + idx);
           if (idx !== -1) {
             // @ts-ignore
@@ -43,84 +43,62 @@ export function GridLayout(props: GridAlbumProps) {
     });
 
     // add listener to commands
-    let cmdId = addAnyCommandHandler((cmd: Command, ...args: any[]) => {
+    let cmdId1 = addCommandHandler(Command.ScrollAlbumToDate, (dt: { year: number, month: number }) => {
       let rows = getAppState().navRows;
 
-      if (cmd == Command.ScrollAlbum) {
-        if (listRef.current) {
-          if (rows) {
-            let dt = args[0] as { year: number, month: number };
-            let idx = rows.findIndex((row: AlbumRow) => row.dt &&
-              (dt.year >= row.dt!.getFullYear() && dt.month >= row.dt!.getMonth()))
-            console.log("ScrollAlbum to " + idx);
-            if (idx >= 0) {
-              // @ts-ignore
-              listRef.current.scrollToItem(idx);
-            }
+      if (listRef.current) {
+        if (rows) {
+          let idx = rows.findIndex((row: AlbumRow) => row.dt &&
+            (dt.year >= row.dt!.getFullYear() && dt.month >= row.dt!.getMonth()))
+          console.log("ScrollAlbum to " + idx);
+          if (idx >= 0) {
+            // @ts-ignore
+            listRef.current.scrollToItem(idx);
           }
-        }
-      } else if (cmd === Command.SetFocusAlbum) {
-        if (ref.current) {
-          // @ts-ignore
-          ref.current.focus();
         }
       }
     });
 
-    // add listener for state changes
-    let stateId = addOnStateChanged(() => {
-      console.log('GridLayout: appstate');
-      if (updateRows()) {
-        setVersion(getAppState().version);
+    let cmdId2 = addCommandHandler(Command.SetFocusAlbum, () => {
+      if (ref.current) {
+        // @ts-ignore
+        ref.current.focus();
       }
+    });
+
+
+    // add listener for state changes
+    let rowsId = getAppState().navRows.addOnChanged((arg: { scrollPos?: number, invalidatePos: number }) => {
+      // update layout when we navigate
+      if (listRef.current) {
+        console.log("GridLayout: rows changed");
+        // @ts-ignore
+        listRef.current.resetAfterIndex(arg.invalidatePos);
+        if (arg.scrollPos !== undefined) {
+          // @ts-ignore
+          listRef.current.scrollToItem(arg.scrollPos);
+        }
+      }
+      setVersion(getAppState().navRows.version);
     });
 
     return () => {
       selectionManager.removeOnSelectionChanged(selectId);
-      removeAnyCommandHandler(cmdId);
-      removeOnStateChanged(stateId);
+      cmdId1();
+      cmdId2();
+      getAppState().navRows.removeOnChanged(rowsId);
     }
   }, [props.width, ref]);
-
-  function updateRows(): boolean {
-    let app = getAppState();
-    let rows = app.navRows;
-
-    console.log('updateRows:' + rows?.length);
-
-    // if rows were reset, 
-    if (rows) {
-      return false;
-    }
-
-    rows = makeByMonthRows(getAppState().navList, props.width, photoPadding);
-    updateAppState({ navRows: rows });
-
-    // update layout when we navigate
-    if (listRef.current) {
-      console.log("GridLayout.updateRows: reset scroll");
-      // @ts-ignore
-      listRef.current.resetAfterIndex(0);
-      if (rows && rows.length > 0) {
-        // @ts-ignore
-        listRef.current.scrollToItem(0);
-      }
-    }
-
-    return true;
-  }
-
 
   function getRowHeight(idx: number): number {
     let rows = getAppState().navRows;
 
-    if (!rows || idx >= rows.length) {
+    let row = rows.getRow(idx);
+    if (!row) {
       return 0;
     }
-
-    let row = rows![idx];
     if (row.kind === RowKind.photos) {
-      return rows![idx].height + rows![idx].padding * 2;
+      return row.height + row.padding * 2;
     } else if (row.kind === RowKind.month) {
       return getAppState().monthRowHeight + 10;
     } else {
@@ -128,14 +106,17 @@ export function GridLayout(props: GridAlbumProps) {
     }
   }
 
-  function renderRow(props: ListChildComponentProps) {
+  function renderRow(props: ListChildComponentProps): JSX.Element | null {
     let rows = getAppState().navRows;
 
     if (!rows) {
       return null;
     }
 
-    let row = rows[props.index];
+    let row = rows.getRow(props.index);
+    if (!row) {
+      return null;
+    }
     if (row.kind !== RowKind.photos) {
       return (
         <DateRowLayout
@@ -156,18 +137,14 @@ export function GridLayout(props: GridAlbumProps) {
     }
   }
 
-  // make sure we have rows if we render first time
-  // or if state was reset
-  updateRows();
-
-  console.log('render grid:' + getAppState()?.navRows?.length);
+  console.log('render grid:' + getAppState()?.navRows?.getRowCount());
 
   return (<List
     ref={listRef}
     style={props.style}
     height={props.height}
     width={props.width}
-    itemCount={(getAppState().navRows) ? getAppState().navRows!.length : 0}
+    itemCount={(getAppState().navRows) ? getAppState().navRows!.getRowCount() : 0}
     itemSize={getRowHeight}
   >
     {renderRow}

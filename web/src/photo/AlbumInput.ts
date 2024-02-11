@@ -7,6 +7,7 @@ import { Command, invokeCommand } from "../commands/Commands";
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   let viewMode = getAppState().viewMode;
   let list = getAppState().workList;
+  let navRows = getAppState().navRows;
 
   if (event.key === 'Escape') {
     invokeCommand(Command.NavigateBack);
@@ -46,16 +47,16 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         break;
       }
       case 'ArrowUp': {
-        let curRowIdx = list.getRow(selectionManager.lastSelectedPhoto!);
+        let curRowIdx = navRows.getRowByPhoto(selectionManager.lastSelectedPhoto!);
 
         // scan photos and find one on next row
         // since we are scannot up, this will be last photo in the row;
         // but we want first, so keep scanning until we find prev row
         let prevRowEnd = list.findReverse(list.findPhotoPos(selectionManager.lastSelectedPhoto), (x: AlbumPhoto) => {
-          return (list.getRow(x) !== curRowIdx);
+          return (navRows.getRowByPhoto(x) !== curRowIdx);
         });
 
-        let prevRowBegin = list.findStartRowPos(prevRowEnd);
+        let prevRowBegin = navRows.findStartRowPos(prevRowEnd);
         if (prevRowBegin === -1) {
           return;
         }
@@ -64,10 +65,10 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         return;
       }
       case 'ArrowDown': {
-        let curRowIdx = list.getRow(selectionManager.lastSelectedPhoto);
+        let curRowIdx = navRows.getRowByPhoto(selectionManager.lastSelectedPhoto);
 
         let nextRowBegin = list.find(list.findPhotoPos(selectionManager.lastSelectedPhoto), (x: AlbumPhoto) => {
-          return (list.getRow(x) !== curRowIdx);
+          return (navRows.getRowByPhoto(x) !== curRowIdx);
         });
         if (nextRowBegin === -1) {
           return;

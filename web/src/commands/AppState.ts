@@ -6,6 +6,7 @@ import { loadPhotoList } from "../photo/LoadPhotoList";
 import { getPhotoById, getStack } from "../photo/PhotoStore";
 import { StaticPhotoSource } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
+import { RowCollection } from "../photo/RowCollection";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -24,10 +25,6 @@ export interface IAppState {
    * normally the same as workList but can be different for stacks
    */
   readonly navList: PhotoList;
-  /**
-   * rows displayed by nav
-   */
-  readonly navRows: AlbumRow[] | null;
 
   readonly workList: PhotoList;
   readonly filterFavorite: FilterFavorite;
@@ -35,6 +32,11 @@ export interface IAppState {
   readonly filterStars: number;
   readonly years: YearEntry[];
   readonly viewDate?: { year: number, month: number };
+
+  /**
+   * rows displayed by nav
+   */
+  readonly navRows: RowCollection;
 
   readonly dayRowHeight: number;
   readonly monthRowHeight: number;
@@ -77,12 +79,12 @@ class AppState implements IAppState {
   listChangeId: number = 0;
   viewMode: ViewMode = ViewMode.measure;
   navListId = new PhotoListId("unknown", 0 as CollectionId);
+  navRows = new RowCollection();
   navList = list;
   workList = list;
   filterFavorite: FilterFavorite = "all";
   filterDups = false;
   filterStars = 0;
-  navRows = null;
   years: YearEntry[] = [];
   dayRowHeight = 0;
   monthRowHeight = 0;
@@ -90,7 +92,7 @@ class AppState implements IAppState {
 let state = new AppState();
 
 let initialized = false;
-let stateChanged = new SimpleEventSource();
+let stateChanged = new SimpleEventSource<void>();
 
 export function addOnStateChanged(func: () => void): number {
   return stateChanged.add(func);
@@ -165,12 +167,12 @@ export function updateAppState(update: AppStateUpdate) {
         console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
         state.years = buildYears(photos);
-        state.navRows = null;
+        state.navRows.load(state.navList);
         stateChanged.invoke();
       });
 
       state.years = buildYears(photos);
-      state.navRows = null;
+      state.navRows.load(state.navList);
       selectionManager.clear();
       stateChanged.invoke();
     })
@@ -240,3 +242,4 @@ export function openPhotoStack(photo: AlbumPhoto) {
 export function closePhotoStack() {
   updateAppState({ workList: getAppState().navList, viewMode: ViewMode.grid });
 }
+

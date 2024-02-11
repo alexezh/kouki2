@@ -32,7 +32,7 @@ export class PhotoCollection {
 }
 
 let collectionMap = new Map<CollectionId, PhotoCollection>();
-let collectionChanged = new SimpleEventSource();
+let collectionChanged = new SimpleEventSource<void>();
 
 // ATT: we are using stable names for quick and some other collections
 // making them "virtual". When we save quick collection, we are going to

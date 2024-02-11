@@ -41,7 +41,7 @@ class DialogModel implements IDialogModel {
 let nextId = 1;
 let dialogVersion = 1;
 let dialogs: DialogModel[] = [];
-let dialogsChanged = new SimpleEventSource();
+let dialogsChanged = new SimpleEventSource<void>();
 
 export function showDialog(render: (props: DialogProps) => JSX.Element): IDialogModel {
   let id = nextId++;

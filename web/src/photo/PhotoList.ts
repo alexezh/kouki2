@@ -2,6 +2,7 @@ import { IEventHandler, SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
 import { addOnPhotoChanged, getPhotoById, getStack } from "./PhotoStore";
 
+// index in PhotoList
 export type PhotoListPos = number & {
   __tag_pos: boolean;
 }
@@ -12,6 +13,8 @@ export interface IPhotoListSource {
   addItems(items: AlbumPhoto[]): void;
   removeItems(items: AlbumPhoto[]): void;
 }
+
+export type PhotoListChangedArg = { ct: PhotoListChangeType, photos: ReadonlyArray<AlbumPhoto> };
 
 /**
  * arbitrary collection of AlbumPhotos backed by either folder or collection
@@ -32,7 +35,7 @@ export interface IPhotoListSource {
 export class PhotoList {
   private readonly _photos: AlbumPhoto[] = [];
   private _filtered: boolean[] = [];
-  private readonly onChanged: SimpleEventSource = new SimpleEventSource();
+  private readonly onChanged: SimpleEventSource<{ ct: PhotoListChangeType, photos: ReadonlyArray<AlbumPhoto> }> = new SimpleEventSource();
   public readonly id: PhotoListId;
   private _filter?: (x: AlbumPhoto) => boolean;
   private _hideStack: boolean;
@@ -42,11 +45,6 @@ export class PhotoList {
    * when we hide photo, we remove it from the filtered list
    */
   private _idIndex: Map<PhotoId, PhotoListPos> = new Map<PhotoId, PhotoListPos>();
-
-  /**
-   * map from id to row index
-   */
-  private _rowIndex: Map<PhotoId, number> = new Map<PhotoId, number>();
 
   /**
    * last stacks which we've seen
@@ -118,7 +116,7 @@ export class PhotoList {
       }
     }
 
-    this.onChanged.invoke(ct, photos);
+    this.onChanged.invoke({ ct: ct, photos: photos });
   }
 
   public removePhoto(photo: AlbumPhoto) {
@@ -131,7 +129,7 @@ export class PhotoList {
     this._filtered.splice(idx, 1);
     this._idIndex.delete(photo.id);
 
-    this.onChanged.invoke(PhotoListChangeType.remove, [photo]);
+    this.onChanged.invoke({ ct: PhotoListChangeType.remove, photos: [photo] });
   }
 
   private hideStackPhotos(stackId: PhotoId, stack: ReadonlyArray<PhotoId>) {
@@ -177,8 +175,12 @@ export class PhotoList {
     }
   }
 
-  public addOnChanged(func: (ct: PhotoListChangeType, photos: AlbumPhoto[]) => void): number {
+  public addOnChanged(func: (arg: PhotoListChangedArg) => void): number {
     return this.onChanged.add(func);
+  }
+
+  public removeOnChanged(id: number) {
+    return this.onChanged.remove(id);
   }
 
   public * photos(): IterableIterator<AlbumPhoto> {
@@ -187,10 +189,6 @@ export class PhotoList {
         yield this._photos[pos];
       }
     }
-  }
-
-  public removeOnChanged(id: number) {
-    return this.onChanged.remove(id);
   }
 
   public getFirstPos(): PhotoListPos {
@@ -338,30 +336,6 @@ export class PhotoList {
     return -1 as PhotoListPos;
   }
 
-  /**
-   * find start position of a row
-   */
-  public findStartRowPos(pos: PhotoListPos): PhotoListPos {
-    if (pos === -1) {
-      return -1 as PhotoListPos;
-    }
-    let rowIdx = this.getRow(this._photos[pos]);
-    let prevPos = pos;
-    for (; pos >= 0; pos--) {
-      if (!this._filtered[pos]) {
-        continue;
-      }
-
-      if (this.getRow(this._photos[pos]) !== rowIdx) {
-        return prevPos;
-      }
-
-      prevPos = pos;
-    }
-
-    return -1 as PhotoListPos;
-  }
-
   public slice(start: PhotoListPos, end: PhotoListPos): AlbumPhoto[] {
     let arr: AlbumPhoto[] = [];
     for (let pos = start; pos <= end; pos++) {
@@ -380,27 +354,6 @@ export class PhotoList {
       }
     }
     return arr;
-  }
-
-  public setRow(id: PhotoId, idx: number) {
-    return this._rowIndex.set(id, idx)!;
-  }
-
-  public resetRows() {
-    return this._rowIndex.clear();
-  }
-
-  public getRow(photo: AlbumPhoto): number {
-    if (!photo) {
-      return -1;
-    }
-
-    let row = this._rowIndex.get(photo.id)!;
-    if (!row) {
-      return -1;
-    }
-
-    return row;
   }
 
   private onListChanged() {
@@ -436,7 +389,7 @@ export class PhotoList {
             this.hideStackPhotos(photo.stackId, stack);
           }
 
-          this.onChanged.invoke(PhotoListChangeType.hide);
+          this.onChanged.invoke({ ct: PhotoListChangeType.hide, photos: [] });
         }
       }
     }

@@ -23,7 +23,7 @@ export class PhotoFolder {
 
 let photoFolders: PhotoFolder[] = [];
 let folderIdMap = new Map<FolderId, PhotoFolder>();
-let folderChanged = new SimpleEventSource();
+let folderChanged = new SimpleEventSource<void>();
 let folderLists = new Map<FolderId, PhotoList>();
 
 export function addOnFoldersChanged(func: () => void): number {

@@ -10,20 +10,17 @@ import { PhotoList, PhotoListPos } from "./PhotoList";
  * 
  * The algorithm is actually simple. We first take first pho
  */
-export function makeRows(photoList: PhotoList,
+export function* makeRows(photoList: PhotoList,
   options: {
     optimalHeight: number,
     targetWidth: number,
     padding: number,
     startNewRow?: (photo: AlbumPhoto, idx: PhotoListPos, photos: PhotoList) => AlbumRow[] | null
-  }): AlbumRow[] {
+  }): IterableIterator<AlbumRow> {
   let row: AlbumPhoto[] = [];
   let prevHeight = 0;
-  let rows: AlbumRow[] = [];
   let maxHeight = Math.round(options.optimalHeight * 1.3);
   let height = Number.MAX_SAFE_INTEGER;
-
-  photoList.resetRows();
 
   for (let pos = photoList.getFirstPos(); pos !== -1; pos = photoList.getNext(pos)) {
     let photo = photoList.getItem(pos);
@@ -32,16 +29,19 @@ export function makeRows(photoList: PhotoList,
       let startRows = options.startNewRow(photo, pos, photoList);
       if (startRows) {
         if (row.length > 0) {
-          rows.push(enforceMaxHeight({
+          yield enforceMaxHeight({
             key: row[0].wire.hash,
+            hash: 0,
             kind: RowKind.photos,
             height: height,
             padding: options.padding,
             photos: row,
-          }, maxHeight));
+          }, maxHeight);
         }
 
-        rows.push(...startRows);
+        for (let sr of startRows) {
+          yield sr;
+        }
 
         row = [];
         height = Number.MAX_SAFE_INTEGER;
@@ -49,37 +49,34 @@ export function makeRows(photoList: PhotoList,
     }
 
     prevHeight = height;
-    photoList.setRow(photo.id, rows.length);
     row.push(photo);
 
     height = computeRowHeight(row, options.targetWidth, options.padding);
     if (Math.abs(options.optimalHeight - prevHeight) < Math.abs(options.optimalHeight - height)) {
-      rows.push(enforceMaxHeight({
+      yield enforceMaxHeight({
         key: row[0].wire.hash,
+        hash: 0,
         kind: RowKind.photos,
         height: height,
         padding: options.padding,
         photos: row.slice(0, row.length - 1),
-      }, maxHeight));
+      }, maxHeight);
       row = [];
-      // add last element back
-      photoList.setRow(photo.id, rows.length);
       row.push(photo);
       height = computeRowHeight(row, options.targetWidth, options.padding);
     }
   }
 
   if (row.length > 0) {
-    rows.push(enforceMaxHeight({
+    yield enforceMaxHeight({
       key: row[0].wire.hash,
+      hash: 0,
       kind: RowKind.photos,
       height: height,
       padding: options.padding,
       photos: row,
-    }, maxHeight));
+    }, maxHeight);
   }
-
-  return rows;
 }
 
 function enforceMaxHeight(row: AlbumRow, maxHeight: number): AlbumRow {
@@ -118,10 +115,10 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   return height * scale;
 }
 
-export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padding: number): AlbumRow[] {
+export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padding: number): IterableIterator<AlbumRow> {
   let currentMonth: Date | null = null;
 
-  let rows = makeRows(photosList, {
+  return makeRows(photosList, {
     optimalHeight: 200,
     targetWidth: targetWidth,
     padding: padding,
@@ -141,6 +138,7 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
           let month = toMonthStart(photo.originalDate);
           rows.push({
             key: 'month_' + month,
+            hash: 0,
             kind: RowKind.month,
             dt: month,
             height: 0,
@@ -152,6 +150,7 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
         let day = toDayStart(photo.originalDate);
         rows.push({
           key: 'day_' + day,
+          hash: 0,
           kind: RowKind.day,
           dt: day,
           height: 0,
@@ -159,7 +158,6 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
         });
 
         return rows;
-
       }
       catch (e: any) {
         console.error('startNewRow failed:' + e.toString());
@@ -167,7 +165,5 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
       }
     }
   });
-
-  return rows;
 }
 

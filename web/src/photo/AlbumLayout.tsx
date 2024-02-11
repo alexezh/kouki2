@@ -63,10 +63,10 @@ export function AlbumLayout(props: PhotoAlbumProps) {
     return (
       <div>
         <Measure onMeasured={(width: number, height: number) => onMeasureDateHeader(height, RowKind.month)}>
-          <DateRowLayout row={{ key: 0, kind: RowKind.month, dt: new Date(), height: 0, padding: 0 }} />
+          <DateRowLayout row={{ key: '0', hash: 0, kind: RowKind.month, dt: new Date(), height: 0, padding: 0 }} />
         </Measure>
         <Measure onMeasured={(width: number, height: number) => onMeasureDateHeader(height, RowKind.day)}>
-          <DateRowLayout row={{ key: 0, kind: RowKind.day, dt: new Date(), height: 0, padding: 0 }} />
+          <DateRowLayout row={{ key: '0', hash: 0, kind: RowKind.day, dt: new Date(), height: 0, padding: 0 }} />
         </Measure>
       </div>)
   } else {

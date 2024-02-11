@@ -42,10 +42,10 @@ export default class SyncEventSource<T> {
   }
 }
 
-export class SimpleEventSource {
-  private handlers: { id: number, func: (...args: any[]) => void }[] = [];
+export class SimpleEventSource<T = void> {
+  private handlers: { id: number, func: (arg: T) => void }[] = [];
 
-  public add(func: (...args: any[]) => void) {
+  public add(func: (arg: T) => void) {
     let id = (this.handlers.length > 0) ? this.handlers[this.handlers.length - 1].id + 1 : 1;
     this.handlers.push({ id: id, func: func });
     return id;
@@ -55,9 +55,9 @@ export class SimpleEventSource {
     this.handlers = this.handlers.filter(x => x.id !== id);
   }
 
-  public invoke(...args: any[]) {
+  public invoke(arg1: T) {
     for (let x of this.handlers) {
-      x.func(...args);
+      x.func(arg1);
     }
   }
 }
