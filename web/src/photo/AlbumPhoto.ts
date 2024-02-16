@@ -3,19 +3,15 @@ import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from
 import { CollectionId } from "./CollectionStore";
 import { invokeLibraryChanged } from "./PhotoStore";
 
-export type FolderId = number & {
-  __tag_folder: boolean;
-}
-
 export type PhotoId = number & {
   __tag_photo: boolean;
 }
 
 export class PhotoListId {
   public kind: PhotoListKind;
-  public id: FolderId | CollectionId;
+  public id: CollectionId;
 
-  public constructor(kind: PhotoListKind, id: FolderId | CollectionId) {
+  public constructor(kind: PhotoListKind, id: CollectionId) {
     this.kind = kind;
     this.id = id;
   }

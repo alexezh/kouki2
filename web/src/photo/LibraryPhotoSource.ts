@@ -17,7 +17,7 @@ export abstract class LibraryPhotoSource implements IPhotoListSource {
     libraryChanged.add(this.libraryChangedHandler);
   }
 
-  public setChangeHandler(func: () => void): void {
+  public setChangeHandler(func: (update: LibraryUpdateRecord[]) => void): void {
     this.changeHandler = func;
   }
 

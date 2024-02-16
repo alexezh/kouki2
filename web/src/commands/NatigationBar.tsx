@@ -6,13 +6,12 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
-import { AlbumPhoto, AlbumRow, FolderId, PhotoListId } from "../photo/AlbumPhoto";
+import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
-import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, loadFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateAppState } from "./AppState";
-import { Device, addOnDeviceChanged, getDevices, loadDevices, removeOnDeviceChanged } from "../photo/Device";
-import { CollectionId, addOnCollectionsChanged, getCollectionsByKind, getQuickCollection } from "../photo/CollectionStore";
-import { loadPhotoList } from "../photo/LoadPhotoList";
+import { Device, addOnDeviceChanged, getDevices, removeOnDeviceChanged } from "../photo/Device";
+import { CollectionId, addOnCollectionsChanged, getCollectionsByKind } from "../photo/CollectionStore";
 import { CollectionItemLayout, CollectionListLayout } from "./CollectionItemLayout";
 
 type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
@@ -67,7 +66,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
       return;
     }
 
-    let list = getFolderList(new PhotoListId('folder', props.folder.wire!.id as FolderId));
+    let list = getFolderList(new PhotoListId('folder', props.folder.id));
     setCount(list.photoCount);
     let collId = list.addOnListChanged(() => {
       setCount(list.photoCount);
@@ -80,7 +79,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);
-    updateAppState({ navListId: new PhotoListId('folder', props.folder.wire!.id as FolderId) });
+    updateAppState({ navListId: new PhotoListId('folder', props.folder.id) });
   }
 
   if (props.folder.children.length > 0) {
@@ -98,7 +97,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
       </div>)
   } else {
     return (
-      <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.wire!.id}>
+      <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
         <div className="FolderItem">
           <div>
             {props.folder.relname}
@@ -110,7 +109,6 @@ function FolderLayout(props: { folder: PhotoFolder }) {
       </ListItemButton>);
   }
 }
-
 
 let catalogs: { name: string, id: PhotoListId }[] =
   [
@@ -124,7 +122,7 @@ let catalogs: { name: string, id: PhotoListId }[] =
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
-  items.push((<CollectionItemLayout key='quick' text="Quich collection" id={new PhotoListId('quick', 0 as CollectionId)} />))
+  items.push((<CollectionListLayout key='quick' text="Quich collection" lists={getCollectionsByKind('quick')} />))
   items.push((<CollectionItemLayout key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
   items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export')} />))
   items.push((<CollectionItemLayout key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))

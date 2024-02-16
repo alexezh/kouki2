@@ -31,7 +31,7 @@ registerLibraryCommands();
 setTimeout(async () => {
   await loadLibrary(async () => {
     await loadCollections();
-    await loadFolders();
+    loadFolders();
     return true;
   });
   await loadDevices();

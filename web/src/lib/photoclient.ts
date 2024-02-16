@@ -34,9 +34,9 @@ export type WirePhotoUpdate = {
   stackId?: number;
 }
 
-export type WireFolder = {
-  id: number;
+export type WireFolderMetadata = {
   path: string;
+  totalPhotos: number;
 }
 
 export type WireCollectionItem = {
@@ -52,6 +52,7 @@ export type WireCollection = {
   // quick, device, user
   kind: PhotoListKind;
   createDt: string;
+  metadata: string;
 }
 
 export type WireAddCollectionRequest = {
@@ -77,16 +78,6 @@ export type UpdatePhotoRequest =
     originalHash: UpdateString;
     stackHash: UpdateString;
   }
-
-export async function wireGetFolders(): Promise<WireFolder[]> {
-  let response = await (await fetchAdapter!.get(`/api/photolibrary/getsourcefolders`)).json();
-  return response;
-}
-
-export async function wireGetFolder(id: number): Promise<WireCollectionItem[]> {
-  let response = await (await fetchAdapter!.get(`/api/photolibrary/getfolder/${id}`)).json();
-  return response;
-}
 
 export async function wireGetCollections(): Promise<WireCollection[]> {
   let response = await (await fetchAdapter!.get(`/api/photolibrary/getcollections`)).json();

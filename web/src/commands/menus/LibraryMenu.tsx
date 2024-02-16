@@ -9,6 +9,7 @@ import { Divider } from "@mui/material";
 import { RescanFolderDialog } from "../dialogs/RescanFolderDialog";
 import { ProgressDialog } from "../dialogs/ProgressDialog";
 import { Command, invokeCommand } from "../Commands";
+import { MyMenuItem } from "./MyMenuItem";
 
 export function LibraryMenu(props: CommandMenuProps) {
   const [openRescanFolder, setOpenRescanFolder] = useState(false);
@@ -63,7 +64,8 @@ export function LibraryMenu(props: CommandMenuProps) {
     <CommandMenu {...props} extra={renderDialogs}>
       <MenuItem key="lib_addfolder" onClick={handleImportFolder}>Import Folder</MenuItem>
       <Divider />
-      <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
+      <MyMenuItem key="add_quick" command={Command.CreateQuickCollection} text="New quick collection" />
+      <MyMenuItem key="add_quick" command={Command.DeleteQuickCollection} text="Delete quick collection" />
       <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>
       <Divider />
       <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Build Folder Thumbnails</MenuItem>

@@ -7,16 +7,35 @@ export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
 const duplicateByHashBuckets = new Map<string, PhotoId[]>();
 export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
+let loadWaiters: (() => void)[] = [];
 
 export function invokeLibraryChanged(updates: LibraryUpdateRecord[]) {
   libraryChanged.invoke(updates);
+}
+
+export async function waitLibraryLoaded(): Promise<void> {
+  if (loaded) {
+    return;
+  }
+
+  let promise = new Promise<void>((resolve) => {
+    loadWaiters.push(resolve);
+  });
+
+  return promise;
 }
 
 /**
  * invoked when any photo is changed
  */
 function completeLoad() {
-  loaded = true;
+  if (!loaded) {
+    loaded = true;
+
+    for (let resolve of loadWaiters) {
+      resolve();
+    }
+  }
 
   setTimeout(async () => {
     libraryChanged.invoke([{ kind: LibraryUpdateRecordKind.load }]);

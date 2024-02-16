@@ -3,7 +3,7 @@ public static class DeviceQueriesExt
   public static Int64? AddDevice(this PhotoDb self, string name, Int64 folderId, Int64 collId)
   {
     (string, object)[] values = { ("name", name), ("archiveFolderId", folderId), ("deviceCollectionId", collId) };
-    return self.InsertWithId("Devices", values);
+    return PhotoQueriesExt.InsertWithId(self.Connection, "Devices", values);
   }
   public static List<DeviceEntry> GetDevices(this PhotoDb self, string deviceName = null)
   {

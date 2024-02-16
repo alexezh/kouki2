@@ -1,8 +1,8 @@
-import { AlbumPhoto, UpdatePhotoContext } from "../photo/AlbumPhoto";
+import { AlbumPhoto, PhotoId, UpdatePhotoContext } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler } from "./Commands";
-import { getQuickCollection } from "../photo/CollectionStore";
+import { getQuickCollectionList } from "../photo/CollectionStore";
 import { addStack, removeStack } from "../photo/PhotoStore";
 import { PhotoList, PhotoListPos } from "../photo/PhotoList";
 
@@ -67,30 +67,51 @@ export function onAddStack() {
   if (selectionManager.selectedPhotos.size === 0) {
     return;
   }
-  else if (selectionManager.selectedPhotos.size === 1) {
+  else {
     let list = getAppState().workList;
-    let photoIt = selectionManager.selectedPhotos.values();
-    let photo = photoIt.next().value as AlbumPhoto;
-    let pos = list.findPhotoPos(photo);
-    if (pos <= 0) {
+    let lastPos = list.findPhotoPos(selectionManager.lastSelectedPhoto);
+    if (lastPos <= 0) {
       return;
     }
-    let prevPhoto = list.getItem(list.getPrev(pos));
+
+    let selected = selectionManager.selectedPhotos;
 
     let ctx = new UpdatePhotoContext();
-    // if previous photo is stack, add to existing stack
-    // otherwise create new stack
-    if (prevPhoto.stackId) {
-      addStack(prevPhoto.stackId, photo, ctx);
+    if (selected.size === 1) {
+      let photo = selected.values().next().value;
+      let prevPhoto = list.getItem(list.getPrev(lastPos));
+
+      // if previous photo is stack, add to existing stack
+      // otherwise create new stack
+      if (prevPhoto.stackId) {
+        addStack(prevPhoto.stackId, photo, ctx);
+      } else {
+        addStack(prevPhoto.id, prevPhoto, ctx);
+        addStack(prevPhoto.id, photo, ctx);
+      }
     } else {
-      addStack(prevPhoto.id, prevPhoto, ctx);
-      addStack(prevPhoto.id, photo, ctx);
+      let stackId: number | undefined = undefined;
+      // if any of photos is stack, combine into this stack
+      for (let [key, photo] of selected) {
+        if (!photo.stackId) {
+          stackId = photo.stackId;
+          break;
+        }
+      }
+
+      if (!stackId) {
+        let photo = selected.values().next().value;
+        stackId = photo.stackId;
+      }
+
+      for (let [key, x] of selected) {
+        addStack(stackId! as PhotoId, x, ctx);
+      }
     }
+
     ctx.commit();
 
-    preserveSelection(list, pos);
-  } else {
-    console.log('onAddStack: missing multiple photo');
+    preserveSelection(list, lastPos);
   }
 }
 
@@ -137,7 +158,14 @@ function onNavigateBack() {
 
 function onAddQuickCollection() {
   let photos = [...selectionManager.items.values()];
-  getQuickCollection().addPhotos(photos);
+  getQuickCollectionList().addPhotos(photos);
+}
+
+function onNewQuickCollection() {
+}
+
+function onDeleteQuickCollection() {
+  //getAppState().navList
 }
 
 export function registerEditCommands() {
@@ -147,5 +175,7 @@ export function registerEditCommands() {
   addCommandHandler(Command.MarkHidden, onMarkHidden);
   addCommandHandler(Command.RemoveStack, onRemoveStack);
   addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
+  addCommandHandler(Command.CreateQuickCollection, onNewQuickCollection);
+  addCommandHandler(Command.DeleteQuickCollection, onDeleteQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);
 }

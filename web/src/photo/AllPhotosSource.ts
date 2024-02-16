@@ -6,24 +6,6 @@ import { filterUnique, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 let allPhotos: PhotoList | undefined;
 
-/**
- *       photos.setFilter((x: AlbumPhoto) => {
-        if (state.filterFavorite === 'favorite' && x.favorite <= 0) {
-          return false;
-        }
-        else if (state.filterFavorite === 'rejected' && x.favorite >= 0) {
-          return false;
-        }
-
-        if (state.filterDups && x.similarId === 0) {
-          return false;
-        }
-
-        return true;
-      });
-
-
- */
 export class AllPhotosSource extends LibraryPhotoSource {
   private uniquePhotos: AlbumPhoto[] | null = null;
   private filterFavorite: FilterFavorite = 'all';
@@ -59,11 +41,11 @@ export class AllPhotosSource extends LibraryPhotoSource {
       return true;
     }
     else if (this.filterFavorite === 'rejected' && photo.favorite >= 0) {
-      return false;
+      return true;
     }
 
     if (this.filterDups && photo.similarId === 0) {
-      return false;
+      return true;
     }
 
     if (photo.stackHidden || photo.hidden) {

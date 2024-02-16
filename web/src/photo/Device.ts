@@ -1,7 +1,7 @@
 import { catchAllAsync } from "../lib/error";
 import { WireDevice, wireGetDevices } from "../lib/mobileclient";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, FolderId } from "./AlbumPhoto";
+import { AlbumPhoto } from "./AlbumPhoto";
 import { PhotoFolder, getFolder } from "./FolderStore";
 
 export class PhotoCollection {
@@ -61,7 +61,7 @@ export async function loadDevices(): Promise<Device[]> {
     devices = [];
     let wireDevices = await wireGetDevices();
     for (let wire of wireDevices) {
-      let folder = getFolder(wire.archiveFolderId as FolderId);
+      let folder = getFolder(wire.archiveFolderId as CollectionId);
       if (!folder) {
         continue;
       }

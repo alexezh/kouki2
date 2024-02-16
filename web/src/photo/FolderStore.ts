@@ -1,11 +1,13 @@
-import { WireFolder, wireGetFolders } from "../lib/photoclient";
+import { WireCollection, WireFolderMetadata } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, FolderId, PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord, PhotoListId } from "./AlbumPhoto";
+import { CollectionId, PhotoCollection, getCollectionsByKind } from "./CollectionStore";
 import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
 import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
-  public wire: WireFolder | null;
+  public readonly wire: WireFolderMetadata | null;
+  public readonly id: CollectionId;
 
   /**
    * name relative to folder above 
@@ -14,7 +16,8 @@ export class PhotoFolder {
   public path: string;
   public children: PhotoFolder[] = [];
 
-  public constructor(wire: WireFolder | null, relname: string, path: string) {
+  public constructor(collId: CollectionId, wire: WireFolderMetadata | null, relname: string, path: string) {
+    this.id = collId;
     this.wire = wire;
     this.relname = relname;
     this.path = path;
@@ -22,9 +25,9 @@ export class PhotoFolder {
 }
 
 let photoFolders: PhotoFolder[] = [];
-let folderIdMap = new Map<FolderId, PhotoFolder>();
+let folderIdMap = new Map<CollectionId, PhotoFolder>();
 let folderChanged = new SimpleEventSource<void>();
-let folderLists = new Map<FolderId, PhotoList>();
+let folderLists = new Map<CollectionId, PhotoList>();
 
 export function addOnFoldersChanged(func: () => void): number {
   return folderChanged.add(func);
@@ -45,13 +48,18 @@ export function triggerRefreshFolders() {
   });
 }
 
-function generatePhotoFolders(wireFolders: WireFolder[]): PhotoFolder[] {
+function generatePhotoFolders(colls: PhotoCollection[]): PhotoFolder[] {
   let folderMap = new Map<string, PhotoFolder>();
   let topFolders = new Map<string, PhotoFolder>();
 
   folderIdMap.clear();
 
-  for (let wf of wireFolders) {
+  for (let coll of colls) {
+    let wf = JSON.parse(coll.wire.metadata) as WireFolderMetadata;
+    if (wf.path === null) {
+      console.log('folder invalid');
+      continue;
+    }
     let parts = wf.path.split(/[/\\]/);
     let path: string[] = [];
     let parent: PhotoFolder | null = null;
@@ -69,14 +77,14 @@ function generatePhotoFolders(wireFolders: WireFolder[]): PhotoFolder[] {
       let pathStr = path.join('/');
       let af = folderMap.get(pathStr);
       if (!af) {
-        af = new PhotoFolder((idx === parts.length - 1) ? wf : null, part, pathStr);
+        af = new PhotoFolder(coll.id as CollectionId, (idx === parts.length - 1) ? wf : null, part, pathStr);
         folderMap.set(pathStr, af);
         if (parent) {
           parent.children.push(af);
         }
 
         if (wf) {
-          folderIdMap.set(wf.id as FolderId, af);
+          folderIdMap.set(coll.id as CollectionId, af);
         }
 
         if (path.length === 1) {
@@ -118,7 +126,7 @@ function pruneFolderChain(folders: PhotoFolder[]): PhotoFolder[] {
   }
 }
 
-export function getFolder(id: FolderId): PhotoFolder | undefined {
+export function getFolder(id: CollectionId): PhotoFolder | undefined {
   return folderIdMap.get(id);
 }
 
@@ -126,10 +134,10 @@ export function getFolders(): PhotoFolder[] {
   return photoFolders;
 }
 
-export async function loadFolders(): Promise<PhotoFolder[]> {
-  let wireFolders = await wireGetFolders();
+export function loadFolders(): PhotoFolder[] {
+  let colls = getCollectionsByKind('folder');
 
-  photoFolders = generatePhotoFolders(wireFolders);
+  photoFolders = generatePhotoFolders(colls);
   folderChanged.invoke();
 
   return photoFolders;
@@ -141,7 +149,7 @@ export async function loadFolders(): Promise<PhotoFolder[]> {
  * with delay load
  */
 export function getFolderList(folderId: PhotoListId): PhotoList {
-  let folderList = folderLists.get(folderId.id as FolderId);
+  let folderList = folderLists.get(folderId.id);
   if (folderList) {
     return folderList;
   }
@@ -152,7 +160,7 @@ export function getFolderList(folderId: PhotoListId): PhotoList {
   console.log('getFolderList: ' + folderPhotos.length);
 
   folderList = new PhotoList(folderId, new StaticPhotoSource(folderPhotos));
-  folderLists.set(folderId.id as FolderId, folderList);
+  folderLists.set(folderId.id, folderList);
 
   return folderList;
 }
@@ -178,7 +186,7 @@ export class StaticPhotoSource implements IPhotoListSource {
 
   }
 
-  public setChangeHandler(func: () => void): void {
+  public setChangeHandler(func: (update: LibraryUpdateRecord[]) => void): void {
   }
 
   public getItems(): ReadonlyArray<AlbumPhoto> {

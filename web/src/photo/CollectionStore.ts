@@ -5,10 +5,10 @@ import {
   wireGetCollectionItems, wireGetCollections
 } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId, PhotoListId } from "./AlbumPhoto";
 import { HiddenPhotoSource } from "./HiddenPhotoSource";
 import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
-import { getPhotoById } from "./PhotoStore";
+import { getPhotoById, waitLibraryLoaded } from "./PhotoStore";
 
 export type CollectionId = number & {
   __tag_collection: boolean;
@@ -32,7 +32,7 @@ export class PhotoCollection {
 }
 
 let collectionMap = new Map<CollectionId, PhotoCollection>();
-let collectionChanged = new SimpleEventSource<void>();
+let collectionMapChanged = new SimpleEventSource<void>();
 
 // ATT: we are using stable names for quick and some other collections
 // making them "virtual". When we save quick collection, we are going to
@@ -40,11 +40,11 @@ let collectionChanged = new SimpleEventSource<void>();
 let collectionLists = new Map<string, PhotoList>();
 
 export function addOnCollectionsChanged(func: () => void): number {
-  return collectionChanged.add(func);
+  return collectionMapChanged.add(func);
 }
 
 export function removeOnCollectionsChanged(id: number) {
-  return collectionChanged.remove(id);
+  return collectionMapChanged.remove(id);
 }
 
 export function triggerRefreshCollections() {
@@ -53,14 +53,9 @@ export function triggerRefreshCollections() {
   });
 }
 
-// export function getCollection(id: CollectionId): PhotoList | undefined {
-//   return collectionLists.get(id);
-// }
-
-// export function getCollections(): IterableIterator<PhotoCollection> {
-//   return collectionMap;
-// }
-
+/**
+ * load map of collections
+ */
 export async function loadCollections(): Promise<boolean> {
   let wireCollections = await wireGetCollections();
 
@@ -72,7 +67,7 @@ export async function loadCollections(): Promise<boolean> {
     }
   }
 
-  collectionChanged.invoke();
+  collectionMapChanged.invoke();
 
   return true;
 }
@@ -84,6 +79,7 @@ export function getCollectionsByKind(kind: PhotoListKind): PhotoCollection[] {
       list.push(coll);
     }
   }
+  list.sort((a: PhotoCollection, b: PhotoCollection) => a.createDt.valueOf() - b.createDt.valueOf());
   return list;
 }
 
@@ -96,7 +92,7 @@ function findCollection(pred: (coll: PhotoCollection) => boolean): PhotoCollecti
   return null;
 }
 
-function findNewestCollection(kind: PhotoListKind): PhotoCollection | null {
+export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoCollection> {
   let coll: PhotoCollection | null = null;
   for (let [key, item] of collectionMap) {
     if (item.wire.kind === kind) {
@@ -109,24 +105,24 @@ function findNewestCollection(kind: PhotoListKind): PhotoCollection | null {
       }
     }
   }
-  return null;
-}
 
-/**
- * for import/export, we create collection on demand and we update collection daily
- */
-export async function getStandardCollection(kind: PhotoListKind): Promise<PhotoList> {
-  let coll: PhotoCollection | null = findNewestCollection(kind);
-
-  let list: PhotoList | undefined;
   if (!coll) {
     let response = await wireAddCollection({ kind: kind, name: '', createDt: nowAsISOString() });
     coll = new PhotoCollection(response.collection);
     collectionMap.set(response.collection.id as CollectionId, coll);
   }
 
+  return coll;
+}
+
+/**
+ * for import/export/quick, we create collection on demand and we update collection daily
+ */
+export async function getStandardCollectionList(kind: PhotoListKind): Promise<PhotoList> {
+  let coll: PhotoCollection | null = await getStandardCollection(kind);
+
   let listId = new PhotoListId(kind, coll.wire.id as CollectionId);
-  list = collectionLists.get(new PhotoListId(kind, listId.id).toString());
+  let list = collectionLists.get(new PhotoListId(kind, listId.id).toString());
   if (list) {
     return list;
   }
@@ -151,7 +147,7 @@ export function createHiddenCollection(listId: PhotoListId) {
  * quick list is special as we need it at all time
  * the rest we can create on demand
  */
-export function getQuickCollection(): PhotoList {
+export function getQuickCollectionList(): PhotoList {
   let quickList = collectionLists.get('quick' as PhotoListKind);
   if (quickList) {
     return quickList;
@@ -165,35 +161,47 @@ export function getQuickCollection(): PhotoList {
   return quickList;
 }
 
+/**
+ * standard collections create bit of complexity
+ * normally we know the exact ID for collection which means that it was loaded
+ * but for standard collections, we just know the alias; and we might create it
+ * before the load. 
+ */
 export class CollectionPhotoSource implements IPhotoListSource {
+  private changeHandler: ((update: LibraryUpdateRecord[]) => void) | null = null;
   private photos: AlbumPhoto[] = [];
-  private collId: CollectionId | undefined = undefined;
+  private coll: PhotoCollection | undefined = undefined;
 
   public constructor(collId: CollectionId) {
-    this.collId = collId;
     setTimeout(async () => {
-      await this.loadPhotos();
+      await this.loadPhotos(collId);
     })
   }
 
   public isHidden(photo: AlbumPhoto): boolean {
     return false;
   }
+
   public setAppFilter(filter: AppFilter): void {
 
   }
 
-  protected async getOrCreateCollection(): Promise<CollectionId> {
-    if (!this.collId) {
-      throw new Error('Unknown collection id');
+  protected async getOrCreateCollection(id: CollectionId): Promise<PhotoCollection> {
+    await waitLibraryLoaded();
+    let coll = collectionMap.get(id);
+    if (!coll) {
+      throw new Error('Collection not found');
     }
-    return this.collId;
+    return coll;
   }
 
-  private async loadPhotos(): Promise<AlbumPhoto[]> {
-    this.collId = await this.getOrCreateCollection();
+  /**
+   * load photos to collection
+   */
+  private async loadPhotos(collId: CollectionId): Promise<void> {
+    this.coll = await this.getOrCreateCollection(collId);
 
-    let items: WireCollectionItem[] = await wireGetCollectionItems(this.collId);
+    let items: WireCollectionItem[] = await wireGetCollectionItems(this.coll.id);
     let photos: AlbumPhoto[] = [];
 
     for (let item of items) {
@@ -205,11 +213,12 @@ export class CollectionPhotoSource implements IPhotoListSource {
       photos.push(photo);
     }
 
-    return photos;
+    this.photos = photos;
+    this.changeHandler?.call(this, [{ kind: LibraryUpdateRecordKind.load }]);
   }
 
   public addItems(items: AlbumPhoto[]) {
-    wireAddCollectionItems(this.collId!, items.map((x) => {
+    wireAddCollectionItems(this.coll!.id, items.map((x) => {
       return { photoId: x.wire.id, updateDt: nowAsISOString() }
     }));
 
@@ -218,7 +227,8 @@ export class CollectionPhotoSource implements IPhotoListSource {
   public removeItems(items: AlbumPhoto[]) {
   }
 
-  public setChangeHandler(func: () => void): void {
+  public setChangeHandler(func: (update: LibraryUpdateRecord[]) => void): void {
+    this.changeHandler = func;
   }
 
   public getItems(): ReadonlyArray<AlbumPhoto> {
@@ -231,10 +241,12 @@ class QuickCollectionSource extends CollectionPhotoSource {
     super(collId);
   }
 
-  protected override async getOrCreateCollection(): Promise<CollectionId> {
+  protected override async getOrCreateCollection(): Promise<PhotoCollection> {
+    await waitLibraryLoaded();
+
     // at this point we have collection list; find default quick and map to it
     // get the current quick and other collections
-    let quickColl: PhotoCollection | null = findNewestCollection('quick');
+    let quickColl: PhotoCollection | null = await getStandardCollection('quick');
 
     // ensure that we have quick collection
     if (!quickColl) {
@@ -243,6 +255,6 @@ class QuickCollectionSource extends CollectionPhotoSource {
       collectionMap.set(response.collection.id as CollectionId, quickColl);
     }
 
-    return quickColl.id;
+    return quickColl;
   }
 }

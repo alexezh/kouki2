@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
 import DialogContentText from "@mui/material/DialogContentText/DialogContentText";
-import TextField from "@mui/material/TextField/TextField";
 import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { sleep } from "../../lib/sleep";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
-import { catchAll, catchAllAsync } from "../../lib/error";
-import { wireImportFolder, wireGetJobStatus, wireRescanFolder, wireBuildPHash, JobResponse, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
+import { catchAllAsync } from "../../lib/error";
+import { wireGetJobStatus, wireRescanFolder, ImportJobStatusResponse } from "../../lib/photoclient";
 import { PhotoListId } from "../../photo/AlbumPhoto";
-import { getStandardCollection } from "../../photo/CollectionStore";
 
 export function RescanFolderDialog(props: { onClose: () => void, folderId: PhotoListId }) {
   const [processing, setProcessing] = useState(false);

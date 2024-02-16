@@ -278,4 +278,5 @@ public class CollectionEntry
   public string name { get; set; }
   public string kind { get; set; }
   public string createDt { get; set; }
+  public string metadata { get; set; }
 }

@@ -1,5 +1,5 @@
 import { SimpleEventSource } from "../lib/synceventsource";
-import { AlbumPhoto, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord, PhotoId, PhotoListId } from "./AlbumPhoto";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -13,7 +13,7 @@ export type AppFilter = {
   filterDups?: boolean
 }
 export interface IPhotoListSource {
-  setChangeHandler(func: () => void): void;
+  setChangeHandler(func: (update: LibraryUpdateRecord[]) => void): void;
   getItems(): ReadonlyArray<AlbumPhoto>;
   addItems(items: AlbumPhoto[]): void;
   removeItems(items: AlbumPhoto[]): void;
@@ -172,14 +172,23 @@ export class PhotoList {
     if (this._photos.length === 0) {
       return -1 as PhotoListPos;
     }
-    return 0 as PhotoListPos;
+    if (this._filtered[0]) {
+      return 0 as PhotoListPos;
+    } else {
+      return this.getNext(0 as PhotoListPos);
+    }
   }
 
   public getLastPos(): PhotoListPos {
     if (this._photos.length === 0) {
       return 0 as PhotoListPos;
     }
-    return (this._photos.length - 1) as PhotoListPos;
+    let idx = this._photos.length - 1;
+    if (this._filtered[idx]) {
+      return idx as PhotoListPos;
+    } else {
+      return this.getPrev(idx as PhotoListPos);
+    }
   }
 
   public getItem(pos: PhotoListPos): AlbumPhoto {

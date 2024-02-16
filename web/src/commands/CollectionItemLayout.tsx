@@ -19,6 +19,7 @@ export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
     let list: PhotoList | null;
 
     // to avoid race condition, keep track if it was already unmounted
+    // TODO: change to collection id which are loaded; we only need list when we change things
     list = loadPhotoList(props.id);
     setCount(list.photoCount);
     if (collId !== -1) {

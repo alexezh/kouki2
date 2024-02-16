@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+
 public static class CollectionsQueriesExt
 {
 
@@ -24,19 +26,38 @@ public static class CollectionsQueriesExt
 
   public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user", Int64 dt = 0)
   {
-    (string, object)[] values = { ("name", name), ("kind", kind), ("createDt", dt) };
-    return self.InsertWithId("Collections", values);
+    return AddCollection(self.Connection, name, kind, dt);
+  }
+
+  public static Int64? AddCollection(SqliteConnection connection, string name, string kind = "user", Int64 dt = 0, string metadata = null)
+  {
+    ;
+    if (metadata != null)
+    {
+      (string, object)[] values = { ("name", name), ("kind", kind), ("createDt", dt), ("metadata", metadata) };
+      return PhotoQueriesExt.InsertWithId(connection, "Collections", values);
+    }
+    else
+    {
+      (string, object)[] values = { ("name", name), ("kind", kind), ("createDt", dt) };
+      return PhotoQueriesExt.InsertWithId(connection, "Collections", values);
+    }
   }
 
   public static Int64? AddCollectionItem(this PhotoDb self, Int64 collectionId, Int64 photoId, Int64 dt)
   {
     (string, object)[] values = { ("id", collectionId), ("photoId", photoId), ("updateDt", dt) };
-    return self.InsertWithId("CollectionItems", values);
+    return PhotoQueriesExt.InsertWithId(self.Connection, "CollectionItems", values);
   }
 
   public static List<CollectionEntry> GetCollections(this PhotoDb self)
   {
-    var command = self.Connection.CreateCommand();
+    return GetCollections(self.Connection);
+  }
+
+  public static List<CollectionEntry> GetCollections(SqliteConnection connection)
+  {
+    var command = connection.CreateCommand();
     command.CommandText = "SELECT * FROM Collections";
 
     var collections = new List<CollectionEntry>();
@@ -49,7 +70,8 @@ public static class CollectionsQueriesExt
           id = (Int64)reader["id"],
           name = (string)reader["name"],
           kind = (string)reader["kind"],
-          createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o")
+          createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o"),
+          metadata = reader.ReadString("metadata")
         });
       }
     }

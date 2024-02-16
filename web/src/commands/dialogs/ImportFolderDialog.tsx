@@ -9,7 +9,7 @@ import Button from "@mui/material/Button/Button";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
 import { wireImportFolder, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
-import { getStandardCollection } from "../../photo/CollectionStore";
+import { getStandardCollectionList } from "../../photo/CollectionStore";
 import { runJob } from "./BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { showConfirmationDialog } from "./ConfirmationDialog";
@@ -34,7 +34,7 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
     setProcessing(true);
 
     catchAllAsync(async () => {
-      let importList = await getStandardCollection('import');
+      let importList = await getStandardCollectionList('import');
 
       setStatusText("Scanning...");
 

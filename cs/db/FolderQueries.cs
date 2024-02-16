@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+
 public static class FolderQueriesExt
 {
   public static Int64? GetFolderId(this PhotoDb self, string path)
@@ -38,7 +40,12 @@ public static class FolderQueriesExt
 
   public static List<FolderEntry> GetSourceFolders(this PhotoDb self)
   {
-    var command = self.Connection.CreateCommand();
+    return GetSourceFolders(self.Connection);
+  }
+
+  public static List<FolderEntry> GetSourceFolders(SqliteConnection connection)
+  {
+    var command = connection.CreateCommand();
     command.CommandText = "SELECT * FROM SourceFolders";
 
     var folders = new List<FolderEntry>();
@@ -60,6 +67,6 @@ public static class FolderQueriesExt
   public static Int64? AddSourceFolder(this PhotoDb self, string path, string kind = "user")
   {
     (string, object)[] values = { ("path", path), ("kind", kind) };
-    return self.InsertWithId("SourceFolders", values);
+    return PhotoQueriesExt.InsertWithId(self.Connection, "SourceFolders", values);
   }
 }

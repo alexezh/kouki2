@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+
 public static class PhotoQueriesExt
 {
   public static List<PhotoEntry> GetPhotoByName(this PhotoDb self, Int64 folderId, string fileName, string fileExt)
@@ -52,9 +54,9 @@ public static class PhotoQueriesExt
     return entries;
   }
 
-  public static Int64? InsertWithId(this PhotoDb self, string table, (string, object val)[] values)
+  public static Int64? InsertWithId(SqliteConnection connection, string table, (string, object val)[] values)
   {
-    var command = self.Connection.CreateCommand();
+    var command = connection.CreateCommand();
     command.CommandText = $"INSERT INTO {table}({String.Join(",", values.Select(x => x.Item1))}) VALUES({String.Join(",", values.Select(x => "$" + x.Item1))}) RETURNING id";
     foreach (var val in values)
     {

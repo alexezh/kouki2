@@ -1,6 +1,12 @@
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
+public class FolderMetadata
+{
+  public string path { get; set; }
+  public Int64 totalPhotos { get; set; }
+}
+
 public class PhotoDbStatics
 {
   public static SqliteConnection CreateConnection(string path)
@@ -19,14 +25,15 @@ public class PhotoDbStatics
     {
       connection.Open();
 
+      Int64 userVersion = ExecuteIntCommand(connection, (SqliteCommand command) =>
+      {
+        command.CommandText = "PRAGMA user_version;";
+      }, "user_version");
+
+      Console.WriteLine("Version " + userVersion);
+
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS Devices (id integer primary key, name TEXT, archiveFolderId INTEGER, deviceCollectionId INTEGER, metadata TEXT)");
       CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `DeviceName` ON `Devices` (`name` ASC);");
-
-      CreateTable(connection, "CREATE TABLE IF NOT EXISTS SourceFolders (id integer primary key, path TEXT, kind TEXT)");
-      CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `SourceFolderPath` ON `SourceFolders` (`path` ASC);");
-
-      CreateTable(connection, "CREATE TABLE IF NOT EXISTS OutputFolders (id integer primary key, path TEXT, content TEXT)");
-
 
       string[] fields = new string[] {
           "id integer primary key",
@@ -64,6 +71,117 @@ public class PhotoDbStatics
 
       CreateTable(connection, "CREATE TABLE IF NOT EXISTS CollectionItems (id INTEGER, photoId INTEGER, updateDt INTEGER, metadata TEXT)");
       CreateIndex(connection, "CREATE UNIQUE INDEX IF NOT EXISTS `CollectionItems_PhotoId` ON `CollectionItems` (`id` ASC, 'photoId' ASC);");
+
+      if (userVersion < 1)
+      {
+        ConvertFolders(connection);
+        userVersion = 1;
+        ExecuteVoidCommand(connection, (SqliteCommand command) =>
+        {
+          command.CommandText = $"PRAGMA user_version = {userVersion};";
+        });
+      }
+
+      UpdateLibraryStats(connection);
+    }
+  }
+
+  public static Int64 ExecuteIntCommand(SqliteConnection connection, Action<SqliteCommand> cmd, string name)
+  {
+    var command = connection.CreateCommand();
+    cmd(command);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader[name];
+      }
+    }
+
+    return 0;
+  }
+
+  public static void ExecuteVoidCommand(SqliteConnection connection, Action<SqliteCommand> cmd)
+  {
+    var command = connection.CreateCommand();
+    cmd(command);
+    using (var reader = command.ExecuteReader())
+    {
+    }
+  }
+
+  private static void UpdateLibraryStats(SqliteConnection connection)
+  {
+    var collections = CollectionsQueriesExt.GetCollections(connection);
+    try
+    {
+      foreach (var coll in collections)
+      {
+        if (coll.kind == "folder")
+        {
+          var count = ExecuteIntCommand(connection,
+            (SqliteCommand command) =>
+            {
+              command.CommandText = $"SELECT COUNT(*) AS count FROM Photos WHERE folder == {coll.id}";
+            },
+            "count"
+          );
+
+          FolderMetadata metaObj;
+          if (coll.metadata != null)
+          {
+            metaObj = JsonSerializer.Deserialize<FolderMetadata>(coll.metadata);
+          }
+          else
+          {
+            metaObj = new FolderMetadata();
+          }
+
+          metaObj.totalPhotos = count;
+          var metaStr = JsonSerializer.Serialize<FolderMetadata>(metaObj);
+          ExecuteVoidCommand(connection, (SqliteCommand command) =>
+          {
+            command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={coll.id}";
+            command.Parameters.AddWithValue("$metadata", metaStr);
+          });
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("Failed " + e.Message);
+      throw;
+    }
+  }
+
+  private static void ConvertFolders(SqliteConnection connection)
+  {
+    var folders = FolderQueriesExt.GetSourceFolders(connection);
+    var createDt = DateTime.Now.ToBinary();
+    try
+    {
+      foreach (var folder in folders)
+      {
+        var metaObj = new FolderMetadata();
+        metaObj.path = folder.path;
+        var metaStr = JsonSerializer.Serialize<FolderMetadata>(metaObj);
+
+        var id = CollectionsQueriesExt.AddCollection(connection, "", "folder", createDt, metaStr);
+        if (id == null)
+        {
+          throw new Exception("Cannot convert folder " + folder.id);
+        }
+
+        var command = connection.CreateCommand();
+        command.CommandText = $"UPDATE Photos SET folder={id} WHERE folder == {folder.id};";
+
+        command.ExecuteNonQuery();
+      }
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("Convestion: exception " + e.Message);
+      throw;
     }
   }
 
