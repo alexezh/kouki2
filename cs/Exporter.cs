@@ -51,7 +51,7 @@ public class ExportJob : IJob
     _status.result = ResultResponse.Processing;
 
     Exporter.ExportPhotos(
-      PhotoFs.Instance.PhotoDb,
+      PhotoFs.Instance,
       PhotoFs.Instance.ExportPath,
       _request,
       (ExportStatus status) =>
@@ -80,12 +80,19 @@ public class Exporter
 {
 
   internal static void ExportPhotos(
-    PhotoDb photoDb,
+    PhotoFs photoFs,
     string exportPath,
     ExportPhotosRequest request,
     Action<ExportStatus> progress)
   {
     var status = new ExportStatus();
+
+    var exportColl = photoFs.AddCollection(new AddCollectionRequest()
+    {
+      kind = "export",
+      name = "",
+      createDt = DateTime.Now.ToString("o")
+    });
 
     try
     {
@@ -101,7 +108,7 @@ public class Exporter
       {
         try
         {
-          var photos = photoDb.GetPhotosById(id);
+          var photos = photoFs.PhotoDb.GetPhotosById(id);
           if (photos.Count != 1)
           {
             throw new ArgumentException("Cannot find photo " + id);
@@ -111,9 +118,9 @@ public class Exporter
 
           if (!folderNames.TryGetValue(photo.folderId, out var folderPath))
           {
-            var folder = photoDb.GetFolder(photo.folderId);
+            var folder = photoFs.GetFolderInfo(photo.folderId);
             folderPath = folder.path;
-            folderNames.Add(folder.id, folder.path);
+            folderNames.Add(photo.folderId, folder.path);
           }
 
           var targetPath = Path.GetFullPath(photo.fileName + photo.fileExt, folderPath);
@@ -131,6 +138,8 @@ public class Exporter
             File.CreateSymbolicLink(linkPath, targetPath);
           }
           status.Exported++;
+
+          UpdateExportCollection(photoFs, exportColl.id, photo.id);
         }
 
         catch (Exception e)
@@ -147,7 +156,7 @@ public class Exporter
         var now = DateTime.Now;
         foreach (var photo in request.photos)
         {
-          photoDb.AddCollectionItem(request.exportCollection, photo, now.ToBinary());
+          photoFs.PhotoDb.AddCollectionItem(request.exportCollection, photo, now.ToBinary());
         }
 
         Console.WriteLine("Export collection " + request.exportCollection);
@@ -157,6 +166,16 @@ public class Exporter
     {
       Console.Error.WriteLine("Failed to export: " + e.Message);
     }
+  }
+
+  private static void UpdateExportCollection(PhotoFs fs, Int64 exportCollId, Int64 id)
+  {
+    var item = new CollectionItem()
+    {
+      photoId = id,
+      updateDt = DateTime.Now.ToString("o")
+    };
+    fs.AddCollectionItems(exportCollId, new CollectionItem[] { item });
   }
 
   private static void CopyJpeg(string destPath, string srcPath)

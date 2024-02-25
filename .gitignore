@@ -5,6 +5,7 @@ photo.sqlite
 thumbnail.sqlite
 
 # Build
+llama/*
 release/*
 web/.cert/*
 web/node_modules/*

@@ -15,8 +15,8 @@ export type AppFilter = {
 export interface IPhotoListSource {
   setChangeHandler(func: (update: LibraryUpdateRecord[]) => void): void;
   getItems(): ReadonlyArray<AlbumPhoto>;
-  addItems(items: AlbumPhoto[]): void;
-  removeItems(items: AlbumPhoto[]): void;
+  addItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void;
+  removeItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void;
   setAppFilter(filter: AppFilter): void;
   isHidden(photo: AlbumPhoto): boolean;
 }
@@ -44,6 +44,7 @@ export class PhotoList {
   private _filtered: boolean[] = [];
   private readonly onListChanged: SimpleEventSource<{ ct: PhotoListChangeType, photos: ReadonlyArray<AlbumPhoto> }> = new SimpleEventSource();
   public readonly id: PhotoListId;
+  private _version: number = 1;
 
   /**
    * map from id to index
@@ -58,6 +59,7 @@ export class PhotoList {
    */
   public get photoCount(): number { return this._photos.length }
   public get source(): IPhotoListSource { return this._source }
+  public get version(): number { return this._version }
 
   public constructor(
     id: PhotoListId,
@@ -77,6 +79,7 @@ export class PhotoList {
 
   public addPhotos(photos: ReadonlyArray<AlbumPhoto>) {
     this.addPhotosWorker(photos, PhotoListChangeType.add);
+    this._source.addItems(photos);
   }
 
   private addPhotosWorker(photos: ReadonlyArray<AlbumPhoto>, ct: PhotoListChangeType) {
@@ -93,7 +96,7 @@ export class PhotoList {
       this._filtered.push(!this.source.isHidden(x));
     }
 
-    this.onListChanged.invoke({ ct: ct, photos: photos });
+    this.invokeOnListChanged({ ct: ct, photos: photos });
   }
 
   public removePhoto(photo: AlbumPhoto) {
@@ -106,7 +109,9 @@ export class PhotoList {
     this._filtered.splice(idx, 1);
     this._idIndex.delete(photo.id);
 
-    this.onListChanged.invoke({ ct: PhotoListChangeType.remove, photos: [photo] });
+    this._source.removeItems(photo);
+
+    this.invokeOnListChanged({ ct: PhotoListChangeType.remove, photos: [photo] });
   }
 
   // private hideStackPhotos(stackId: PhotoId, stack: ReadonlyArray<PhotoId>) {
@@ -348,9 +353,14 @@ export class PhotoList {
     this._filtered.length = 0;
     this._idIndex.clear();
     this.addPhotosWorker(this._source.getItems(), PhotoListChangeType.load);
-    this.onListChanged.invoke({ ct: PhotoListChangeType.update, photos: [] })
+    this._version++;
+    this.invokeOnListChanged({ ct: PhotoListChangeType.update, photos: [] })
   }
 
+  private invokeOnListChanged(args: { ct: PhotoListChangeType, photos: ReadonlyArray<AlbumPhoto> }) {
+    this._version++;
+    this.onListChanged.invoke(args);
+  }
   /**
    * called if any photo changed; we only care about stacks
    */

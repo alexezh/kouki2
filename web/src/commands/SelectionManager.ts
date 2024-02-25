@@ -20,7 +20,11 @@ export class SelectionManager {
     for (let x of this._selected) {
       this.invokeOnSelected(x[1], false);
     }
-    this._selected.clear();
+
+    // it is important to reset rather than clear
+    // otherwise we can get into weird loops
+    this._selected = new Map<string, AlbumPhoto>();
+
     this._lastSelectedPhoto = null;
     this.invokeOnSelectionChanged();
   }
@@ -29,7 +33,10 @@ export class SelectionManager {
     for (let x of this._selected) {
       this.invokeOnSelected(x[1], false);
     }
-    this._selected.clear();
+
+    // it is important to reset rather than clear
+    // otherwise we can get into weird loops
+    this._selected = new Map<string, AlbumPhoto>();
 
     this.add(photos);
   }

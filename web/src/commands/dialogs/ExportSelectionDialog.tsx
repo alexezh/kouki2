@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { wireImportFolder, wireExportPhotos, wireGetJobStatus, wireRescanFolder, ExportJobStatusResponse } from "../../lib/photoclient";
+import { useState } from "react";
+import { GetJobStatusResponse, ProcessCollectionStatusResponse, wireExportPhotos, wireGetJobStatus } from "../../lib/photoclient";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -12,12 +12,14 @@ import { sleep } from "../../lib/sleep";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { selectionManager } from "../SelectionManager";
 import { AlbumPhoto } from "../../photo/AlbumPhoto";
-import { getStandardCollectionList, triggerRefreshCollections } from "../../photo/CollectionStore";
+import { createCollectionOfKind, triggerRefreshCollections } from "../../photo/CollectionStore";
+import { createCollectionPhotoList } from "../../photo/LoadPhotoList";
+import { runJob } from "../BackgroundJobs";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
   const [path, setPath] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [processedFiles, setProcessedFiles] = useState(0);
+  const [statusText, setStatusText] = useState('');
 
   function handleClose() {
     props.onClose();
@@ -29,31 +31,27 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
     try {
       let photos = selectionManager.map((x: AlbumPhoto) => x.wire.id);
 
-      let exportList = await getStandardCollectionList('export');
+      let exportColl = await createCollectionOfKind('export');
+      let exportList = createCollectionPhotoList(exportColl.id);
       console.log(`Export ${photos.length} photos to ${exportList.id.id}`);
 
-      let exportResponse = await wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: exportList.id.id });
-      if (exportResponse.result !== 'Ok') {
+      let job = runJob('export',
+        'Export folders',
+        () => wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: exportList.id.id }),
+        (response: GetJobStatusResponse) => `Exported: ${(response as ProcessCollectionStatusResponse).processedFiles} files`);
+
+      let exportResult = await job.task;
+
+      if (exportResult.result !== 'Ok') {
         props.onClose();
         return;
       }
-
-      while (true) {
-        let jobInfo = await wireGetJobStatus<ExportJobStatusResponse>(exportResponse.jobId);
-        if (jobInfo.result !== 'Processing') {
-          break;
-        } else {
-          setProcessedFiles(jobInfo.addedFiles);
-        }
-        await sleep(1);
-      }
-
-      triggerRefreshCollections();
     }
     catch (e: any) {
       console.log(e.toString());
     }
     finally {
+      triggerRefreshCollections();
       triggerRefreshFolders();
       props.onClose();
     }
@@ -81,11 +79,11 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
           variant="standard"
           value={path}
           onChange={handleChanged}
-        />) : (<Typography variant="body1">{'Exported: ' + processedFiles + ' files'}</Typography>)}
+        />) : (<Typography variant="body1">{statusText}</Typography>)}
       </DialogContent>
       <DialogActions>
-        <Button disabled={processing} onClick={handleClose}>Cancel</Button>
         <Button disabled={processing} onClick={handleExport}>Export</Button>
+        <Button disabled={processing} onClick={handleClose}>Cancel</Button>
       </DialogActions>
     </Dialog>
   );

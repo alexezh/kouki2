@@ -89,8 +89,15 @@ export async function wireAddCollection(request: WireAddCollectionRequest): Prom
   return response;
 }
 
-export async function wireGetLibrary(): Promise<WirePhotoEntry[]> {
-  let response = await (await fetchAdapter!.get(`/api/photolibrary/getlibrary`)).json();
+export type GetLibraryRequest = {
+  minId: number
+}
+
+export async function wireGetLibrary(minId: number): Promise<WirePhotoEntry[]> {
+  let request: GetLibraryRequest = {
+    minId: minId
+  }
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getlibrary`, JSON.stringify(request))).json();
   return response;
 }
 
@@ -101,6 +108,11 @@ export async function wireGetCollectionItems(id: number): Promise<WireCollection
 
 export async function wireAddCollectionItems(id: number, items: WireCollectionItem[]): Promise<ResultResponse> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/addcollectionitems/${id}`, JSON.stringify(items))).json();
+  return response;
+}
+
+export async function wireRemoveCollectionItems(id: number, items: WireCollectionItem[]): Promise<ResultResponse> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/removecollectionitems/${id}`, JSON.stringify(items))).json();
   return response;
 }
 
@@ -123,16 +135,7 @@ export type ImportFolderRequest = {
   importCollection: number;
 }
 
-export type ImportFolderResponse = JobResponse & {
-}
-
-export type RescanFolderRequest = {
-  folderId: number;
-}
-
-export type RescanFolderResponse = {
-  jobId: string;
-  result: string;
+export type ImportFolderResponse = StartJobResponse & {
 }
 
 export type GetFolderInfoRequest = {
@@ -140,13 +143,22 @@ export type GetFolderInfoRequest = {
 }
 
 export async function wireImportFolder(request: ImportFolderRequest): Promise<ImportFolderResponse> {
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/addsourcefolder`, JSON.stringify(request))).json();
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/importsourcefolder`, JSON.stringify(request))).json();
   return response;
 }
 
-export async function wireRescanFolder(folderId: number): Promise<RescanFolderResponse> {
-  let request: RescanFolderRequest = { folderId: folderId };
-  let response = await (await fetchAdapter!.post(`/api/photolibrary/rescansourcefolder`, JSON.stringify(request))).json();
+export type CollectionJobKind = 'phash' | 'alttext' | 'rescan';
+export type ProcessCollectionJobRequest = {
+  cmd: CollectionJobKind,
+  collId: number;
+}
+
+export async function wireProcessCollectionJob(
+  cmd: CollectionJobKind,
+  collId: number): Promise<StartJobResponse> {
+
+  let request: ProcessCollectionJobRequest = { cmd: cmd, collId: collId };
+  let response = await (await fetchAdapter!.post(`/api/job/processcollection`, JSON.stringify(request))).json();
   return response;
 }
 
@@ -156,15 +168,10 @@ export type GetJobStatusResponse = ResultResponse & {
 export type ImportJobStatusResponse = GetJobStatusResponse & {
   addedFiles: number;
   updatedFiles: number;
-  processedFiles: number;
 }
 
-export type PHashJobStatusResponse = GetJobStatusResponse & {
+export type ProcessCollectionStatusResponse = GetJobStatusResponse & {
   processedFiles: number;
-}
-
-export type ExportJobStatusResponse = GetJobStatusResponse & {
-  addedFiles: number;
 }
 
 export async function wireGetJobStatus<T extends ResultResponse>(id: string): Promise<T> {
@@ -184,9 +191,7 @@ export type ExportPhotosRequest = {
   photos: number[];
 }
 
-export type ExportPhotosResponse = {
-  jobId: string;
-  result: string;
+export type ExportPhotosResponse = StartJobResponse & {
 }
 
 export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<ExportPhotosResponse> {
@@ -194,21 +199,8 @@ export async function wireExportPhotos(wire: ExportPhotosRequest): Promise<Expor
   return response;
 }
 
-export type BuildPHashRequest = {
-  photos: number[] | null;
-  folderId?: number;
-}
-
-export type JobResponse = ResultResponse & {
+export type StartJobResponse = ResultResponse & {
   jobId: string;
-}
-
-export type BuildPHashResponse = JobResponse & {
-}
-
-export async function wireBuildPHash(wire: BuildPHashRequest): Promise<BuildPHashResponse> {
-  let response = await (await fetchAdapter!.post(`/api/similarity/buildphash`, JSON.stringify(wire))).json();
-  return response;
 }
 
 export type GetCorrelationRequest = {

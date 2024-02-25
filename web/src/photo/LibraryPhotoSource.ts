@@ -21,10 +21,10 @@ export abstract class LibraryPhotoSource implements IPhotoListSource {
     this.changeHandler = func;
   }
 
-  addItems(items: AlbumPhoto[]): void {
+  addItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void {
   }
 
-  removeItems(items: AlbumPhoto[]): void {
+  removeItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void {
   }
 
   public abstract setAppFilter(filter: AppFilter): void;

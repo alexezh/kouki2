@@ -204,10 +204,6 @@ export function openPhotoStack(photo: AlbumPhoto) {
     let stack = getStack(photo.stackId);
     for (let id of stack!) {
       let sp = getPhotoById(id);
-      if (!sp) {
-        console.log('cannot find photo ' + id);
-        continue;
-      }
       photos.push(sp);
     }
   }

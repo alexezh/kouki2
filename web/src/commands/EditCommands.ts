@@ -2,9 +2,9 @@ import { AlbumPhoto, PhotoId, UpdatePhotoContext } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler } from "./Commands";
-import { getQuickCollectionList } from "../photo/CollectionStore";
 import { addStack, removeStack } from "../photo/PhotoStore";
 import { PhotoList, PhotoListPos } from "../photo/PhotoList";
+import { createQuickCollection, createQuickCollectionList, getQuickCollectionList } from "../photo/LoadPhotoList";
 
 export function onMarkFavorite() {
   let ctx = new UpdatePhotoContext();
@@ -101,11 +101,14 @@ export function onAddStack() {
 
       if (!stackId) {
         let photo = selected.values().next().value;
-        stackId = photo.stackId;
+        addStack(photo.id, photo, ctx);
+        stackId = photo.id;
       }
 
       for (let [key, x] of selected) {
-        addStack(stackId! as PhotoId, x, ctx);
+        if (stackId !== x.id) {
+          addStack(stackId! as PhotoId, x, ctx);
+        }
       }
     }
 
@@ -128,13 +131,15 @@ export function onRemoveStack() {
       return;
     }
 
+    let ctx = new UpdatePhotoContext();
+
     for (let [key, photo] of selectionManager.selectedPhotos) {
       let pos = photos.findPhotoPos(photo);
       if (pos < 0) {
         return;
       }
 
-      removeStack(photo);
+      removeStack(photo, ctx);
 
       let nextSelect = photos.getNext(photo);
       if (nextSelect !== -1) {
@@ -145,6 +150,8 @@ export function onRemoveStack() {
         selectionManager.reset([photos.getItem(nextSelect)]);
       }
     }
+
+    ctx.commit();
   }
 }
 
@@ -162,10 +169,7 @@ function onAddQuickCollection() {
 }
 
 function onNewQuickCollection() {
-}
-
-function onDeleteQuickCollection() {
-  //getAppState().navList
+  createQuickCollection();
 }
 
 export function registerEditCommands() {
@@ -176,6 +180,5 @@ export function registerEditCommands() {
   addCommandHandler(Command.RemoveStack, onRemoveStack);
   addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
   addCommandHandler(Command.CreateQuickCollection, onNewQuickCollection);
-  addCommandHandler(Command.DeleteQuickCollection, onDeleteQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);
 }

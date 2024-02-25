@@ -17,6 +17,9 @@ export class PhotoListId {
   }
 
   public toString() { return `${this.kind}!${this.id}` };
+  public isEqual(id: PhotoListId) {
+    return this.kind === id.kind && this.id === id.id;
+  }
 }
 
 export enum LibraryUpdateRecordKind {
@@ -77,7 +80,8 @@ export class UpdatePhotoContext {
       let wireUpdate: WirePhotoUpdate = {
         hash: update.photo.wire.hash,
         hidden: update.hidden,
-        favorite: update.favorite
+        favorite: update.favorite,
+        stackId: update.stackId
       }
       this.wireUpdates.push(wireUpdate);
     }
@@ -149,6 +153,10 @@ export class AlbumPhoto {
   }
 
   public setStackHidden(val: boolean, ctx: UpdatePhotoContext) {
+    if (this._stackHidden === val) {
+      return;
+    }
+
     this._stackHidden = val;
     this.invokeOnChanged();
     ctx.addPhoto({

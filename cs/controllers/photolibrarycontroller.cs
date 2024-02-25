@@ -14,10 +14,6 @@ public class PhotoLibraryController : Controller
   internal static void RegisterRoutes(WebApplication app)
   {
     app.MapControllerRoute(
-        name: "GetFolder",
-        pattern: "/api/{controller=PhotoLibrary}/{action=GetFolder}/{id}");
-
-    app.MapControllerRoute(
         name: "GetCollectionItems",
         pattern: "/api/{controller=PhotoLibrary}/{action=GetCollectionItems}/{id}");
 
@@ -42,10 +38,6 @@ public class PhotoLibraryController : Controller
         pattern: "/api/{controller=PhotoLibrary}/{action=AddCollection}");
 
     app.MapControllerRoute(
-        name: "GetSourceFolders",
-        pattern: "/api/{controller=PhotoLibrary}/{action=GetSourceFolders}");
-
-    app.MapControllerRoute(
         name: "GetImage",
         pattern: "/api/{controller=PhotoLibrary}/{action=GetImage}/{id}");
 
@@ -54,12 +46,8 @@ public class PhotoLibraryController : Controller
         pattern: "/api/{controller=PhotoLibrary}/{action=GetThumbnail}/{id}");
 
     app.MapControllerRoute(
-        name: "AddSourceFolder",
-        pattern: "/api/{controller=PhotoLibrary}/{action=AddSourceFolder}");
-
-    app.MapControllerRoute(
-        name: "UpdateSourceFolder",
-        pattern: "/api/{controller=PhotoLibrary}/{action=RescanSourceFolder}");
+        name: "ImportSourceFolder",
+        pattern: "/api/{controller=PhotoLibrary}/{action=ImportSourceFolder}");
 
     app.MapControllerRoute(
         name: "UpdatePhotos",
@@ -67,43 +55,25 @@ public class PhotoLibraryController : Controller
   }
 
   [HttpPost]
-  public async Task<ImportFolderResponse> AddSourceFolder()
+  public async Task<ImportFolderResponse> ImportSourceFolder()
   {
     using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
     {
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<ImportFolderRequest>(content);
 
-      var id = JobRunner.Instance.RunJob(new ImportJob(request));
+      string id;
+      if (request.folderId != 0)
+      {
+        id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
+      }
+      else
+      {
+        id = JobRunner.Instance.RunJob(new ImportJob(request));
+      }
 
       return new ImportFolderResponse() { result = ResultResponse.Ok, jobId = id };
     }
-  }
-
-  [HttpPost]
-  public async Task<ImportFolderResponse> RescanSourceFolder()
-  {
-    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
-    {
-      string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<RescanFolderRequest>(content);
-
-      var id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
-
-      return new ImportFolderResponse() { result = ResultResponse.Ok, jobId = id };
-    }
-  }
-
-  [HttpGet]
-  public IEnumerable<FolderEntry> GetSourceFolders()
-  {
-    return PhotoFs.Instance.GetSourceFolders();
-  }
-
-  [HttpGet]
-  public IEnumerable<CollectionItem> GetFolder(Int64 id)
-  {
-    return PhotoFs.Instance.GetFolder(id);
   }
 
   [HttpGet]
@@ -112,10 +82,16 @@ public class PhotoLibraryController : Controller
     return PhotoFs.Instance.GetCollectionItems(id);
   }
 
-  [HttpGet]
-  public IEnumerable<PhotoEntry> GetLibrary()
+  [HttpPost]
+  public async Task<IEnumerable<PhotoEntry>> GetLibrary()
   {
-    return PhotoFs.Instance.GetLibrary();
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<GetLibraryRequest>(content);
+
+      return PhotoFs.Instance.GetLibrary(request.minId);
+    }
   }
 
   [HttpPost]

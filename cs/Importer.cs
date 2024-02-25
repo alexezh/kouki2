@@ -1,10 +1,15 @@
 
 using System.Drawing;
+using System.Text.Json;
 using ImageMagick;
 
+/// <summary>
+/// if folderId is set, run rescan job
+/// </summary>
 public class ImportFolderRequest
 {
   public string folder { get; set; }
+  public Int64 folderId { get; set; }
   public Int64 importCollection { get; set; }
   public bool dryRun { get; set; }
 }
@@ -59,7 +64,7 @@ public class ImportJob : IJob
       else
       {
         importer = new FileImporter(
-          PhotoFs.Instance.PhotoDb,
+          PhotoFs.Instance,
           PhotoFs.Instance.ThumbnailDb);
       }
       FolderImporter.ScanFiles(
@@ -105,7 +110,7 @@ public class RescanJob : IJob
     _status.result = ResultResponse.Processing;
 
     FolderImporter.RescanFolder(
-      PhotoFs.Instance.PhotoDb,
+      PhotoFs.Instance,
       PhotoFs.Instance.ThumbnailDb,
       _folderId,
       (ScanStatus status) =>
@@ -159,26 +164,51 @@ public interface IFileImporter
 
 public class FileImporter : IFileImporter
 {
-  private PhotoDb db;
+  private PhotoFs fs;
   private ThumbnailDb thumbnailDb;
+  private Dictionary<string, Int64> folderMap = new Dictionary<string, long>();
+  private Int64 importCollId;
 
-  public FileImporter(PhotoDb db_, ThumbnailDb thumbnailDb_)
+  public FileImporter(PhotoFs fs_, ThumbnailDb thumbnailDb_)
   {
-    db = db_;
+    fs = fs_;
     thumbnailDb = thumbnailDb_;
+    var colls = fs.GetCollections();
+    foreach (var coll in colls)
+    {
+      if (coll.kind != "folder")
+      {
+        continue;
+      }
+
+      var folderInfo = JsonSerializer.Deserialize<FolderMetadata>(coll.metadata);
+      if (folderInfo.path != null)
+      {
+        folderMap.Add(folderInfo.path, coll.id);
+      }
+    }
+
+    var importColl = fs.AddCollection(new AddCollectionRequest()
+    {
+      kind = "import",
+      name = "",
+      createDt = DateTime.Now.ToString("o")
+    });
+
+    importCollId = importColl.id;
   }
 
   public Int64? GetFolderId(string path)
   {
-    var folderId = db.GetFolderId(path);
-    if (folderId == null)
+    if (!folderMap.TryGetValue(path, out var folderId))
     {
-      var temp = db.AddSourceFolder(path);
+      var temp = fs.AddFolderCollection(path);
       if (temp == null)
       {
         throw new ArgumentException("Cannot create folder");
       }
       folderId = temp.Value;
+      folderMap.Add(path, folderId);
     }
 
     return folderId;
@@ -186,7 +216,7 @@ public class FileImporter : IFileImporter
 
   public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
-    return db.HasPhoto(folderId, fileName, fileExt);
+    return fs.PhotoDb.HasPhoto(folderId, fileName, fileExt);
   }
 
   public void UpdatePhoto(
@@ -198,7 +228,7 @@ public class FileImporter : IFileImporter
     PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
     if (entry != null)
     {
-      db.UpdatePhotoFileInfo(entry);
+      fs.PhotoDb.UpdatePhotoFileInfo(entry);
     }
   }
 
@@ -209,12 +239,16 @@ public class FileImporter : IFileImporter
     string fileExt)
   {
     PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
-    if (entry != null)
+    if (entry == null)
     {
-      db.AddPhoto(entry);
-      return true;
+      return false;
     }
-    return false;
+
+    var id = fs.PhotoDb.AddPhoto(entry);
+
+    UpdateImportCollection(id);
+
+    return true;
   }
 
   public Int64? AddFile(Int64 folderId, string filePath, bool favorite)
@@ -230,7 +264,19 @@ public class FileImporter : IFileImporter
 
     entry.favorite = (favorite) ? 1 : 0;
 
-    return db.AddPhoto(entry);
+    var id = fs.PhotoDb.AddPhoto(entry);
+    UpdateImportCollection(id);
+    return id;
+  }
+
+  private void UpdateImportCollection(Int64 id)
+  {
+    var item = new CollectionItem()
+    {
+      photoId = id,
+      updateDt = DateTime.Now.ToString("o")
+    };
+    fs.AddCollectionItems(importCollId, new CollectionItem[] { item });
   }
 
   private PhotoEntry BuildEntryFromFile(
@@ -395,11 +441,11 @@ public class FileImportedDry : IFileImporter
 
 public class FolderImporter
 {
-  public static void RescanFolder(PhotoDb db, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
+  public static void RescanFolder(PhotoFs fs, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
   {
     var status = new ScanStatus();
-    var folder = db.GetFolder(folderId);
-    ScanFolder(new FolderName(folder.path), folderId, new FileImporter(db, thumbnailDb), onProgress, status);
+    var folder = fs.GetFolderInfo(folderId);
+    ScanFolder(new FolderName(folder.path), folderId, new FileImporter(fs, thumbnailDb), onProgress, status);
   }
 
   public static void ScanFiles(

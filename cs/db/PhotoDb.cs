@@ -27,6 +27,7 @@ public class PhotoEntry
   public string originalDateTime { get; set; }
   public string originalHash { get; set; }
   public Int64 stackId { get; set; }
+  public string altText { get; set; }
   [JsonIgnore]
   public byte[] phash;
 }
@@ -40,6 +41,7 @@ public class UpdatePhotoRequest
   public UpdateString? color { get; set; }
   public UpdateString? originalHash { get; set; }
   public Int64? stackId { get; set; }
+  public string altText { get; set; }
 }
 
 public class UpdatePhotoResponse
@@ -47,11 +49,17 @@ public class UpdatePhotoResponse
   public string error { get; set; }
 }
 
+public class GetLibraryRequest
+{
+  public Int64 minId { get; set; }
+}
+
 public class AddCollectionRequest
 {
   public string kind { get; set; }
   public string name { get; set; }
   public string createDt { get; set; }
+  public string metadata { get; set; }
 }
 
 public class AddCollectionResponse : ResultResponse
@@ -160,7 +168,7 @@ public class PhotoDb
   public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt, $phash)";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt, $phash) RETURNING id";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
@@ -174,16 +182,6 @@ public class PhotoDb
     command.Parameters.AddWithValue("$format", entry.format);
     AddStringValue(command, "$originalDt", entry.originalDateTime);
 
-    var inserted = command.ExecuteNonQuery();
-    if (inserted != 1)
-    {
-      throw new ArgumentException("Cannot insert");
-    }
-
-    /*
-    command.CommandText = "INSERT INTO SourceFolders(path) VALUES($path) RETURNING id";
-    command.Parameters.AddWithValue("$path", path);
-
     using (var reader = command.ExecuteReader())
     {
       while (reader.Read())
@@ -191,7 +189,6 @@ public class PhotoDb
         return (Int64)reader["id"];
       }
     }
-    */
 
     return 0;
   }
@@ -241,6 +238,7 @@ public class PhotoDb
       originalDateTime = reader.ReadMagicTime("originalDt")?.ToString("o"),
       originalHash = reader.ReadString("originalHash"),
       stackId = reader.ReadInt64("stackId"),
+      altText = reader.ReadString("alttext"),
       phash = reader.ReadBlob("phash"),
     };
 
@@ -263,13 +261,6 @@ public class PhotoDb
 
     return entries;
   }
-}
-
-public class FolderEntry
-{
-  public Int64 id { get; set; }
-  public string path { get; set; }
-  public string kind { get; set; }
 }
 
 public class CollectionEntry

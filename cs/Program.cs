@@ -32,6 +32,8 @@ else
     koukiPath = Path.GetFullPath("kouki2", picturesPath);
 }
 
+Console.WriteLine("Data directory:" + koukiPath);
+
 if (exportPath == null)
 {
     exportPath = Path.GetFullPath("export", koukiPath);

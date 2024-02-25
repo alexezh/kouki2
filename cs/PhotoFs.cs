@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ImageMagick;
 using Microsoft.AspNetCore.Mvc;
 
@@ -92,6 +93,24 @@ public class PhotoFs
     return ResultResponse.Ok;
   }
 
+  public Int64? AddFolderCollection(string path, string kind = "folder")
+  {
+    var metadata = new FolderMetadata()
+    {
+      path = path
+    };
+    var metadataStr = JsonSerializer.Serialize(metadata);
+    var entry = AddCollection(new AddCollectionRequest()
+    {
+      kind = "folder",
+      name = "",
+      createDt = DateTime.Now.ToString("o"),
+      metadata = metadataStr,
+    });
+
+    return entry.id;
+  }
+
   public FileStreamResult GetImageFile(string key)
   {
     var infos = _photoDb.GetPhotosByHash(key);
@@ -100,7 +119,7 @@ public class PhotoFs
       return null;
     }
 
-    var folder = _photoDb.GetFolder(infos[0].folderId);
+    var folder = GetFolderInfo(infos[0].folderId);
 
     var filePath = Path.Combine(folder.path, $"{infos[0].fileName}{infos[0].fileExt}");
     if (infos[0].format == (int)MagickFormat.Jpeg || infos[0].format == (int)MagickFormat.Jpg)
@@ -144,21 +163,24 @@ public class PhotoFs
     return new FileStreamResult(new MemoryStream(infos[0].data), "image/jpeg");
   }
 
-  public IEnumerable<FolderEntry> GetSourceFolders()
+  public IEnumerable<CollectionItem> GetFolderItems(Int64 collectionId)
   {
-    return _photoDb.GetSourceFolders();
+    return _photoDb.GetPhotosByFolder(collectionId);
   }
 
-  public IEnumerable<CollectionItem> GetFolder(Int64 folderId)
+  public FolderMetadata GetFolderInfo(Int64 collectionId)
   {
-    return _photoDb.GetPhotosByFolder(folderId);
+    var coll = _photoDb.GetCollection(collectionId);
+    var folder = JsonSerializer.Deserialize<FolderMetadata>(coll.metadata);
+    return folder;
   }
 
-  public IEnumerable<PhotoEntry> GetLibrary()
+  public IEnumerable<PhotoEntry> GetLibrary(Int64 minId)
   {
     return _photoDb.SelectPhotos((command) =>
     {
-      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
+      command.CommandText = "SELECT * FROM Photos WHERE id>=$id ORDER BY originalDt DESC";
+      command.Parameters.AddWithValue("$id", minId);
     });
   }
 
@@ -192,7 +214,7 @@ public class PhotoFs
   public CollectionEntry AddCollection(AddCollectionRequest request)
   {
     var createDt = DateTime.Parse(request.createDt).ToBinary();
-    var id = _photoDb.AddCollection(request.name, request.kind, createDt);
+    var id = _photoDb.AddCollection(request.name, request.kind, createDt, request.metadata);
     if (id == null)
     {
       return null;

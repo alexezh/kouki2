@@ -24,9 +24,9 @@ public static class CollectionsQueriesExt
     return items;
   }
 
-  public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user", Int64 dt = 0)
+  public static Int64? AddCollection(this PhotoDb self, string name, string kind = "user", Int64 dt = 0, string metadata = null)
   {
-    return AddCollection(self.Connection, name, kind, dt);
+    return AddCollection(self.Connection, name, kind, dt, metadata);
   }
 
   public static Int64? AddCollection(SqliteConnection connection, string name, string kind = "user", Int64 dt = 0, string metadata = null)
@@ -50,9 +50,40 @@ public static class CollectionsQueriesExt
     return PhotoQueriesExt.InsertWithId(self.Connection, "CollectionItems", values);
   }
 
+  public static CollectionEntry GetCollection(this PhotoDb self, Int64 collectionId)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Collections WHERE Id == $id";
+    command.Parameters.AddWithValue("$id", collectionId);
+
+    var collections = new List<CollectionEntry>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return ReadCollectionEntry(reader);
+      }
+    }
+
+    return null;
+  }
+
+
   public static List<CollectionEntry> GetCollections(this PhotoDb self)
   {
     return GetCollections(self.Connection);
+  }
+
+  private static CollectionEntry ReadCollectionEntry(SqliteDataReader reader)
+  {
+    return new CollectionEntry()
+    {
+      id = (Int64)reader["id"],
+      name = (string)reader["name"],
+      kind = (string)reader["kind"],
+      createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o"),
+      metadata = reader.ReadString("metadata")
+    };
   }
 
   public static List<CollectionEntry> GetCollections(SqliteConnection connection)
@@ -65,14 +96,7 @@ public static class CollectionsQueriesExt
     {
       while (reader.Read())
       {
-        collections.Add(new CollectionEntry()
-        {
-          id = (Int64)reader["id"],
-          name = (string)reader["name"],
-          kind = (string)reader["kind"],
-          createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o"),
-          metadata = reader.ReadString("metadata")
-        });
+        collections.Add(ReadCollectionEntry(reader));
       }
     }
 

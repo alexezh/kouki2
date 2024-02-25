@@ -1,13 +1,13 @@
 import { WireCollection, WireFolderMetadata } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, LibraryUpdateRecord, PhotoListId } from "./AlbumPhoto";
-import { CollectionId, PhotoCollection, getCollectionsByKind } from "./CollectionStore";
+import { CollectionId, PhotoCollection, getCollectionsByKind, loadCollections } from "./CollectionStore";
 import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
 import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
 export class PhotoFolder {
   public readonly wire: WireFolderMetadata | null;
-  public readonly id: CollectionId;
+  public readonly id: PhotoListId;
 
   /**
    * name relative to folder above 
@@ -15,9 +15,10 @@ export class PhotoFolder {
   public relname: string;
   public path: string;
   public children: PhotoFolder[] = [];
+  public get totalPhotos(): number { return (this.wire) ? this.wire.totalPhotos : 0 }
 
-  public constructor(collId: CollectionId, wire: WireFolderMetadata | null, relname: string, path: string) {
-    this.id = collId;
+  public constructor(listId: PhotoListId, wire: WireFolderMetadata | null, relname: string, path: string) {
+    this.id = listId;
     this.wire = wire;
     this.relname = relname;
     this.path = path;
@@ -41,10 +42,8 @@ export function triggerRefreshFolders() {
   console.log('triggerRefreshFolders');
 
   setTimeout(async () => {
-    await loadLibrary(async () => {
-      await loadFolders();
-      return true;
-    })
+    await loadLibrary();
+    return true;
   });
 }
 
@@ -77,14 +76,14 @@ function generatePhotoFolders(colls: PhotoCollection[]): PhotoFolder[] {
       let pathStr = path.join('/');
       let af = folderMap.get(pathStr);
       if (!af) {
-        af = new PhotoFolder(coll.id as CollectionId, (idx === parts.length - 1) ? wf : null, part, pathStr);
+        af = new PhotoFolder(coll.id, (idx === parts.length - 1) ? wf : null, part, pathStr);
         folderMap.set(pathStr, af);
         if (parent) {
           parent.children.push(af);
         }
 
         if (wf) {
-          folderIdMap.set(coll.id as CollectionId, af);
+          folderIdMap.set(coll.id.id, af);
         }
 
         if (path.length === 1) {
@@ -172,10 +171,10 @@ export class StaticPhotoSource implements IPhotoListSource {
     this.photos = photos;
   }
 
-  addItems(items: AlbumPhoto[]): void {
+  addItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void {
   }
 
-  removeItems(items: AlbumPhoto[]): void {
+  removeItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>): void {
   }
 
   public isHidden(photo: AlbumPhoto): boolean {

@@ -33,13 +33,3 @@ export function CommandBar(props: { className?: string }) {
       </Toolbar>
     </AppBar >)
 };
-
-{/* 
-            <MenuItem key="lib_star1" onClick={handleRescanFolder}>Rescan Folder</MenuItem>
-            <MenuItem key="new_coll" onClick={handleNewCollection}>New Collection</MenuItem>
-
-<Divider />
-<DatePicker
-  label=""
-  views={['year', 'month', 'day']}
-  slotProps={{ textField: { size: 'small' } }} /> */}

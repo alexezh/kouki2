@@ -1,12 +1,10 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { AlbumPhoto, PhotoId } from "./AlbumPhoto"
+import { AlbumPhoto } from "./AlbumPhoto"
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import { PhotoLayout } from "./PhotoLayout";
-import { PhotoRowLayout } from "./RowLayout";
 import { ViewMode, getAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { getCssIntVar } from "../lib/htmlutils";
-import { getPhotoById } from "./PhotoStore";
 import { PhotoViewer } from "./PhotoViewer";
 import { PhotoListPos } from "./PhotoList";
 
@@ -18,7 +16,8 @@ export type StripeLayoutProps = {
 }
 
 export function StripeLayout(props: StripeLayoutProps): JSX.Element {
-  let [version, setVersion] = useState(0);
+  let [listVersion, setListVersion] = useState(0);
+  let [currentPhoto, setCurrentPhoto] = useState<AlbumPhoto | null>(selectionManager.lastSelectedPhoto);
   const listRef = useRef(null);
 
   console.log("StripeLayout: render");
@@ -38,14 +37,14 @@ export function StripeLayout(props: StripeLayoutProps): JSX.Element {
           if (idx !== -1) {
             // @ts-ignore
             listRef.current.scrollToItem(idx);
-            setVersion(getAppState().version)
+            setCurrentPhoto(selectionManager.lastSelectedPhoto)
           }
         }
       }
     });
 
     let collId = getAppState().workList.addOnListChanged(() => {
-      setVersion(getAppState().version);
+      setListVersion(getAppState().workList.version);
     });
 
     return () => {

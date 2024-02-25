@@ -63,12 +63,25 @@ public static class PhotoQueriesExt
       command.Parameters.AddWithValue("$" + val.Item1, val.Item2);
     }
 
-    using (var reader = command.ExecuteReader())
+    try
     {
-      while (reader.Read())
+      using (var reader = command.ExecuteReader())
       {
-        return (Int64)reader["id"];
+        while (reader.Read())
+        {
+          return (Int64)reader["id"];
+        }
       }
+    }
+    catch (SqliteException e)
+    {
+      // UNIQUE contraint failed
+      if (e.SqliteErrorCode == 19)
+      {
+        return null;
+      }
+
+      throw;
     }
 
     return null;
@@ -120,11 +133,25 @@ public static class PhotoQueriesExt
       setFields += "stackId = $stackId";
       command.Parameters.AddWithValue("$stackId", updateReqest.stackId);
     }
-    command.CommandText = $"UPDATE Photos SET {setFields} WHERE hash == $hash";
-    command.Parameters.AddWithValue("$hash", updateReqest.hash);
 
-    var updated = command.ExecuteNonQuery();
-    if (updated != 1)
+    if (updateReqest.altText != null)
+    {
+      setFields += "altText = $altText";
+      command.Parameters.AddWithValue("$altText", updateReqest.altText);
+    }
+
+    if (setFields.Length > 0)
+    {
+      command.CommandText = $"UPDATE Photos SET {setFields} WHERE hash == $hash";
+      command.Parameters.AddWithValue("$hash", updateReqest.hash);
+
+      var updated = command.ExecuteNonQuery();
+      if (updated != 1)
+      {
+        return false;
+      }
+    }
+    else
     {
       return false;
     }
@@ -140,6 +167,22 @@ public static class PhotoQueriesExt
 
     command.Parameters.AddWithValue("$id", photoId);
     self.AddBlobValue(command, "$phash", phash);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      throw new ArgumentException("Cannot update");
+    }
+  }
+
+  public static void UpdatePhotoAltText(this PhotoDb self, Int64 photoId, string altText)
+  {
+    var command = self.Connection.CreateCommand();
+
+    command.CommandText = "UPDATE Photos SET alttext=$altText WHERE id == $id";
+
+    command.Parameters.AddWithValue("$id", photoId);
+    self.AddStringValue(command, "$altText", altText);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)

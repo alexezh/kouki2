@@ -9,16 +9,16 @@ import Button from "@mui/material/Button/Button";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
 import { wireImportFolder, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
-import { getStandardCollectionList } from "../../photo/CollectionStore";
-import { runJob } from "./BackgroundJobs";
+import { JobStatus, runJob } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { showConfirmationDialog } from "./ConfirmationDialog";
+import { createCollectionOfKind } from "../../photo/CollectionStore";
 
 export function onImportFolder() {
   showDialog((props: DialogProps) => {
     return (
       <ImportFolderDialog onClose={props.onClose} />)
-  })
+  });
 }
 
 export function ImportFolderDialog(props: { onClose: () => void }) {
@@ -34,35 +34,33 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
     setProcessing(true);
 
     catchAllAsync(async () => {
-      let importList = await getStandardCollectionList('import');
+      let importColl = await createCollectionOfKind('import');
 
       setStatusText("Scanning...");
 
-      let dryRunResult = await runJob<ImportJobStatusResponse>("dry_" + value,
-        {
-
-          worker: async () => {
-            let addResponse = await wireImportFolder({
-              folder: value,
-              dryRun: true,
-              importCollection: importList.id.id
-            });
-            return addResponse;
-          },
-          onStatus: (status: GetJobStatusResponse) => {
-            let importStatus = status as ImportJobStatusResponse;
-            setStatusText('Scanned: ' + importStatus.addedFiles + ' files')
-          },
-          onComplete: (status: GetJobStatusResponse) => { }
+      let dryJob = runJob("dry_" + value,
+        'Import folder',
+        async () => {
+          let addResponse = await wireImportFolder({
+            folder: value,
+            dryRun: true,
+            importCollection: importColl.id.id
+          });
+          return addResponse;
+        },
+        (status: GetJobStatusResponse) => {
+          let importStatus = status as ImportJobStatusResponse;
+          return 'Scanned: ' + importStatus.addedFiles + ' files';
         });
 
-      if (dryRunResult?.result !== 'Done') {
-        setStatusText(dryRunResult ? dryRunResult.message : 'unknown error');
+      let dryResult = (await dryJob.task) as ImportJobStatusResponse;
+      if (dryResult?.result !== 'Done') {
+        setStatusText(dryResult ? dryResult.message : 'unknown error');
         setProcessing(false);
         return;
       }
 
-      let res = await showConfirmationDialog('Import photos', `Do you want to import ${dryRunResult?.addedFiles} files?`);
+      let res = await showConfirmationDialog('Import photos', `Do you want to import ${dryResult?.addedFiles} files?`);
       if (!res) {
         setStatusText("");
         setProcessing(false);
@@ -70,30 +68,33 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
       }
 
       // now start background job
-      runJob("import_" + value,
-        {
-          worker: async () => {
-            let addResponse = await wireImportFolder({
-              folder: value,
-              dryRun: false,
-              importCollection: importList.id.id
-            });
-            return addResponse;
-          },
-          onStatus: (status: GetJobStatusResponse) => {
-            let importStatus = status as ImportJobStatusResponse;
-            setStatusText('Added: ' + importStatus.addedFiles + ' files');
-          },
-          onComplete: (status: GetJobStatusResponse) => {
-            if (status.result === "Done") {
-              triggerRefreshFolders();
-              props.onClose();
-            } else {
-              setProcessing(false);
-              setStatusText(status.message);
-            }
-          }
+      let job = runJob("import_" + value,
+        'Import folder',
+        async () => {
+          let addResponse = await wireImportFolder({
+            folder: value,
+            dryRun: false,
+            importCollection: importColl.id.id
+          });
+          return addResponse;
+        },
+        (status: GetJobStatusResponse) => {
+          let importStatus = status as ImportJobStatusResponse;
+          return 'Added: ' + importStatus.addedFiles + ' files';
         });
+
+      job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+      let jobResult = await job.task;
+
+      setProcessing(false);
+      if (jobResult) {
+        if (jobResult.result === "Done") {
+          triggerRefreshFolders();
+          props.onClose();
+        } else {
+          setStatusText(jobResult.message);
+        }
+      }
     });
   };
 

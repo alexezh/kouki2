@@ -81,7 +81,7 @@ public class MobileSync
     {
       var archivePath = Path.GetFullPath(request.name, fs.DevicePath);
       Directory.CreateDirectory(archivePath);
-      var folderId = fs.PhotoDb.AddSourceFolder(archivePath, "device");
+      var folderId = fs.AddFolderCollection(archivePath, "device");
       if (folderId == null)
       {
         throw new ArgumentException("Cannot create folder");
@@ -185,7 +185,8 @@ public class MobileSync
       }
 
       // save file to folder
-      var folder = fs.PhotoDb.GetFolder(request.archiveFolderId);
+      var folderId = request.archiveFolderId;
+      var folder = fs.GetFolderInfo(folderId);
       var destPath = Path.GetFullPath(request.fileName, folder.path);
 
       stream.Position = 0;
@@ -195,10 +196,10 @@ public class MobileSync
         stream.CopyTo(destStm);
       }
 
-      var importer = new FileImporter(fs.PhotoDb, fs.ThumbnailDb);
+      var importer = new FileImporter(fs, fs.ThumbnailDb);
 
       // add file to archive folder
-      var photoId = importer.AddFile(folder.id, destPath, request.favorite);
+      var photoId = importer.AddFile(folderId, destPath, request.favorite);
       if (!photoId.HasValue)
       {
         return new ResultResponse() { result = "cannot_add_photo" };

@@ -1,9 +1,8 @@
 import ListItemButton from "@mui/material/ListItemButton/ListItemButton";
 import { updateAppState } from "./AppState";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { PhotoListId } from "../photo/AlbumPhoto";
 import { loadPhotoList } from "../photo/LoadPhotoList";
-import { PhotoList } from "../photo/PhotoList";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import Collapse from "@mui/material/Collapse/Collapse";
@@ -11,28 +10,23 @@ import List from "@mui/material/List/List";
 import { PhotoCollection } from "../photo/CollectionStore";
 
 // catelog is either collection, or list of collections (like folder)
-export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
+export function CollectionItemLayout(props: { text: string, id: PhotoListId, paddingLeft: number }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let collId = 0;
-    let list: PhotoList | null;
-
-    // to avoid race condition, keep track if it was already unmounted
-    // TODO: change to collection id which are loaded; we only need list when we change things
-    list = loadPhotoList(props.id);
-    setCount(list.photoCount);
-    if (collId !== -1) {
-      collId = list.addOnListChanged(() => {
-        setCount(list!.photoCount);
-      });
+    if (props.id.kind === 'quick') {
+      console.log('load quick coll ' + props.id.id);
     }
+    let list = loadPhotoList(props.id);
+    setCount(list.photoCount);
+    let collId = list.addOnListChanged(() => {
+      setCount(list!.photoCount);
+    });
 
     return () => {
       if (collId > 0) {
         list!.removeOnListChanged(collId);
       }
-      collId = -1;
     }
   }, [props.id.id]);
 
@@ -41,7 +35,7 @@ export function CollectionItemLayout(props: { text: string, id: PhotoListId }) {
   }
 
   return (
-    <ListItemButton sx={{ pl: 4 }} onClick={handleClick} key={'coll_' + props.id}>
+    <ListItemButton sx={{ pl: props.paddingLeft }} onClick={handleClick} key={'coll_' + props.id}>
       <div className="CatalogItem">
         <div>{props.text}</div>
         <div className="CatalogItem-Count">{count}</div>
@@ -60,7 +54,7 @@ export function CollectionListLayout(props: { text: string, lists: PhotoCollecti
       </ListItemButton >
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
-          {props.lists.map((x) => { return (<CollectionItemLayout key={'list_' + x.id} text={x.createDt.toLocaleDateString()} id={x.createListId()} />) })}
+          {props.lists.map((x) => { return (<CollectionItemLayout paddingLeft={4} key={'list_' + x.id} text={x.createDt.toLocaleDateString()} id={x.id} />) })}
         </List>
       </Collapse>
     </div>

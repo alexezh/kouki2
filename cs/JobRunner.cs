@@ -27,6 +27,17 @@ public class GetJobStatusResponse : ResultResponse
 {
 }
 
+public class ProcessCollectionJobRequest
+{
+  public string cmd { get; set; }
+  public Int64 collId { get; set; }
+}
+
+public class ProcessCollectionStatusResponse : GetJobStatusResponse
+{
+  public Int64 processedFiles { get; set; }
+}
+
 public class CollectionItem
 {
   public Int64 photoId { get; set; }

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
-import { PhotoFolder, addOnFoldersChanged, getFolderList, getFolders, removeOnFoldersChanged } from "../photo/FolderStore";
+import { PhotoFolder, addOnFoldersChanged, getFolder, getFolderList, getFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateAppState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, removeOnDeviceChanged } from "../photo/Device";
 import { CollectionId, addOnCollectionsChanged, getCollectionsByKind } from "../photo/CollectionStore";
@@ -58,28 +58,12 @@ export function collapsablePane(
 }
 
 function FolderLayout(props: { folder: PhotoFolder }) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(props.folder.totalPhotos);
   const [openFolders, setOpenFolders] = useState(false);
-
-  useEffect(() => {
-    if (!props.folder.wire) {
-      return;
-    }
-
-    let list = getFolderList(new PhotoListId('folder', props.folder.id));
-    setCount(list.photoCount);
-    let collId = list.addOnListChanged(() => {
-      setCount(list.photoCount);
-    });
-
-    return () => {
-      list.removeOnListChanged(collId);
-    }
-  }, [props.folder]);
 
   async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
     //props.setPhotos(photos);
-    updateAppState({ navListId: new PhotoListId('folder', props.folder.id) });
+    updateAppState({ navListId: props.folder.id });
   }
 
   if (props.folder.children.length > 0) {
@@ -110,22 +94,14 @@ function FolderLayout(props: { folder: PhotoFolder }) {
   }
 }
 
-let catalogs: { name: string, id: PhotoListId }[] =
-  [
-    { name: 'Quick collection', id: new PhotoListId('quick', 0 as CollectionId) },
-    { name: 'All Photos', id: new PhotoListId('all', 0 as CollectionId) },
-    { name: 'Import', id: new PhotoListId('import', 0 as CollectionId) },
-    { name: 'Export', id: new PhotoListId('export', 0 as CollectionId) },
-    { name: 'Hidden', id: new PhotoListId('hidden', 0 as CollectionId) },
-  ];
-
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
   items.push((<CollectionListLayout key='quick' text="Quich collection" lists={getCollectionsByKind('quick')} />))
-  items.push((<CollectionItemLayout key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
+  items.push((<CollectionItemLayout paddingLeft={0} key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
   items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export')} />))
-  items.push((<CollectionItemLayout key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))
+  items.push((<CollectionListLayout key='import' text="Import" lists={getCollectionsByKind('import')} />))
+  items.push((<CollectionItemLayout paddingLeft={0} key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))
   //catalogs.map((x) => { return () });
 
   return items;

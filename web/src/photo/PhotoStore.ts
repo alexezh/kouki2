@@ -1,6 +1,8 @@
 import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId, UpdatePhotoContext } from "./AlbumPhoto";
 import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto } from "../lib/photoclient";
 import { WeakEventSource } from "../lib/synceventsource";
+import { loadCollections } from "./CollectionStore";
+import { loadFolders } from "./FolderStore";
 
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
@@ -8,6 +10,7 @@ const duplicateByHashBuckets = new Map<string, PhotoId[]>();
 export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
 let loadWaiters: (() => void)[] = [];
+let maxPhotoId: number = 0;
 
 export function invokeLibraryChanged(updates: LibraryUpdateRecord[]) {
   libraryChanged.invoke(updates);
@@ -42,12 +45,15 @@ function completeLoad() {
   });
 }
 
-export async function loadLibrary(loadParts: () => Promise<boolean>) {
-  console.log("loadLibrary");
-  let wirePhotos = await wireGetLibrary();
+export async function loadLibrary() {
+  console.log("loadLibrary:" + maxPhotoId);
+
+  // get photos from previous max
+  let wirePhotos = await wireGetLibrary(maxPhotoId);
 
   let pairs: { left: PhotoId, right: PhotoId }[] = [];
   let prevPhoto: AlbumPhoto | null = null;
+  let newPhotos: AlbumPhoto[] = [];
 
   // for photos with the same ti,e. get similarity
   for (let wirePhoto of wirePhotos) {
@@ -57,6 +63,7 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
     } else {
       photo = new AlbumPhoto(wirePhoto);
       photoLibraryMap.set(wirePhoto.id as PhotoId, photo);
+      newPhotos.push(photo);
     }
 
     if (prevPhoto) {
@@ -66,11 +73,46 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
     }
 
     prevPhoto = photo;
+    maxPhotoId = Math.max(photo.id, maxPhotoId);
   }
 
-  buildStacks();
-  buildDuplicateBuckets();
+  buildStacks(newPhotos);
+  buildDuplicateBuckets(newPhotos);
+  buildSimilarityInfo(pairs);
 
+  await loadCollections();
+  loadFolders();
+
+  completeLoad();
+}
+
+/**
+ * this is a ever going question on storage vs runtime
+ * for now we are going to do runtime because it is cheaper
+ * 
+ * for dupes, we are going to store hash and signature
+ * in this function we are first going to first get photos which are dupes
+ * and then choose which one is good. 
+ */
+function buildDuplicateBuckets(photos: AlbumPhoto[]) {
+  // make list of dupes by hash; we will also make list by signature
+  duplicateByHashBuckets.clear();
+  for (let photo of photos) {
+    let ids = duplicateByHashBuckets.get(photo.wire.hash);
+    if (ids) {
+      ids.push(photo.wire.id as PhotoId);
+    } else {
+      duplicateByHashBuckets.set(photo.wire.hash, [photo.wire.id as PhotoId]);
+    }
+  }
+
+  for (let photo of photos) {
+    let ids = duplicateByHashBuckets.get(photo.wire.hash);
+    photo.dupCount = ids!.length;
+  }
+}
+
+async function buildSimilarityInfo(pairs: { left: PhotoId, right: PhotoId }[]): Promise<void> {
   let corrResp = await wireGetCorrelation({ photos: pairs });
   for (let i = 0; i < pairs.length; i++) {
     let correlation = corrResp.corrections[i];
@@ -88,41 +130,11 @@ export async function loadLibrary(loadParts: () => Promise<boolean>) {
     }
     right.correlation = correlation;
   }
-
-  await loadParts();
-
-  completeLoad();
 }
 
-/**
- * this is a ever going question on storage vs runtime
- * for now we are going to do runtime because it is cheaper
- * 
- * for dupes, we are going to store hash and signature
- * in this function we are first going to first get photos which are dupes
- * and then choose which one is good. 
- */
-function buildDuplicateBuckets() {
-  // make list of dupes by hash; we will also make list by signature
-  duplicateByHashBuckets.clear();
-  for (let [key, photo] of photoLibraryMap) {
-    let ids = duplicateByHashBuckets.get(photo.wire.hash);
-    if (ids) {
-      ids.push(photo.wire.id as PhotoId);
-    } else {
-      duplicateByHashBuckets.set(photo.wire.hash, [photo.wire.id as PhotoId]);
-    }
-  }
-
-  for (let [key, photo] of photoLibraryMap) {
-    let ids = duplicateByHashBuckets.get(photo.wire.hash);
-    photo.dupCount = ids!.length;
-  }
-}
-
-function buildStacks() {
+function buildStacks(photos: AlbumPhoto[]) {
   stackMap.clear();
-  for (let [key, photo] of photoLibraryMap) {
+  for (let photo of photos) {
     if (photo.wire.stackId) {
       let stack = stackMap.get(photo.wire.stackId as PhotoId);
       if (!stack) {
@@ -163,7 +175,7 @@ function updateStackCover(stack: ReadonlyArray<PhotoId>, ctx: UpdatePhotoContext
   }
 
   for (let photo of stack) {
-    getPhotoById(photo)!.setStackHidden(photo !== cover, ctx);
+    getPhotoById(photo).setStackHidden(photo !== cover, ctx);
   }
 }
 
@@ -178,17 +190,34 @@ export function addStack(stackId: PhotoId, photo: AlbumPhoto, ctx: UpdatePhotoCo
     stack = [...oldStack];
   }
 
-  stackMap.set(stackId, stack);
-  updateStackCover(stack, ctx);
+  let addStackPhoto = (photo: AlbumPhoto) => {
+    stackMap.set(stackId, stack);
+    stack.push(photo.id);
+    photo.wire.stackId = stackId;
 
-  photo.wire.stackId = stackId;
-  stack.push(photo.id);
+    updateStackCover(stack, ctx);
 
-  wireUpdatePhoto({ hash: photo.wire.hash, stackId: stackId })
-  photo.invokeOnChanged();
+    ctx.addPhoto({ kind: LibraryUpdateRecordKind.update, photo: photo, stackId: stackId })
+    photo.invokeOnChanged();
+  }
+
+  // combine stacks
+  if (photo.stackId) {
+    let stackPhotos = getStack(photo.stackId);
+    if (!stackPhotos) {
+      console.log('addStack: cannot get stack');
+      return;
+    }
+    for (let spId of stackPhotos) {
+      let sp = getPhotoById(spId);
+      addStackPhoto(sp);
+    }
+  } else {
+    addStackPhoto(photo);
+  }
 }
 
-export function removeStack(photo: AlbumPhoto) {
+export function removeStack(photo: AlbumPhoto, ctx: UpdatePhotoContext) {
   if (!photo.hasStack) {
     console.log('removeStack: photo is not in stack');
     return;
@@ -204,7 +233,7 @@ export function removeStack(photo: AlbumPhoto) {
   let stack = [...oldStack];
   stack.splice(idx, 1);
 
-  wireUpdatePhoto({ hash: photo.wire.hash, stackId: 0 })
+  ctx.addPhoto({ kind: LibraryUpdateRecordKind.update, photo: photo, stackId: 0 })
   photo.invokeOnChanged();
 }
 
@@ -275,7 +304,11 @@ export function getDuplicateBucket(photo: AlbumPhoto): PhotoId[] {
   return ids ?? [photo.wire.id as PhotoId];
 }
 
-export function getPhotoById(id: PhotoId): AlbumPhoto | undefined {
-  return photoLibraryMap.get(id);
+export function getPhotoById(id: PhotoId): AlbumPhoto {
+  let photo = photoLibraryMap.get(id);
+  if (!photo) {
+    throw new Error('Cannot find photo ' + id);
+  }
+  return photo;
 }
 

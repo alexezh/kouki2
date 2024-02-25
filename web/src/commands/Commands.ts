@@ -13,7 +13,9 @@ export enum Command {
   RemoveStack = 22,
   ImportFolder = 23,
   CreateQuickCollection = 24,
-  DeleteQuickCollection = 25,
+  BuildPHash = 25,
+  BuildAltText = 26,
+  RescanFolder = 27,
 }
 
 let commandHandlers = new Map<Command, SimpleEventSource<any>>();
