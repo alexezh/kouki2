@@ -177,5 +177,17 @@ public class PhotoLibraryController : Controller
     // for now we only accept * pattern
     return PhotoFs.Instance.GetThumbnailFile(id);
   }
+
+  [HttpPost]
+  public async Task<IEnumerable<CollectionItem>> TextSearch()
+  {
+    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    {
+      string content = await reader.ReadToEndAsync();
+      var request = JsonSerializer.Deserialize<TextSearchRequest>(content);
+
+      return GenerateAltTextJob.TextSearch(request);
+    }
+  }
 }
 

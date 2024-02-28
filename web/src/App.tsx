@@ -2,7 +2,7 @@ import { CSSProperties, useLayoutEffect, useRef, useState } from 'react';
 import './App.css';
 import AutoSizer from "react-virtualized-auto-sizer";
 import { AlbumLayout } from './photo/AlbumLayout';
-import { CommandBar } from './commands/CommandBar';
+import { CommandBar } from './commands/menus/CommandBar';
 import Drawer from '@mui/material/Drawer/Drawer';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';

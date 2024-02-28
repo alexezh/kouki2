@@ -98,7 +98,7 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
     });
   };
 
-  async function handleChanged(event: React.ChangeEvent) {
+  function handleChanged(event: React.ChangeEvent) {
     // @ts-ignore
     setValue(event.target.value);
   }

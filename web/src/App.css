@@ -17,7 +17,7 @@
   --total-height: 600px;
   --total-width: 400px;
   --header-height: 40px;
-  --sidebar-width: 200px;
+  --sidebar-width: 250px;
   --calendarbar-width: 70px;
   --middlerow-height: calc(var(--total-height) - 2*var(--header-height));
   --album-height: var(--middlerow-height);
@@ -70,11 +70,16 @@
   margin-left: 10px;
 }
 
-.PhotoInfoItem {
+.Photo-info-item-flex {
   display: flex;
 }
 
-.PhotoInfoValue {
+.Photo-info-item-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.Photo-info-item-flex:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;

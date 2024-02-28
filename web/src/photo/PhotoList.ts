@@ -1,3 +1,4 @@
+import { WireCollectionItem } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, LibraryUpdateRecord, PhotoId, PhotoListId } from "./AlbumPhoto";
 
@@ -97,6 +98,33 @@ export class PhotoList {
     }
 
     this.invokeOnListChanged({ ct: ct, photos: photos });
+  }
+
+  public setFilteredItems(items: WireCollectionItem[]) {
+    let itemSet = new Set<PhotoId>();
+    for (let item of items) {
+      itemSet.add(item.photoId as PhotoId);
+    }
+
+    for (let i = 0, len = this._filtered.length; i < len; i++) {
+      let photo = this._photos[i];
+      if (!this.source.isHidden(photo)) {
+        this._filtered[i] = itemSet.has(photo.id);
+      } else {
+        this._filtered[i] = false;
+      }
+    }
+
+    this.invokeOnListChanged({ ct: PhotoListChangeType.filter, photos: [] });
+  }
+
+  public resetFilteredItems() {
+    for (let i = 0, len = this._filtered.length; i < len; i++) {
+      let photo = this._photos[i];
+      this._filtered[i] = !this.source.isHidden(photo);
+    }
+
+    this.invokeOnListChanged({ ct: PhotoListChangeType.filter, photos: [] });
   }
 
   public removePhoto(photo: AlbumPhoto) {
@@ -402,4 +430,5 @@ export enum PhotoListChangeType {
   remove,
   hide,
   update,
+  filter,
 }

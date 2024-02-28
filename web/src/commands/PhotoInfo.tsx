@@ -5,7 +5,7 @@ import { getDuplicateBucket, getPhotoById } from "../photo/PhotoStore";
 import { getFolder } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
 
-function getProperties(photo: AlbumPhoto | null): { name: string, value: string }[] {
+function getProperties(photo: AlbumPhoto | null): { name: string, value: string, className?: string }[] {
   if (!photo) {
     return [];
   }
@@ -17,6 +17,7 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string 
   props.push({ name: 'Height:', value: photo.wire.height.toString() });
   props.push({ name: 'Size:', value: photo.wire.fileSize.toString() });
   props.push({ name: 'DupCount:', value: photo.dupCount.toString() });
+  props.push({ name: 'Description:', value: photo.wire.altText, className: "Photo-info-item-box" });
   if (photo.correlation) {
     props.push({ name: 'Corr:', value: photo.correlation.toString() });
   }
@@ -51,12 +52,15 @@ export function PhotoInfo() {
 
   return (
     <div key={currentPhoto?.wire.hash} className="PhotoInfo">
-      {getProperties(currentPhoto).map((x) => (
-        <div key={x.name} className="PhotoInfoItem">
-          <div>{x.name}</div>
-          <div className="PhotoInfoValue">{x.value}</div>
-        </div>
-      ))}
+      {getProperties(currentPhoto).map((x) => {
+        let className = x.className ?? "Photo-info-item-flex";
+        return (
+          <div key={x.name} className={className}>
+            <div>{x.name}</div>
+            <div className="PhotoInfoValue">{x.value}</div>
+          </div>
+        )
+      })}
     </div>
   );
 };

@@ -44,6 +44,13 @@ public class UpdatePhotoRequest
   public string altText { get; set; }
 }
 
+public class TextSearchRequest
+{
+  public string collKind { get; set; }
+  public Int64 collId { get; set; }
+  public string search { get; set; }
+}
+
 public class UpdatePhotoResponse
 {
   public string error { get; set; }

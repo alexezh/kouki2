@@ -94,13 +94,15 @@ function FolderLayout(props: { folder: PhotoFolder }) {
   }
 }
 
+const maxCollectionHistory = 10;
+
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
-  items.push((<CollectionListLayout key='quick' text="Quich collection" lists={getCollectionsByKind('quick')} />))
+  items.push((<CollectionListLayout key='quick' text="Quich collection" lists={getCollectionsByKind('quick', maxCollectionHistory)} />))
   items.push((<CollectionItemLayout paddingLeft={0} key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
-  items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export')} />))
-  items.push((<CollectionListLayout key='import' text="Import" lists={getCollectionsByKind('import')} />))
+  items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export', maxCollectionHistory)} />))
+  items.push((<CollectionListLayout key='import' text="Import" lists={getCollectionsByKind('import', maxCollectionHistory)} />))
   items.push((<CollectionItemLayout paddingLeft={0} key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))
   //catalogs.map((x) => { return () });
 

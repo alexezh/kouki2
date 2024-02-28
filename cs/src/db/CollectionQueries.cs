@@ -3,6 +3,26 @@ using Microsoft.Data.Sqlite;
 public static class CollectionsQueriesExt
 {
 
+  public static List<CollectionItem> GetLibraryItems(this PhotoDb self)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT id, importedDt FROM Photos";
+
+    var items = new List<CollectionItem>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        var item = new CollectionItem();
+        item.photoId = reader.ReadInt64("id");
+        item.updateDt = reader.ReadString("importedDt");
+        items.Add(item);
+      }
+    }
+
+    return items;
+  }
+
   public static List<CollectionItem> GetCollectionItems(this PhotoDb self, Int64 id)
   {
     var command = self.Connection.CreateCommand();

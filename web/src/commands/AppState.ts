@@ -7,6 +7,7 @@ import { getPhotoById, getStack } from "../photo/PhotoStore";
 import { StaticPhotoSource } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
 import { RowCollection } from "../photo/RowCollection";
+import { wireTextSearch } from "../lib/photoclient";
 
 /**
  * general note. react useEffect/useState should only be used to manage state related to UI
@@ -24,6 +25,9 @@ export interface IAppState {
    */
   readonly navList: PhotoList;
 
+  /**
+   * list displayed in UI. Can be a stack
+   */
   readonly workList: PhotoList;
   readonly filterFavorite: FilterFavorite;
   readonly filterDups: boolean;
@@ -215,5 +219,20 @@ export function openPhotoStack(photo: AlbumPhoto) {
 
 export function closePhotoStack() {
   updateAppState({ workList: getAppState().navList, viewMode: ViewMode.grid });
+}
+
+export async function setTextFilter(val: string): Promise<void> {
+  try {
+    if (val && val.length > 0) {
+      let id = getAppState().navList.id;
+      let items = await wireTextSearch({ collKind: id.kind, collId: id.id, search: val });
+      getAppState().navList.setFilteredItems(items);
+    } else {
+      getAppState().navList.resetFilteredItems();
+    }
+  }
+  catch (e: any) {
+    console.log('setTextFilter: failed ' + e.toString());
+  }
 }
 

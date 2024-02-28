@@ -191,6 +191,72 @@ public static class PhotoQueriesExt
     }
   }
 
+  public static void UpdatePhotoAltTextEmbedding(this PhotoDb self, Int64 photoId, byte[] altTextEmb)
+  {
+    var command = self.Connection.CreateCommand();
+
+    command.CommandText = "UPDATE Photos SET alttexte=$altTextEmb WHERE id == $id";
+
+    command.Parameters.AddWithValue("$id", photoId);
+    self.AddBlobValue(command, "$altTextEmb", altTextEmb);
+
+    var updated = command.ExecuteNonQuery();
+    if (updated != 1)
+    {
+      throw new ArgumentException("Cannot update");
+    }
+  }
+
+  public static List<Int64> SearchAltText(this PhotoDb self, string search)
+  {
+    var items = new List<Int64>();
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "SELECT photoId FROM AltText WHERE text MATCH $search";
+    command.Parameters.AddWithValue("$search", search);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        items.Add((Int64)reader["photoId"]);
+      }
+    }
+    return items;
+  }
+
+  public static void UpdateAltText(this PhotoDb self, Int64 photoId, string altText)
+  {
+    int updated = 0;
+    {
+      var command = self.Connection.CreateCommand();
+      command.CommandText = "UPDATE AltText SET text=$text WHERE photoId==$id";
+      command.Parameters.AddWithValue("$id", photoId);
+      self.AddStringValue(command, "$text", altText);
+
+      try
+      {
+        updated = command.ExecuteNonQuery();
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine("Cannot update alttext");
+      }
+    }
+
+    if (updated != 1)
+    {
+      var command = self.Connection.CreateCommand();
+      command.CommandText = "INSERT INTO AltText (text, photoId) VALUES($text, $id)";
+      command.Parameters.AddWithValue("$id", photoId);
+      self.AddStringValue(command, "$text", altText);
+      var added = command.ExecuteNonQuery();
+      if (added != 1)
+      {
+        throw new ArgumentException("Cannot insert");
+      }
+    }
+  }
+
+
   public static void UpdatePhotoFileInfo(this PhotoDb self, PhotoEntry entry)
   {
     var command = self.Connection.CreateCommand();

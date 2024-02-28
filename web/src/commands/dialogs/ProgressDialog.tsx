@@ -9,7 +9,7 @@ import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
-import { runJob, runRescanFolder } from "../BackgroundJobs";
+import { JobStatus, runJob, runRescanFolder } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { CollectionId, getCollectioById } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
@@ -35,7 +35,7 @@ export async function showBuildPhashDialog(collId: CollectionId): Promise<void> 
     await runJob<ImportJobStatusResponse>("alt_" + collId,
       'Build PHash',
       () => wireProcessCollectionJob('phash', collId),
-      (status: ResultResponse) => `Processed: {status.processedFiles} files`)
+      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
 
     triggerRefreshFolders();
   }
@@ -71,10 +71,14 @@ export async function showRescanFolderDialog(collId: CollectionId) {
 
 export function showAltTextDialog(collId: CollectionId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
-    await runJob<ImportJobStatusResponse>("alt_" + collId,
+    let job = runJob<ImportJobStatusResponse>("alt_" + collId,
       'Generate Alternative Text',
       () => wireProcessCollectionJob('alttext', collId),
-      (status: ResultResponse) => `Processed: {status.processedFiles} files`)
+      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
+
+    job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+
+    await job.task;
   }
 
   showDialog((props: DialogProps) => {
@@ -88,6 +92,7 @@ export function showAltTextDialog(collId: CollectionId) {
         onAction={func} />)
   });
 }
+
 export type ProgressDialogProps = {
   onClose: () => void,
   title: string,
@@ -97,6 +102,9 @@ export type ProgressDialogProps = {
   onAction: (setStatus: (val: string) => void) => Promise<void>,
 }
 
+/**
+ * start job specified by action and wait for completion
+ */
 export function ProgressDialog(props: ProgressDialogProps) {
   const [processing, setProcessing] = useState(false);
   const [statusText, setStatusText] = useState(props.statusText);

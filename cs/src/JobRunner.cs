@@ -36,6 +36,7 @@ public class ProcessCollectionJobRequest
 public class ProcessCollectionStatusResponse : GetJobStatusResponse
 {
   public Int64 processedFiles { get; set; }
+  public Int64 skippedFiles { get; set; }
 }
 
 public class CollectionItem

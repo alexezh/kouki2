@@ -22,6 +22,7 @@ export type WirePhotoEntry = {
   // stack makes sense when original photo is included in the list
   originalId: number;
   stackId: number;
+  altText: string;
 }
 
 export type WirePhotoUpdate = {
@@ -113,6 +114,17 @@ export async function wireAddCollectionItems(id: number, items: WireCollectionIt
 
 export async function wireRemoveCollectionItems(id: number, items: WireCollectionItem[]): Promise<ResultResponse> {
   let response = await (await fetchAdapter!.post(`/api/photolibrary/removecollectionitems/${id}`, JSON.stringify(items))).json();
+  return response;
+}
+
+export type TextSearchRequest = {
+  collKind: string,
+  collId: number,
+  search: string
+}
+
+export async function wireTextSearch(request: TextSearchRequest): Promise<WireCollectionItem[]> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/textsearch`, JSON.stringify(request))).json();
   return response;
 }
 

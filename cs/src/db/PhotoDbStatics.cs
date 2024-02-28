@@ -80,7 +80,18 @@ public class PhotoDbStatics
       if (userVersion < 2)
       {
         AddColumn(connection, "Photos", "alttext", "TEXT");
-        userVersion = 2;
+      }
+
+      if (userVersion < 3)
+      {
+        CreateTable(connection, "CREATE VIRTUAL TABLE AltText USING fts5(text, photoId UNINDEXED)");
+      }
+
+      if (userVersion < 4)
+      {
+        AddColumn(connection, "Photos", "alttexte", "BLOB");
+
+        userVersion = 4;
         ExecuteVoidCommand(connection, (SqliteCommand command) =>
         {
           command.CommandText = $"PRAGMA user_version = {userVersion};";
