@@ -161,15 +161,17 @@ export async function wireImportFolder(request: ImportFolderRequest): Promise<Im
 
 export type CollectionJobKind = 'phash' | 'alttext' | 'rescan';
 export type ProcessCollectionJobRequest = {
-  cmd: CollectionJobKind,
+  cmd: CollectionJobKind;
+  collKind: string;
   collId: number;
 }
 
 export async function wireProcessCollectionJob(
   cmd: CollectionJobKind,
+  collKind: PhotoListKind,
   collId: number): Promise<StartJobResponse> {
 
-  let request: ProcessCollectionJobRequest = { cmd: cmd, collId: collId };
+  let request: ProcessCollectionJobRequest = { cmd: cmd, collKind: collKind, collId: collId };
   let response = await (await fetchAdapter!.post(`/api/job/processcollection`, JSON.stringify(request))).json();
   return response;
 }

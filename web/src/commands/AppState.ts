@@ -149,11 +149,19 @@ export function updateAppState(update: AppStateUpdate) {
       state.listChangeId = state.navList.addOnListChanged(() => {
         console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
-        state.years = buildYears(photos);
+        if (!photos.filtered) {
+          state.years = buildYears(photos);
+        } else {
+          state.years = [];
+        }
         stateChanged.invoke();
       });
 
-      state.years = buildYears(photos);
+      if (!photos.filtered) {
+        state.years = buildYears(photos);
+      } else {
+        state.years = [];
+      }
       state.navRows.load(state.navList);
       selectionManager.clear();
       stateChanged.invoke();

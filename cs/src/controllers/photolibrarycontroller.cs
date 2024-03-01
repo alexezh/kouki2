@@ -65,7 +65,7 @@ public class PhotoLibraryController : Controller
       string id;
       if (request.folderId != 0)
       {
-        id = JobRunner.Instance.RunJob(new RescanJob(request.folderId));
+        id = JobRunner.Instance.RunJob(new RescanJob(request));
       }
       else
       {
@@ -186,7 +186,7 @@ public class PhotoLibraryController : Controller
       string content = await reader.ReadToEndAsync();
       var request = JsonSerializer.Deserialize<TextSearchRequest>(content);
 
-      return GenerateAltTextJob.TextSearch(request);
+      return await GenerateAltTextJob.TextSearch(request);
     }
   }
 }

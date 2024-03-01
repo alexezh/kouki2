@@ -184,11 +184,6 @@ public class PhotoFs
     });
   }
 
-  public IEnumerable<CollectionItem> GetLibraryItems()
-  {
-    return _photoDb.GetLibraryItems();
-  }
-
   public IEnumerable<CollectionItem> GetCollectionItems(Int64 id)
   {
     return _photoDb.GetCollectionItems(id);

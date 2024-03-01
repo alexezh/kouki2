@@ -3,7 +3,7 @@ import { AlbumPhoto, AlbumRow, PhotoId, RowKind } from "./AlbumPhoto";
 import { PhotoList, PhotoListChangeType, PhotoListChangedArg, PhotoListPos } from "./PhotoList";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { photoPadding } from "./AlbumLayout";
-import { makeByMonthRows } from "./MakeRows";
+import { makeByMonthRows, makeFlatRows } from "./MakeRows";
 import { hashInt52, hashString } from "../lib/hash";
 
 export type RowCollectionChangedArg = { scrollPos?: number, invalidatePos?: number };
@@ -131,7 +131,11 @@ export class RowCollection {
   }
 
   private resetRows() {
-    this.rowsIt = makeByMonthRows(this.photoList!, this.width, photoPadding);
+    if (this.photoList?.filtered) {
+      this.rowsIt = makeFlatRows(this.photoList!, this.width, photoPadding);
+    } else {
+      this.rowsIt = makeByMonthRows(this.photoList!, this.width, photoPadding);
+    }
     this.loaded = false;
     this.version++;
     this._rowIndex.clear();

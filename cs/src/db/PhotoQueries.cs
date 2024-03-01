@@ -175,6 +175,24 @@ public static class PhotoQueriesExt
     }
   }
 
+  public static string GetPhotoAltText(this PhotoDb self, Int64 photoId)
+  {
+    var command = self.Connection.CreateCommand();
+
+    command.CommandText = "SELECT alttext FROM Photos WHERE id == $id";
+    command.Parameters.AddWithValue("$id", photoId);
+
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return reader.ReadString("alttext");
+      }
+    }
+
+    return null;
+  }
+
   public static void UpdatePhotoAltText(this PhotoDb self, Int64 photoId, string altText)
   {
     var command = self.Connection.CreateCommand();

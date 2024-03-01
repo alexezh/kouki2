@@ -30,7 +30,9 @@ public class GetJobStatusResponse : ResultResponse
 public class ProcessCollectionJobRequest
 {
   public string cmd { get; set; }
+  public string collKind { get; set; }
   public Int64 collId { get; set; }
+  public bool forceUpdate { get; set; }
 }
 
 public class ProcessCollectionStatusResponse : GetJobStatusResponse

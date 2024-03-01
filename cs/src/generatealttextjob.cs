@@ -47,7 +47,20 @@ public class GenerateAltTextJob : IJob
   {
     _status.result = ResultResponse.Processing;
 
-    var items = PhotoFs.Instance.GetCollectionItems(_request.collId);
+    IEnumerable<CollectionItem> items;
+
+    if (_request.collKind == "all")
+    {
+      items = PhotoFs.Instance.PhotoDb.GetLibraryItems();
+    }
+    else if (_request.collKind == "folder")
+    {
+      items = PhotoFs.Instance.GetCollectionItems(_request.collId);
+    }
+    else
+    {
+      items = PhotoFs.Instance.GetCollectionItems(_request.collId);
+    }
 
     using (var client = new HttpClient())
     {
@@ -55,8 +68,15 @@ public class GenerateAltTextJob : IJob
       {
         try
         {
-          await ProcessItem(client, item.photoId);
-          this._status.processedFiles++;
+          bool ret = await ProcessItem(client, item.photoId, _request.forceUpdate);
+          if (ret)
+          {
+            _status.processedFiles++;
+          }
+          else
+          {
+            _status.skippedFiles++;
+          }
         }
         catch (Exception e)
         {
@@ -73,8 +93,17 @@ public class GenerateAltTextJob : IJob
     }
   }
 
-  private async Task<bool> ProcessItem(HttpClient client, Int64 imageId)
+  public static async Task<bool> ProcessItem(HttpClient client, Int64 imageId, bool forceUpdate = false)
   {
+    if (!forceUpdate)
+    {
+      var alttext = PhotoFs.Instance.PhotoDb.GetPhotoAltText(imageId);
+      if (alttext != null)
+      {
+        return false;
+      }
+    }
+
     var imageData = GetImageBase64(imageId);
 
     var request = new LLamaRequest()
@@ -100,44 +129,56 @@ ASSISTANT:",
         PhotoFs.Instance.PhotoDb.UpdateAltText(imageId, responseObj.content);
       }
 
-      await ComputeTextEmbedding(client, imageId, responseObj.content);
+      var emb = await ComputeTextEmbedding(client, responseObj.content);
+      var embBuf = SerializeEmbedding(emb);
+      PhotoFs.Instance.PhotoDb.UpdatePhotoAltTextEmbedding(imageId, embBuf);
     }
 
     return true;
   }
 
-  private byte[] SerializeEmbedding(double[] array)
+  private static byte[] SerializeEmbedding(double[] array)
   {
+    int bufferSize = sizeof(double) * array.Length;
+    byte[] buffer = new byte[bufferSize];
+
+    for (int i = 0; i < array.Length; i++)
     {
-      int bufferSize = sizeof(double) * array.Length;
-      byte[] buffer = new byte[bufferSize];
-
-      for (int i = 0; i < array.Length; i++)
-      {
-        byte[] doubleBytes = BitConverter.GetBytes(array[i]);
-        Array.Copy(doubleBytes, 0, buffer, i * sizeof(double), sizeof(double));
-      }
-
-      return buffer;
+      byte[] doubleBytes = BitConverter.GetBytes(array[i]);
+      Array.Copy(doubleBytes, 0, buffer, i * sizeof(double), sizeof(double));
     }
+
+    return buffer;
   }
 
-  private async Task<bool> ComputeTextEmbedding(HttpClient client, Int64 photoId, string text)
+  private static async Task<double[]> ComputeTextEmbedding(HttpClient client, string text)
   {
     var request = new ComputeTextEmbeddingRequest() { text = text };
     var requestData = JsonSerializer.Serialize(request);
-    using (var response = await client.PostAsync("http://127.0.0.1:5000/api/textembedding",
+    using (var response = await client.PostAsync("http://localhost:5050/api/textembedding",
       new StringContent(requestData, Encoding.UTF8,
                                     "application/json")))
     {
       var responseText = await response.Content.ReadAsStringAsync();
       var responseObj = JsonSerializer.Deserialize<ComputeTextEmbeddingResponse>(responseText);
+      return responseObj.numpy_data;
       //Console.WriteLine(responseObj?.numpy_data?.Length);
-      var emb = SerializeEmbedding(responseObj.numpy_data);
-      PhotoFs.Instance.PhotoDb.UpdatePhotoAltTextEmbedding(photoId, emb);
+    }
+  }
+
+  private static double[] DeserializeTextEmbedding(byte[] buffer)
+  {
+    int numDoubles = buffer.Length / sizeof(double);
+    double[] result = new double[numDoubles];
+
+    byte[] doubleBytes = new byte[sizeof(double)];
+    for (int i = 0; i < numDoubles; i++)
+    {
+      Array.Copy(buffer, i * sizeof(double), doubleBytes, 0, sizeof(double));
+      result[i] = BitConverter.ToDouble(doubleBytes, 0);
     }
 
-    return true;
+    return result;
   }
   public GenerateAltTextJob(ProcessCollectionJobRequest request)
   {
@@ -156,6 +197,10 @@ ASSISTANT:",
 
     var folder = PhotoFs.Instance.GetFolderInfo(photo.folderId);
     var srcPath = Path.GetFullPath(photo.fileName + photo.fileExt, folder.path);
+    if (FileImporter.IsVideoFile(photo.fileExt))
+    {
+      throw new ArgumentException("Cannot process video " + photo.fileName);
+    }
 
     using (var srcStm = System.IO.File.OpenRead(srcPath))
     {
@@ -177,36 +222,67 @@ ASSISTANT:",
     }
   }
 
-  public static IEnumerable<CollectionItem> TextSearch(TextSearchRequest? request)
+  private class Comparer : IComparer<Tuple<Int64, double>>
+  {
+    public int Compare(Tuple<long, double>? x, Tuple<long, double>? y)
+    {
+      return Math.Sign(x.Item1 - x.Item2);
+    }
+  }
+
+  public static async Task<IEnumerable<CollectionItem>> TextSearch(TextSearchRequest? request)
   {
     try
     {
       var itemMap = new HashSet<Int64>();
 
-      IEnumerable<CollectionItem> collItems;
+      List<Tuple<Int64, byte[]>> collItems;
       if (request.collKind != "all")
       {
-        collItems = PhotoFs.Instance.GetCollectionItems(request.collId);
+        //collItems = PhotoFs.Instance.GetCollectionItems(request.collId);
+        return null;
       }
       else
       {
-        collItems = PhotoFs.Instance.GetLibraryItems();
+
+        //collItems = PhotoFs.Instance.PhotoDb.GetLibraryItems();
+        collItems = PhotoFs.Instance.PhotoDb.GetLibraryAltTextEmbedding();
       }
 
-      foreach (var item in collItems)
-      {
-        itemMap.Add(item.photoId);
-      }
-
-      var searchItems = PhotoFs.Instance.PhotoDb.SearchAltText(request.search);
+      var rankedItems = new List<Tuple<Int64, double>>();
       var filteredItems = new List<CollectionItem>();
-      foreach (var item in searchItems)
+      using (var client = new HttpClient())
       {
-        if (!itemMap.Contains(item))
+        var searchEmb = await ComputeTextEmbedding(client, request.search);
+
+        foreach (var item in collItems)
         {
-          continue;
+          var itemEmb = DeserializeTextEmbedding(item.Item2);
+          var sim = GetCosineSimilarity(itemEmb, searchEmb);
+          rankedItems.Add(new Tuple<long, double>(item.Item1, sim));
         }
-        filteredItems.Add(new CollectionItem() { photoId = item });
+
+        rankedItems.Sort((x, y) =>
+        {
+          return Math.Sign(y.Item2 - x.Item2);
+        });
+        return rankedItems.Select(x => new CollectionItem() { photoId = x.Item1, updateDt = DateTime.UtcNow.ToString("o") }).Take(100);
+
+        // foreach (var item in collItems)
+        // {
+        //   itemMap.Add(item.photoId);
+        // }
+
+        // var searchItems = PhotoFs.Instance.PhotoDb.SearchAltText(request.search);
+        // var filteredItems = new List<CollectionItem>();
+        // foreach (var item in searchItems)
+        // {
+        //   if (!itemMap.Contains(item))
+        //   {
+        //     continue;
+        //   }
+        //   filteredItems.Add(new CollectionItem() { photoId = item });
+        // }
       }
       return filteredItems;
     }
@@ -215,5 +291,22 @@ ASSISTANT:",
       Console.WriteLine("TextSearch: failed " + e.Message);
       return new CollectionItem[0];
     }
+  }
+
+  private static double GetCosineSimilarity(double[] V1, double[] V2)
+  {
+    int N = 0;
+    N = (V2.Length < V1.Length) ? V2.Length : V1.Length;
+    double dot = 0.0d;
+    double mag1 = 0.0d;
+    double mag2 = 0.0d;
+    for (int n = 0; n < N; n++)
+    {
+      dot += V1[n] * V2[n];
+      mag1 += Math.Pow(V1[n], 2);
+      mag2 += Math.Pow(V2[n], 2);
+    }
+
+    return dot / (Math.Sqrt(mag1) * Math.Sqrt(mag2));
   }
 }

@@ -9,6 +9,7 @@ import { FilterMenu } from './FilterMenu';
 import { PhotoList } from '../../photo/PhotoList';
 import { addOnStateChanged, getAppState, removeOnStateChanged, setTextFilter } from '../AppState';
 import TextField from '@mui/material/TextField/TextField';
+import { Divider } from '@mui/material';
 
 export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
@@ -39,12 +40,15 @@ export function CommandBar(props: { className?: string }) {
         <EditMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} label="Edit" id="edit" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <LibraryMenu open={anchorEl?.id === "library"} anchorEl={anchorEl?.elem ?? null} label='Library' id='library' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <FilterMenu open={anchorEl?.id === "filter"} anchorEl={anchorEl?.elem ?? null} label='Filter' id='filter' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
+        <Divider sx={{ width: 50 }} />
         <TextField
+          sx={{ maxWidth: 400 }}
           autoFocus
           margin="dense"
           id="name"
           label=""
           type="text"
+          placeholder="Search"
           fullWidth
           variant="standard"
           value={value}

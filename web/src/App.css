@@ -107,6 +107,16 @@
   max-height: var(--album-height);
 }
 
+.Album-layout-grid {
+  overflow: scroll;
+}
+
+.Album-layout-grid::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+  /* make scrollbar transparent */
+}
+
 .Photo-viewer {
   display: block;
 }

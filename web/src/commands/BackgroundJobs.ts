@@ -2,6 +2,7 @@ import { ResultResponse } from "../lib/fetchadapter";
 import { GetJobStatusResponse, ProcessCollectionJobRequest, ProcessCollectionStatusResponse, StartJobResponse, wireGetJobStatus, wireProcessCollectionJob } from "../lib/photoclient";
 import { sleep } from "../lib/sleep";
 import { SimpleEventSource } from "../lib/synceventsource";
+import { PhotoListId } from "../photo/AlbumPhoto";
 import { CollectionId } from "../photo/CollectionStore";
 
 let jobColl: BackgroundJob[] = [];
@@ -102,42 +103,13 @@ export function runJob<T extends GetJobStatusResponse>(
 }
 
 
-export function runBuildPHash(collId: CollectionId): IBackgroundJob {
+export function runRescanFolder(listId: PhotoListId): IBackgroundJob {
   return runJob(
-    'phash' + collId,
-    'Build PHash',
-    () => wireProcessCollectionJob('phash', collId),
-    (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
-  );
-  //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),
-};
-
-export function runRescanFolder(collId: CollectionId): IBackgroundJob {
-  return runJob(
-    'rescan' + collId,
+    'rescan' + listId.kind,
     'Rescan Folder',
-    () => wireProcessCollectionJob('rescan', collId),
+    () => wireProcessCollectionJob('rescan', listId.kind, listId.id),
     (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
   );
   //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),
 };
 
-export function runAltText(collId: CollectionId): IBackgroundJob {
-  return runJob(
-    'alttext' + collId,
-    'Compute Alternative Text',
-    () => wireProcessCollectionJob('alttext', collId),
-    (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
-  );
-  //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),
-};
-
-export function runExport(collId: CollectionId): IBackgroundJob {
-  return runJob(
-    'phash' + collId,
-    'Export photos',
-    () => wireProcessCollectionJob('phash', collId),
-    (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
-  );
-  //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),
-};

@@ -78,7 +78,7 @@ public class BuildPHashJob : IJob
     }
   }
 
-  private static Digest ComputePHash(Int64 photoId)
+  public static Digest ComputePHash(Int64 photoId)
   {
     var photos = PhotoFs.Instance.PhotoDb.GetPhotosById(photoId);
     if (photos.Count != 1)

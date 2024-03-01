@@ -115,6 +115,18 @@ function computeRowHeight(row: AlbumPhoto[], targetWidth: number, padding: numbe
   return height * scale;
 }
 
+export function makeFlatRows(photosList: PhotoList, targetWidth: number, padding: number): IterableIterator<AlbumRow> {
+  return makeRows(photosList, {
+    optimalHeight: 200,
+    targetWidth: targetWidth,
+    padding: padding,
+    startNewRow: (photo: AlbumPhoto, idx: PhotoListPos, photos: PhotoList) => {
+      return null;
+    }
+  });
+}
+
+
 export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padding: number): IterableIterator<AlbumRow> {
   let currentMonth: Date | null = null;
 

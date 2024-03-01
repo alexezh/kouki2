@@ -23,6 +23,24 @@ public static class CollectionsQueriesExt
     return items;
   }
 
+  public static List<Tuple<Int64, byte[]>> GetLibraryAltTextEmbedding(this PhotoDb self)
+  {
+    var command = self.Connection.CreateCommand();
+    command.CommandText = "select Photos.alttexte, CollectionItems.photoId from CollectionItems inner join Photos on Photos.id == CollectionItems.photoId where Photos.alttexte is not null;";
+
+    var items = new List<Tuple<Int64, byte[]>>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        var item = new Tuple<long, byte[]>(reader.ReadInt64("photoId"), reader.ReadBlob("alttexte"));
+        items.Add(item);
+      }
+    }
+
+    return items;
+  }
+
   public static List<CollectionItem> GetCollectionItems(this PhotoDb self, Int64 id)
   {
     var command = self.Connection.CreateCommand();

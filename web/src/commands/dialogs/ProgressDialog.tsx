@@ -13,6 +13,7 @@ import { JobStatus, runJob, runRescanFolder } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { CollectionId, getCollectioById } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
+import { PhotoListId } from "../../photo/AlbumPhoto";
 
 export async function showBuildPhashDialog(collId: CollectionId): Promise<void> {
 
@@ -34,7 +35,7 @@ export async function showBuildPhashDialog(collId: CollectionId): Promise<void> 
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     await runJob<ImportJobStatusResponse>("alt_" + collId,
       'Build PHash',
-      () => wireProcessCollectionJob('phash', collId),
+      () => wireProcessCollectionJob('phash', coll!.id.kind, collId),
       (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
 
     triggerRefreshFolders();
@@ -69,11 +70,11 @@ export async function showRescanFolderDialog(collId: CollectionId) {
   // });
 }
 
-export function showAltTextDialog(collId: CollectionId) {
+export function showAltTextDialog(listId: PhotoListId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
-    let job = runJob<ImportJobStatusResponse>("alt_" + collId,
+    let job = runJob<ImportJobStatusResponse>("alt_" + listId.id,
       'Generate Alternative Text',
-      () => wireProcessCollectionJob('alttext', collId),
+      () => wireProcessCollectionJob('alttext', listId.kind, listId.id),
       (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
 
     job.addOnStatus((status: JobStatus) => setStatusText(status.text));

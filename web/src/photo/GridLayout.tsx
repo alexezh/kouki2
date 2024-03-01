@@ -72,7 +72,7 @@ export function GridLayout(props: GridAlbumProps) {
       // update layout when we navigate
       if (listRef.current) {
         console.log("GridLayout: rows changed");
-        if (arg.invalidatePos) {
+        if (arg.invalidatePos !== undefined) {
           // @ts-ignore
           listRef.current.resetAfterIndex(arg.invalidatePos);
         }
@@ -143,6 +143,7 @@ export function GridLayout(props: GridAlbumProps) {
 
   return (<List
     ref={listRef}
+    className="Album-layout-grid"
     style={props.style}
     height={props.height}
     width={props.width}

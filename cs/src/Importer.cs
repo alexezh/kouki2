@@ -22,6 +22,19 @@ public class ImportJobResponse : GetJobStatusResponse
 
 public class ImportJob : IJob
 {
+  private bool _completed = false;
+  private ImportJobResponse _status = new ImportJobResponse();
+  private ImportFolderRequest _request;
+
+  public bool Completed => _completed;
+
+  public object Status => _status;
+
+  public ImportJob(ImportFolderRequest request)
+  {
+    _request = request;
+  }
+
   public void Run()
   {
     _status.result = ResultResponse.Processing;
@@ -59,7 +72,7 @@ public class ImportJob : IJob
       IFileImporter importer;
       if (_request.dryRun)
       {
-        importer = new FileImportedDry();
+        importer = new FileImportedDry(PhotoFs.Instance);
       }
       else
       {
@@ -88,31 +101,42 @@ public class ImportJob : IJob
       _completed = true;
     }
   }
-
-  private bool _completed = false;
-  private ImportJobResponse _status = new ImportJobResponse();
-  private ImportFolderRequest _request;
-
-  public ImportJob(ImportFolderRequest request)
-  {
-    _request = request;
-  }
-
-  public bool Completed => _completed;
-
-  public object Status => _status;
 }
 
 public class RescanJob : IJob
 {
+  private ImportFolderRequest _request;
+  private bool _completed = false;
+  private ImportJobResponse _status = new ImportJobResponse();
+
+  public bool Completed => _completed;
+
+  public object Status => _status;
+
+  public RescanJob(ImportFolderRequest request)
+  {
+    _request = request;
+  }
+
   public void Run()
   {
     _status.result = ResultResponse.Processing;
 
+    IFileImporter importer;
+    if (_request.dryRun)
+    {
+      importer = new FileImportedDry(PhotoFs.Instance);
+    }
+    else
+    {
+      importer = new FileImporter(
+        PhotoFs.Instance,
+        PhotoFs.Instance.ThumbnailDb);
+    }
+
     FolderImporter.RescanFolder(
-      PhotoFs.Instance,
-      PhotoFs.Instance.ThumbnailDb,
-      _folderId,
+      importer,
+      _request.folderId,
       (ScanStatus status) =>
       {
         _status.addedFiles = status.Added;
@@ -122,19 +146,6 @@ public class RescanJob : IJob
     _status.result = ResultResponse.Done;
     _completed = true;
   }
-
-  private bool _completed = false;
-  private ImportJobResponse _status = new ImportJobResponse();
-  private Int64 _folderId;
-
-  public RescanJob(Int64 folderId)
-  {
-    _folderId = folderId;
-  }
-
-  public bool Completed => _completed;
-
-  public object Status => _status;
 }
 
 public class ScanStatus
@@ -153,27 +164,31 @@ public interface IFileImporter
     string fileName,
     string fileExt);
 
-  public bool AddPhoto(
+  public Task<bool> AddPhoto(
     Int64? folderId,
     string filePath,
     string fileName,
     string fileExt);
 
   public Int64? GetFolderId(string path);
+  public FolderMetadata GetFolderInfo(long folderId);
 }
 
-public class FileImporter : IFileImporter
+public class FileImporter : IFileImporter, IDisposable
 {
-  private PhotoFs fs;
-  private ThumbnailDb thumbnailDb;
-  private Dictionary<string, Int64> folderMap = new Dictionary<string, long>();
-  private Int64 importCollId;
+  private PhotoFs _fs;
+  private ThumbnailDb _thumbnailDb;
+  private Dictionary<string, Int64> _folderMap = new Dictionary<string, long>();
+  private Int64 _importCollId;
+  private HttpClient _httpClient;
 
   public FileImporter(PhotoFs fs_, ThumbnailDb thumbnailDb_)
   {
-    fs = fs_;
-    thumbnailDb = thumbnailDb_;
-    var colls = fs.GetCollections();
+    _fs = fs_;
+    _thumbnailDb = thumbnailDb_;
+    _httpClient = new HttpClient();
+
+    var colls = _fs.GetCollections();
     foreach (var coll in colls)
     {
       if (coll.kind != "folder")
@@ -184,39 +199,49 @@ public class FileImporter : IFileImporter
       var folderInfo = JsonSerializer.Deserialize<FolderMetadata>(coll.metadata);
       if (folderInfo.path != null)
       {
-        folderMap.Add(folderInfo.path, coll.id);
+        _folderMap.Add(folderInfo.path, coll.id);
       }
     }
 
-    var importColl = fs.AddCollection(new AddCollectionRequest()
+    var importColl = _fs.AddCollection(new AddCollectionRequest()
     {
       kind = "import",
       name = "",
       createDt = DateTime.Now.ToString("o")
     });
 
-    importCollId = importColl.id;
+    _importCollId = importColl.id;
+  }
+
+  public void Dispose()
+  {
+    _httpClient.Dispose();
   }
 
   public Int64? GetFolderId(string path)
   {
-    if (!folderMap.TryGetValue(path, out var folderId))
+    if (!_folderMap.TryGetValue(path, out var folderId))
     {
-      var temp = fs.AddFolderCollection(path);
+      var temp = _fs.AddFolderCollection(path);
       if (temp == null)
       {
         throw new ArgumentException("Cannot create folder");
       }
       folderId = temp.Value;
-      folderMap.Add(path, folderId);
+      _folderMap.Add(path, folderId);
     }
 
     return folderId;
   }
 
+  public FolderMetadata GetFolderInfo(long folderId)
+  {
+    return _fs.GetFolderInfo(folderId);
+  }
+
   public bool HasPhoto(Int64 folderId, string fileName, string fileExt)
   {
-    return fs.PhotoDb.HasPhoto(folderId, fileName, fileExt);
+    return _fs.PhotoDb.HasPhoto(folderId, fileName, fileExt);
   }
 
   public void UpdatePhoto(
@@ -228,11 +253,11 @@ public class FileImporter : IFileImporter
     PhotoEntry entry = BuildEntryFromFile(folderId, filePath, fileName, fileExt);
     if (entry != null)
     {
-      fs.PhotoDb.UpdatePhotoFileInfo(entry);
+      _fs.PhotoDb.UpdatePhotoFileInfo(entry);
     }
   }
 
-  public bool AddPhoto(
+  public async Task<bool> AddPhoto(
     Int64? folderId,
     string filePath,
     string fileName,
@@ -244,7 +269,10 @@ public class FileImporter : IFileImporter
       return false;
     }
 
-    var id = fs.PhotoDb.AddPhoto(entry);
+    var id = _fs.PhotoDb.AddPhoto(entry);
+
+    await UpdateAltText(id);
+    UpdatePHash(id);
 
     UpdateImportCollection(id);
 
@@ -264,9 +292,16 @@ public class FileImporter : IFileImporter
 
     entry.favorite = (favorite) ? 1 : 0;
 
-    var id = fs.PhotoDb.AddPhoto(entry);
+    var id = _fs.PhotoDb.AddPhoto(entry);
     UpdateImportCollection(id);
     return id;
+  }
+
+  static string[] videoFormats = { "mp4", "avi", "mkv", "mov", "wmv", "flv" };
+  public static bool IsVideoFile(string ext)
+  {
+    //    var ext = Path.GetExtension(path).ToLower();
+    return Array.Exists(videoFormats, (f) => f.Equals(ext, StringComparison.OrdinalIgnoreCase));
   }
 
   private void UpdateImportCollection(Int64 id)
@@ -276,7 +311,7 @@ public class FileImporter : IFileImporter
       photoId = id,
       updateDt = DateTime.Now.ToString("o")
     };
-    fs.AddCollectionItems(importCollId, new CollectionItem[] { item });
+    _fs.AddCollectionItems(_importCollId, new CollectionItem[] { item });
   }
 
   private PhotoEntry BuildEntryFromFile(
@@ -306,6 +341,7 @@ public class FileImporter : IFileImporter
         try
         {
           var info = new MagickImageInfo(stm);
+          MagickFormat fmt = info.Format;
 
           // generate thumbnail
           stm.Position = 0;
@@ -403,7 +439,7 @@ public class FileImporter : IFileImporter
     {
       image.Write(stm);
       var imageBytes = stm.ToArray();
-      thumbnailDb.AddThumbnail(hash, thumbSize.Width, thumbSize.Height, imageBytes);
+      _thumbnailDb.AddThumbnail(hash, thumbSize.Width, thumbSize.Height, imageBytes);
     }
   }
 
@@ -415,18 +451,43 @@ public class FileImporter : IFileImporter
     var hash = sha1.ComputeHash(stm);
     return Convert.ToHexString(hash);
   }
+
+  private async Task<bool> UpdateAltText(Int64 id)
+  {
+    await GenerateAltTextJob.ProcessItem(_httpClient, id);
+    return true;
+  }
+
+  private bool UpdatePHash(Int64 id)
+  {
+    var digest = BuildPHashJob.ComputePHash(id);
+    PhotoFs.Instance.PhotoDb.UpdatePhotoPHash(id, digest.Coefficients);
+    return true;
+  }
 }
 
 public class FileImportedDry : IFileImporter
 {
-  public bool AddPhoto(long? folderId, string filePath, string fileName, string fileExt)
+  private PhotoFs fs;
+
+  public FileImportedDry(PhotoFs fs_)
   {
-    return true;
+    fs = fs_;
+  }
+
+  public Task<bool> AddPhoto(long? folderId, string filePath, string fileName, string fileExt)
+  {
+    return Task<bool>.FromResult(true);
   }
 
   public long? GetFolderId(string path)
   {
     return 1;
+  }
+
+  public FolderMetadata GetFolderInfo(long folderId)
+  {
+    return fs.GetFolderInfo(folderId);
   }
 
   public bool HasPhoto(long folderId, string fileName, string fileExt)
@@ -441,14 +502,17 @@ public class FileImportedDry : IFileImporter
 
 public class FolderImporter
 {
-  public static void RescanFolder(PhotoFs fs, ThumbnailDb thumbnailDb, Int64 folderId, Action<ScanStatus> onProgress)
+  public static void RescanFolder(
+    IFileImporter importer,
+    Int64 folderId,
+    Action<ScanStatus> onProgress)
   {
     var status = new ScanStatus();
-    var folder = fs.GetFolderInfo(folderId);
-    ScanFolder(new FolderName(folder.path), folderId, new FileImporter(fs, thumbnailDb), onProgress, status);
+    var folder = importer.GetFolderInfo(folderId);
+    ScanFolder(new FolderName(folder.path), folderId, importer, onProgress, status);
   }
 
-  public static void ScanFiles(
+  public static async void ScanFiles(
     FolderName folder,
     IFileImporter importer,
     Action<ScanStatus> onProgress,
@@ -467,10 +531,10 @@ public class FolderImporter
       Console.WriteLine("ScanFiles: exception " + e.Message);
     }
 
-    ScanFolder(folder, null, importer, onProgress, status);
+    await ScanFolder(folder, null, importer, onProgress, status);
   }
 
-  private static void ScanFolder(
+  private static async Task ScanFolder(
     FolderName folder,
     Int64? folderId,
     IFileImporter importer,
@@ -501,7 +565,7 @@ public class FolderImporter
           }
           else
           {
-            if (importer.AddPhoto(folderId, file, fileName, fileExt))
+            if (await importer.AddPhoto(folderId, file, fileName, fileExt))
             {
               status.Added++;
               onProgress(status);

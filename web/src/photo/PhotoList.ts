@@ -1,6 +1,7 @@
 import { WireCollectionItem } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, LibraryUpdateRecord, PhotoId, PhotoListId } from "./AlbumPhoto";
+import { getPhotoById } from "./PhotoStore";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -42,10 +43,16 @@ export type PhotoListChangedArg = { ct: PhotoListChangeType, photos: ReadonlyArr
  */
 export class PhotoList {
   private readonly _photos: AlbumPhoto[] = [];
-  private _filtered: boolean[] = [];
+  private _visible: boolean[] = [];
   private readonly onListChanged: SimpleEventSource<{ ct: PhotoListChangeType, photos: ReadonlyArray<AlbumPhoto> }> = new SimpleEventSource();
   public readonly id: PhotoListId;
   private _version: number = 1;
+
+  /**
+   * if true, filter is set via setFilteredItems
+   */
+  private _filtered: boolean = false;
+  public get filtered(): boolean { return this._filtered }
 
   /**
    * map from id to index
@@ -67,7 +74,7 @@ export class PhotoList {
     source: IPhotoListSource) {
     this.id = id;
     this._photos = [];
-    this._filtered = [];
+    this._visible = [];
     this._source = source;
 
     let photos = this._source.getItems();
@@ -84,7 +91,7 @@ export class PhotoList {
   }
 
   private addPhotosWorker(photos: ReadonlyArray<AlbumPhoto>, ct: PhotoListChangeType) {
-    let idx = this._filtered.length;
+    let idx = this._visible.length;
     this._photos.push(...photos);
 
     // setup map of id to index
@@ -94,36 +101,37 @@ export class PhotoList {
     }
 
     for (let x of photos) {
-      this._filtered.push(!this.source.isHidden(x));
+      this._visible.push(!this.source.isHidden(x));
     }
 
     this.invokeOnListChanged({ ct: ct, photos: photos });
   }
 
   public setFilteredItems(items: WireCollectionItem[]) {
-    let itemSet = new Set<PhotoId>();
+    let photos: AlbumPhoto[] = [];
+
+    this._visible.length = 0;
+    this._photos.length = 0;
+    this._idIndex.clear();
+
+    let idx = 0;
     for (let item of items) {
-      itemSet.add(item.photoId as PhotoId);
+      let photo = getPhotoById(item.photoId as PhotoId);
+      this._photos.push(photo);
+      this._visible.push(!this._source.isHidden(photo));
+      this._idIndex.set(photo.id, idx as PhotoListPos);
+      idx++;
     }
 
-    for (let i = 0, len = this._filtered.length; i < len; i++) {
-      let photo = this._photos[i];
-      if (!this.source.isHidden(photo)) {
-        this._filtered[i] = itemSet.has(photo.id);
-      } else {
-        this._filtered[i] = false;
-      }
-    }
-
+    this._version++;
+    this._filtered = true;
     this.invokeOnListChanged({ ct: PhotoListChangeType.filter, photos: [] });
   }
 
   public resetFilteredItems() {
-    for (let i = 0, len = this._filtered.length; i < len; i++) {
-      let photo = this._photos[i];
-      this._filtered[i] = !this.source.isHidden(photo);
-    }
-
+    this.addPhotosWorker(this._source.getItems(), PhotoListChangeType.load);
+    this._version++;
+    this._filtered = false;
     this.invokeOnListChanged({ ct: PhotoListChangeType.filter, photos: [] });
   }
 
@@ -134,7 +142,7 @@ export class PhotoList {
     }
 
     this._photos.splice(idx, 1);
-    this._filtered.splice(idx, 1);
+    this._visible.splice(idx, 1);
     this._idIndex.delete(photo.id);
 
     this._source.removeItems(photo);
@@ -195,7 +203,7 @@ export class PhotoList {
 
   public * photos(): IterableIterator<AlbumPhoto> {
     for (let pos = 0; pos < this._photos.length; pos++) {
-      if (this._filtered[pos]) {
+      if (this._visible[pos]) {
         yield this._photos[pos];
       }
     }
@@ -205,7 +213,7 @@ export class PhotoList {
     if (this._photos.length === 0) {
       return -1 as PhotoListPos;
     }
-    if (this._filtered[0]) {
+    if (this._visible[0]) {
       return 0 as PhotoListPos;
     } else {
       return this.getNext(0 as PhotoListPos);
@@ -217,7 +225,7 @@ export class PhotoList {
       return 0 as PhotoListPos;
     }
     let idx = this._photos.length - 1;
-    if (this._filtered[idx]) {
+    if (this._visible[idx]) {
       return idx as PhotoListPos;
     } else {
       return this.getPrev(idx as PhotoListPos);
@@ -256,7 +264,7 @@ export class PhotoList {
     }
 
     for (let idx = pos + 1; idx < this._photos.length; idx++) {
-      if (this._filtered[idx]) {
+      if (this._visible[idx]) {
         return idx as PhotoListPos;
       }
     }
@@ -280,7 +288,7 @@ export class PhotoList {
     }
 
     for (let idx = pos - 1; idx >= 0; idx--) {
-      if (this._filtered[idx]) {
+      if (this._visible[idx]) {
         return idx as PhotoListPos;
       }
     }
@@ -323,7 +331,7 @@ export class PhotoList {
       return -1 as PhotoListPos;
     }
     for (; pos < this._photos.length - 1; pos++) {
-      if (!this._filtered[pos]) {
+      if (!this._visible[pos]) {
         continue;
       }
 
@@ -343,7 +351,7 @@ export class PhotoList {
       return -1 as PhotoListPos;
     }
     for (; pos >= 0; pos--) {
-      if (!this._filtered[pos]) {
+      if (!this._visible[pos]) {
         continue;
       }
 
@@ -358,7 +366,7 @@ export class PhotoList {
   public slice(start: PhotoListPos, end: PhotoListPos): AlbumPhoto[] {
     let arr: AlbumPhoto[] = [];
     for (let pos = start; pos <= end; pos++) {
-      if (this._filtered[pos]) {
+      if (this._visible[pos]) {
         arr.push(this._photos[pos]);
       }
     }
@@ -368,7 +376,7 @@ export class PhotoList {
   public asArray(): AlbumPhoto[] {
     let arr: AlbumPhoto[] = [];
     for (let pos = 0; pos <= this._photos.length; pos++) {
-      if (this._filtered[pos]) {
+      if (this._visible[pos]) {
         arr.push(this._photos[pos]);
       }
     }
@@ -378,7 +386,7 @@ export class PhotoList {
   private onListChangedHandler() {
     console.log('onListChanged');
     this._photos.length = 0;
-    this._filtered.length = 0;
+    this._visible.length = 0;
     this._idIndex.clear();
     this.addPhotosWorker(this._source.getItems(), PhotoListChangeType.load);
     this._version++;

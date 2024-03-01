@@ -72,7 +72,7 @@ export function EditMenu(props: CommandMenuProps) {
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
       <MyMenuItem key="mark_fav" command={Command.MarkFavorite} text="Mark Favorite" shortcut="A" />
-      <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="P" />
+      <MyMenuItem key="mark_rejected" command={Command.MarkRejected} text="Mark Rejected" shortcut="X" />
       <Divider />
       <MyMenuItem key="add_quick" command={Command.AddQuickCollection} text="Add quick collection" shortcut="B" />
       <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
