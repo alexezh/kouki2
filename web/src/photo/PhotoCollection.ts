@@ -1,4 +1,4 @@
-import { PhotoListKind, WireCollection, WireCollectionMetadata } from "../lib/photoclient";
+import { PhotoListKind, WireCollection, WireCollectionMetadata, wireUpdateCollection } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { PhotoListId } from "./AlbumPhoto";
 import { CollectionId } from "./CollectionStore";
@@ -35,7 +35,7 @@ export class PhotoCollection {
     if (this._metadata) {
       this._metadata.totalPhotos += delta;
     }
-    wireUpdateCollection({ totalPhotos: this._metadata.totalPhotos })
+    wireUpdateCollection(this.id.id, { totalPhotos: this._metadata.totalPhotos });
     this.onChanged.invoke();
   }
 }
