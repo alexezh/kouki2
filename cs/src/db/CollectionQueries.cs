@@ -108,7 +108,7 @@ public static class CollectionsQueriesExt
 
   public static void UpdateCollection(this PhotoDb self, Int64 id, string metaStr)
   {
-    PhotoDbStatics.ExecuteVoidCommand(self.Connection, (SqliteCommand command) =>
+    ReaderExt.ExecuteVoidCommand(self.Connection, (command) =>
     {
       command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={id}";
       command.Parameters.AddWithValue("$metadata", metaStr);

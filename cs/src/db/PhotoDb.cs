@@ -89,6 +89,30 @@ public class ThumbnailEntry
 
 public static class ReaderExt
 {
+  public static Int64 ExecuteIntCommand(SqliteConnection connection, Action<SqliteCommand> cmd, string name)
+  {
+    var command = connection.CreateCommand();
+    cmd(command);
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        return (Int64)reader[name];
+      }
+    }
+
+    return 0;
+  }
+
+  public static void ExecuteVoidCommand(SqliteConnection connection, Action<SqliteCommand> cmd)
+  {
+    var command = connection.CreateCommand();
+    cmd(command);
+    using (var reader = command.ExecuteReader())
+    {
+    }
+  }
+
   public static byte[] ReadBlob(this SqliteDataReader reader, string name)
   {
     var val = reader[name];

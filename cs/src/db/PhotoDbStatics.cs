@@ -29,7 +29,7 @@ public class PhotoDbStatics
     {
       connection.Open();
 
-      Int64 userVersion = ExecuteIntCommand(connection, (SqliteCommand command) =>
+      Int64 userVersion = ReaderExt.ExecuteIntCommand(connection, (command) =>
       {
         command.CommandText = "PRAGMA user_version;";
       }, "user_version");
@@ -94,164 +94,58 @@ public class PhotoDbStatics
       if (userVersion < 4)
       {
         AddColumn(connection, "Photos", "alttexte", "BLOB");
+      }
 
-        userVersion = 4;
-        ExecuteVoidCommand(connection, (SqliteCommand command) =>
+      if (userVersion < 5)
+      {
+        ConvertPhotoTime2(connection);
+
+        userVersion = 5;
+        ReaderExt.ExecuteVoidCommand(connection, (command) =>
         {
           command.CommandText = $"PRAGMA user_version = {userVersion};";
         });
       }
 
-      UpdateLibraryStats(connection);
+      CollectionStatUpdater.UpdateLibraryStats(connection);
     }
   }
 
-  public static Int64 ExecuteIntCommand(SqliteConnection connection, Action<SqliteCommand> cmd, string name)
+  private static void ConvertPhotoTime2(SqliteConnection connection)
   {
-    var command = connection.CreateCommand();
-    cmd(command);
-    using (var reader = command.ExecuteReader())
+    AddColumn(connection, "Photos", "originalDt2", "INTEGER");
+    AddColumn(connection, "Photos", "importedDt2", "INTEGER");
+    CreateIndex(connection, "CREATE INDEX IF NOT EXISTS `PhotoOriginalDt` ON `Photos` (`originalDt2` ASC);");
+
+    // might take a while
+    var items = new List<Tuple<Int64, DateTime?, DateTime?>>();
     {
-      while (reader.Read())
+      var command = connection.CreateCommand();
+      command.CommandText = $"SELECT id, originalDt, importedDt FROM Photos;";
+      using (var reader = command.ExecuteReader())
       {
-        return (Int64)reader[name];
+        while (reader.Read())
+        {
+          items.Add(new Tuple<long, DateTime?, DateTime?>(
+            reader.ReadInt64("id"),
+          reader.ReadMagicTime("originalDt"),
+          reader.ReadMagicTime("importedDt")));
+        }
       }
     }
 
-    return 0;
-  }
-
-  public static void ExecuteVoidCommand(SqliteConnection connection, Action<SqliteCommand> cmd)
-  {
-    var command = connection.CreateCommand();
-    cmd(command);
-    using (var reader = command.ExecuteReader())
+    foreach (var item in items)
     {
-    }
-  }
+      Int64 original = item.Item2 != null ? item.Item2.Value.ToBinary() : 0;
+      Int64 updated = item.Item3 != null ? item.Item3.Value.ToBinary() : 0;
 
-  private static void UpdateLibraryStats(SqliteConnection connection)
-  {
-    var collections = CollectionsQueriesExt.GetCollections(connection);
-
-    var updateCollections = false;
-    var idx = collections.FindIndex((x) => x.kind == "all");
-    if (idx == -1)
-    {
-      CollectionsQueriesExt.AddCollection(connection, "", "all", DateTime.Now.ToBinary());
-      updateCollections = true;
-    }
-
-    idx = collections.FindIndex((x) => x.kind == "favorite");
-    if (idx == -1)
-    {
-      CollectionsQueriesExt.AddCollection(connection, "", "favorite", DateTime.Now.ToBinary());
-      updateCollections = true;
-    }
-
-    idx = collections.FindIndex((x) => x.kind == "rejected");
-    if (idx == -1)
-    {
-      CollectionsQueriesExt.AddCollection(connection, "", "rejected", DateTime.Now.ToBinary());
-      updateCollections = true;
-    }
-
-    idx = collections.FindIndex((x) => x.kind == "hidden");
-    if (idx == -1)
-    {
-      CollectionsQueriesExt.AddCollection(connection, "", "hidden", DateTime.Now.ToBinary());
-      updateCollections = true;
-    }
-
-    if (updateCollections)
-    {
-      collections = CollectionsQueriesExt.GetCollections(connection);
-    }
-
-    try
-    {
-      foreach (var coll in collections)
+      ReaderExt.ExecuteVoidCommand(connection, (command) =>
       {
-        if (coll.kind == "folder")
-        {
-          UpdateFolderStats(connection, coll);
-        }
-        else if (coll.kind == "all")
-        {
-          UpdateSyntheticCollection(connection, coll, "");
-        }
-        else if (coll.kind == "favorite")
-        {
-          UpdateSyntheticCollection(connection, coll, "WHERE fav > 0");
-        }
-        else if (coll.kind == "rejected")
-        {
-          UpdateSyntheticCollection(connection, coll, "WHERE fav < 0");
-        }
-        else if (coll.kind == "hidden")
-        {
-          UpdateSyntheticCollection(connection, coll, "WHERE hidden != 0");
-        }
-        else
-        {
-          UpdateCollection(connection, coll);
-        }
-      }
+        command.CommandText = $"UPDATE Photos SET originalDt2={original}, importedDt2={updated} WHERE id == {item.Item1};";
+      });
     }
-    catch (Exception e)
-    {
-      Console.WriteLine("Failed " + e.Message);
-      throw;
-    }
-  }
 
-  private static void UpdateFolderStats(SqliteConnection connection, CollectionEntry coll)
-  {
-    var count = ExecuteIntCommand(connection,
-      (SqliteCommand command) =>
-      {
-        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos WHERE folder == {coll.id}";
-      },
-      "count"
-    );
-
-    UpdateCollectionCount<FolderMetadata>(connection, coll, count);
-  }
-
-  private static void UpdateCollection(SqliteConnection connection, CollectionEntry coll)
-  {
-    var count = ExecuteIntCommand(connection,
-      (SqliteCommand command) =>
-      {
-        command.CommandText = $"SELECT COUNT(*) AS count FROM CollectionItems WHERE id == {coll.id}";
-      },
-      "count"
-    );
-
-    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
-  }
-
-  private static void UpdateSyntheticCollection(SqliteConnection connection, CollectionEntry coll, string expr)
-  {
-    var count = ExecuteIntCommand(connection,
-      (SqliteCommand command) =>
-      {
-        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos {expr}";
-      },
-      "count"
-    );
-
-    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
-  }
-
-  private static void UpdateCollectionCount<T>(SqliteConnection connection, CollectionEntry coll, Int64 count) where T : CollectionMetadata, new()
-  {
-    var metaStr = PhotoFs.UpdateCollectionCount<T>(coll, count);
-    ExecuteVoidCommand(connection, (SqliteCommand command) =>
-    {
-      command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={coll.id}";
-      command.Parameters.AddWithValue("$metadata", metaStr);
-    });
+    //connection.Cre
   }
 
   private static void ConvertFolders(SqliteConnection connection)
@@ -334,22 +228,136 @@ public class PhotoDbStatics
     }
   }
 
-
-
   private static JsonSerializerOptions jsonOptions = new JsonSerializerOptions()
   {
     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault
   };
+}
 
-  public static string SerializeEntity<T>(T ent)
+public static class CollectionStatUpdater
+{
+  public static void UpdateLibraryStats(SqliteConnection connection)
   {
-    string s = JsonSerializer.Serialize(ent, jsonOptions);
-    return s;
+    var collections = CollectionsQueriesExt.GetCollections(connection);
+
+    var updateCollections = false;
+    var idx = collections.FindIndex((x) => x.kind == "all");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "all", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "favorite");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "favorite", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "rejected");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "rejected", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "hidden");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "hidden", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    if (updateCollections)
+    {
+      collections = CollectionsQueriesExt.GetCollections(connection);
+    }
+
+    try
+    {
+      foreach (var coll in collections)
+      {
+        if (coll.kind == "folder")
+        {
+          UpdateFolderStats(connection, coll);
+        }
+        else if (coll.kind == "all")
+        {
+          UpdateSyntheticCollection(connection, coll, "");
+        }
+        else if (coll.kind == "favorite")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE fav > 0");
+        }
+        else if (coll.kind == "rejected")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE fav < 0");
+        }
+        else if (coll.kind == "hidden")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE hidden != 0");
+        }
+        else
+        {
+          UpdateCollection(connection, coll);
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("Failed " + e.Message);
+      throw;
+    }
   }
 
-  internal static T DeserializeEntity<T>(string blob)
+  private static void UpdateFolderStats(SqliteConnection connection, CollectionEntry coll)
   {
-    return JsonSerializer.Deserialize<T>(blob);
+    var count = ReaderExt.ExecuteIntCommand(connection,
+      (SqliteCommand command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos WHERE folder == {coll.id}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<FolderMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateCollection(SqliteConnection connection, CollectionEntry coll)
+  {
+    var count = ReaderExt.ExecuteIntCommand(connection,
+      (command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM CollectionItems WHERE id == {coll.id}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateSyntheticCollection(SqliteConnection connection, CollectionEntry coll, string expr)
+  {
+    var count = ReaderExt.ExecuteIntCommand(connection,
+      (command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos {expr}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateCollectionCount<T>(SqliteConnection connection, CollectionEntry coll, Int64 count) where T : CollectionMetadata, new()
+  {
+    var metaStr = PhotoFs.UpdateCollectionCount<T>(coll, count);
+    ReaderExt.ExecuteVoidCommand(connection, (command) =>
+    {
+      command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={coll.id}";
+      command.Parameters.AddWithValue("$metadata", metaStr);
+    });
   }
 }
 
