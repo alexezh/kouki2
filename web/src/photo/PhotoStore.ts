@@ -1,8 +1,9 @@
-import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId, UpdatePhotoContext } from "./AlbumPhoto";
+import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId } from "./AlbumPhoto";
 import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto } from "../lib/photoclient";
 import { WeakEventSource } from "../lib/synceventsource";
 import { loadCollections } from "./CollectionStore";
 import { loadFolders } from "./FolderStore";
+import { UpdatePhotoContext } from "./UpdatePhotoContext";
 
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();

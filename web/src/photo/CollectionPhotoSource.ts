@@ -1,7 +1,8 @@
 import { nowAsISOString } from "../lib/date";
 import { WireCollectionItem, wireAddCollectionItems, wireGetCollectionItems, wireRemoveCollectionItems } from "../lib/photoclient";
 import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId } from "./AlbumPhoto";
-import { CollectionId, PhotoCollection, collectionMap } from "./CollectionStore";
+import { CollectionId, collectionMap } from "./CollectionStore";
+import type { PhotoCollection } from "./PhotoCollection";
 import { AppFilter, IPhotoListSource } from "./PhotoList";
 import { getPhotoById, waitLibraryLoaded } from "./PhotoStore";
 

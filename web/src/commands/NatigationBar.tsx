@@ -4,41 +4,35 @@ import ListItemButton from "@mui/material/ListItemButton/ListItemButton";
 import ListItemText from "@mui/material/ListItemText/ListItemText";
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import { useEffect, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import Divider from "@mui/material/Divider/Divider";
 import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoInfo } from "./PhotoInfo";
 import { PhotoFolder, addOnFoldersChanged, getFolder, getFolderList, getFolders, removeOnFoldersChanged } from "../photo/FolderStore";
 import { updateAppState } from "./AppState";
 import { Device, addOnDeviceChanged, getDevices, removeOnDeviceChanged } from "../photo/Device";
-import { CollectionId, addOnCollectionsChanged, getCollectionsByKind } from "../photo/CollectionStore";
+import { CollectionId, addOnCollectionsChanged, collectionMap, getCollectionByKind, getCollectionsByKind } from "../photo/CollectionStore";
 import { CollectionItemLayout, CollectionListLayout } from "./CollectionItemLayout";
 
-type SetPhotoHandler = React.Dispatch<React.SetStateAction<AlbumPhoto[]>>;
-
-function onDevice() {
-  //setView(new ViewDesc(CanvasViewKind.Device));
-}
-
-function onAlbum(setPhoto: SetPhotoHandler) {
-  //setView(new ViewDesc(CanvasViewKind.Album));
-}
-
-export function collapsableList(
-  text: string,
+export function CollapsableList(props: {
   open: boolean,
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>,
-  items: JSX.Element[]) {
-  return [(
-    <ListItemButton onClick={() => setOpen(!open)} key={'cat_' + text} >
-      <ListItemText primary={text} />
-      {open ? <ExpandLess /> : <ExpandMore />}
-    </ListItemButton >),
-  (<Collapse in={open} timeout="auto" unmountOnExit>
-    <List component="div" disablePadding>
-      {items}
-    </List>
-  </Collapse>)]
+  text: string,
+  items: JSX.Element[]
+}) {
+  let [open, setOpen] = useState(props.open);
+
+  return (
+    <div>
+      <ListItemButton onClick={() => setOpen(!open)} >
+        <ListItemText primary={props.text} />
+        {open ? <ExpandLess /> : <ExpandMore />}
+      </ListItemButton >
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <List component="div" disablePadding>
+          {props.items}
+        </List>
+      </Collapse>
+    </div>)
 }
 
 export function collapsablePane(
@@ -70,7 +64,7 @@ function FolderLayout(props: { folder: PhotoFolder }) {
     return (
       <div>
         <ListItemButton onClick={() => setOpenFolders(!openFolders)} key={'cat_' + props.folder.path} >
-          <div className="FolderItem">{props.folder.relname}</div>
+          <div className="Folder-item">{props.folder.relname}</div>
           {openFolders ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton >
         <Collapse in={openFolders} timeout="auto" unmountOnExit>
@@ -81,12 +75,12 @@ function FolderLayout(props: { folder: PhotoFolder }) {
       </div>)
   } else {
     return (
-      <ListItemButton className="FolderItem" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
-        <div className="FolderItem">
+      <ListItemButton className="Folder-item" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
+        <div className="Folder-item">
           <div>
             {props.folder.relname}
           </div>
-          <div className="FolderItem-Count">
+          <div className="Folder-item-count">
             {count}
           </div>
         </div>
@@ -99,11 +93,29 @@ const maxCollectionHistory = 10;
 function renderCatalogs(): JSX.Element[] {
   let items: JSX.Element[] = [];
 
-  items.push((<CollectionListLayout key='quick' text="Quich collection" lists={getCollectionsByKind('quick', maxCollectionHistory)} />))
-  items.push((<CollectionItemLayout paddingLeft={0} key='all' text="All Photos" id={new PhotoListId('all', 0 as CollectionId)} />))
-  items.push((<CollectionListLayout key='export' text="Export" lists={getCollectionsByKind('export', maxCollectionHistory)} />))
-  items.push((<CollectionListLayout key='import' text="Import" lists={getCollectionsByKind('import', maxCollectionHistory)} />))
-  items.push((<CollectionItemLayout paddingLeft={0} key='hidden' text="Hidden" id={new PhotoListId('hidden', 0 as CollectionId)} />))
+  // items.push((<CollectionListLayout key='quick' text="Quich collection"
+  //   lists={getCollectionsByKind('quick', maxCollectionHistory)} />))
+  // items.push((
+  //   <CollectionItemLayout paddingLeft={2} key='recent' text="All Photos"
+  //     id={new PhotoListId('all', 0 as CollectionId)} />))
+  // items.push((
+  //   <CollectionItemLayout paddingLeft={2} key='favorite' textClassName="Catalog-item" text="Favorite"
+  //     id={new PhotoListId('all', 0 as CollectionId)} />))
+  items.push((
+    <CollectionItemLayout paddingLeft={2} key='rejected' textClassName="Catalog-item" text="Rejected"
+      coll={getCollectionByKind('rejected')} />))
+  items.push((
+    <CollectionListLayout key='export' textClassName="Folder-item" text="Export"
+      lists={getCollectionsByKind('export', maxCollectionHistory)} />))
+  items.push((
+    <CollectionListLayout key='import' textClassName="Folder-item" text="Import"
+      lists={getCollectionsByKind('import', maxCollectionHistory)} />))
+  items.push((
+    <CollectionItemLayout paddingLeft={2} key='hidden' textClassName="Catalog-item" text="Hidden"
+      coll={getCollectionByKind('hidden')} />))
+  items.push((
+    <CollectionItemLayout paddingLeft={2} key='dups' textClassName="Catalog-item" text="Duplicates"
+      coll={getCollectionByKind('all')} />))
   //catalogs.map((x) => { return () });
 
   return items;
@@ -124,13 +136,11 @@ function DeviceLayout(props: { device: Device }) {
 //export function NavigationBar() {
 //  return (
 export function NavigationBar() {
-  let [openCollections, setOpenCollections] = useState(true);
-  let [openFolders, setOpenFolders] = useState(false);
-  let [openDevices, setOpenDevices] = useState(false);
   let [openInfo, setOpenInfo] = useState(true);
-
   const [folders, setFolders] = useState([] as PhotoFolder[]);
   const [devices, setDevices] = useState([] as Device[]);
+  const [loaded, setLoaded] = useState(collectionMap.size > 0);
+
   useEffect(() => {
     // reload folder list when folders change
     let idFolders = addOnFoldersChanged(() => {
@@ -139,6 +149,7 @@ export function NavigationBar() {
 
     let idCollections = addOnCollectionsChanged(() => {
       setFolders(getFolders());
+      setLoaded(true);
     });
 
     // reload folder list when folders change
@@ -160,18 +171,25 @@ export function NavigationBar() {
 
   // TODO: add by month navigation in photo-all.
 
-  return (
+  return (loaded) ? (
     <div>
-      {collapsableList("Catalogs", openCollections, setOpenCollections, renderCatalogs())}
+      <CollectionListLayout key='quick' textClassName="Top-catalog-item" text="Quich collection"
+        lists={getCollectionsByKind('quick', maxCollectionHistory)} />
+      <CollectionItemLayout paddingLeft={2} key='recent' textClassName="Top-catalog-item" text="All Photos"
+        coll={getCollectionByKind('all')} />
+      <CollectionItemLayout paddingLeft={2} key='favorite' textClassName="Top-catalog-item" text="Favorite"
+        coll={getCollectionByKind('favorite')} />
+      <CollapsableList key="catalogs" text="Catalogs" open={true}
+        items={renderCatalogs()} />
       <Divider />
-      {collapsableList("Folders", openFolders, setOpenFolders,
-        folders.map((x) => { return (<FolderLayout folder={x} />) }))}
+      <CollapsableList key="folders" text="Folders" open={false}
+        items={folders.map((x) => { return (<FolderLayout folder={x} />) })} />
+
       <Divider />
-      {collapsableList("Devices", openDevices, setOpenDevices,
-        devices.map((x) => { return (<DeviceLayout device={x} />) }))}
-      <Divider />
-      {collapsablePane("Photo Info", openInfo, setOpenInfo,
-        () => (<PhotoInfo />))
+      {
+        collapsablePane("Photo Info", openInfo, setOpenInfo,
+          () => (<PhotoInfo />))
       }
-    </div>);
+    </div >) : null;
+  //      <CollapsableList key="devices" text="Devices" open={false} items={devices.map((x) => { return (<DeviceLayout device={x} />) })} />
 }

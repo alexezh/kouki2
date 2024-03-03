@@ -3,11 +3,12 @@ import { LibraryPhotoSource } from "./LibraryPhotoSource";
 import { AppFilter } from "./PhotoList";
 import { filterPhotos, photoLibraryMap, sortByDate } from "./PhotoStore";
 
+export class FilteredPhotoSource extends LibraryPhotoSource {
+  private filter: (x: AlbumPhoto) => boolean;
 
-export class HiddenPhotoSource extends LibraryPhotoSource {
-
-  public constructor() {
+  public constructor(filter: (x: AlbumPhoto) => boolean) {
     super();
+    this.filter = filter;
   }
 
   protected override onLibraryChanged(updates: LibraryUpdateRecord[]) {
@@ -27,11 +28,18 @@ export class HiddenPhotoSource extends LibraryPhotoSource {
       return [];
     }
 
-    let photos = filterPhotos(photoLibraryMap, (x: AlbumPhoto) => {
-      return x.hidden;
-    });
+    let photos = filterPhotos(photoLibraryMap, this.filter);
 
     sortByDate(photos);
     return photos;
+  }
+}
+
+export class HiddenPhotoSource extends FilteredPhotoSource {
+
+  public constructor() {
+    super((x: AlbumPhoto) => {
+      return x.hidden;
+    });
   }
 }

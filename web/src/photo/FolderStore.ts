@@ -1,7 +1,8 @@
 import { WireCollection, WireFolderMetadata } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, LibraryUpdateRecord, PhotoListId } from "./AlbumPhoto";
-import { CollectionId, PhotoCollection, getCollectionsByKind, loadCollections } from "./CollectionStore";
+import { CollectionId, getCollectionsByKind, loadCollections } from "./CollectionStore";
+import type { PhotoCollection } from "./PhotoCollection";
 import { AppFilter, IPhotoListSource, PhotoList } from "./PhotoList";
 import { filterPhotos, loadLibrary, photoLibraryMap, sortByDate } from "./PhotoStore";
 
@@ -54,7 +55,7 @@ function generatePhotoFolders(colls: PhotoCollection[]): PhotoFolder[] {
   folderIdMap.clear();
 
   for (let coll of colls) {
-    let wf = JSON.parse(coll.wire.metadata) as WireFolderMetadata;
+    let wf = coll.metadata as WireFolderMetadata;
     if (wf.path === null) {
       console.log('folder invalid');
       continue;

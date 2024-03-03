@@ -1,7 +1,7 @@
 import { Key } from "react";
 import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
 import { CollectionId } from "./CollectionStore";
-import { invokeLibraryChanged } from "./PhotoStore";
+import type { UpdatePhotoContext } from "./UpdatePhotoContext";
 
 export type PhotoId = number & {
   __tag_photo: boolean;
@@ -64,36 +64,6 @@ export type LibraryUpdateRecord =
   LibraryAddRecord |
   LibraryRemoveRecord |
   LibraryFilterRecord;
-
-export class UpdatePhotoContext {
-  private updates: PhotoUpdateRecord[] = [];
-  private wireUpdates: WirePhotoUpdate[] = [];
-  private sendWire: boolean;
-
-  public constructor(sendWire: boolean = true) {
-    this.sendWire = sendWire;
-  }
-
-  public addPhoto(update: PhotoUpdateRecord) {
-    this.updates.push(update);
-    if (this.sendWire) {
-      let wireUpdate: WirePhotoUpdate = {
-        hash: update.photo.wire.hash,
-        hidden: update.hidden,
-        favorite: update.favorite,
-        stackId: update.stackId
-      }
-      this.wireUpdates.push(wireUpdate);
-    }
-  }
-
-  public commit() {
-    invokeLibraryChanged(this.updates);
-    if (this.sendWire) {
-      wireUpdatePhotos(this.wireUpdates);
-    }
-  }
-}
 
 export class AlbumPhoto {
   private onChanged: { id: number, func: (p: AlbumPhoto) => void }[] = [];

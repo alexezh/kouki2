@@ -51,7 +51,7 @@ public class TextSearchRequest
   public string search { get; set; }
 }
 
-public class UpdatePhotoResponse
+public class UpdatePhotoResponse : ResultResponse
 {
   public string error { get; set; }
 }
@@ -67,6 +67,11 @@ public class AddCollectionRequest
   public string name { get; set; }
   public string createDt { get; set; }
   public string metadata { get; set; }
+}
+
+public class UpdateCollectionRequest
+{
+  public Int64 totalPhotos { get; set; }
 }
 
 public class AddCollectionResponse : ResultResponse

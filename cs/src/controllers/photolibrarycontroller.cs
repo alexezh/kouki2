@@ -34,6 +34,10 @@ public class PhotoLibraryController : Controller
         pattern: "/api/{controller=PhotoLibrary}/{action=GetCollections}");
 
     app.MapControllerRoute(
+        name: "UpdateCollection",
+        pattern: "/api/{controller=PhotoLibrary}/{action=UpdateCollection}/{id}");
+
+    app.MapControllerRoute(
         name: "AddCollection",
         pattern: "/api/{controller=PhotoLibrary}/{action=AddCollection}");
 
@@ -129,23 +133,43 @@ public class PhotoLibraryController : Controller
   }
 
   [HttpPost]
-  public async Task<AddCollectionResponse> AddCollection()
+  public Task<ResultResponse> UpdateCollection(Int64 id)
   {
-    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    return ResultResponse.CatchAll(async () =>
     {
-      string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<AddCollectionRequest>(content);
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+      {
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<UpdateCollectionRequest>(content);
 
-      CollectionEntry coll = PhotoFs.Instance.AddCollection(request);
-      if (coll != null)
-      {
-        return new AddCollectionResponse() { collection = coll, result = ResultResponse.Ok };
+        PhotoFs.Instance.UpdateCollection(id, request);
+
+        return new ResultResponse() { result = ResultResponse.Ok };
       }
-      else
+    });
+  }
+
+  [HttpPost]
+  public Task<AddCollectionResponse> AddCollection()
+  {
+    return ResultResponse.CatchAll(async () =>
+    {
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
       {
-        return new AddCollectionResponse() { collection = null, result = ResultResponse.Failed };
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<AddCollectionRequest>(content);
+
+        CollectionEntry coll = PhotoFs.Instance.AddCollection(request);
+        if (coll != null)
+        {
+          return new AddCollectionResponse() { collection = coll, result = ResultResponse.Ok };
+        }
+        else
+        {
+          return new AddCollectionResponse() { collection = null, result = ResultResponse.Failed };
+        }
       }
-    }
+    });
   }
 
   // get string as resource

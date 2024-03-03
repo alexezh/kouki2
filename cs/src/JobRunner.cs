@@ -16,6 +16,22 @@ public class ResultResponse
 
   public string result { get; set; }
   public string message { get; set; }
+
+  public static async Task<T> CatchAll<T>(Func<Task<T>> func) where T : ResultResponse, new()
+  {
+    try
+    {
+      return await func();
+    }
+    catch (Exception e)
+    {
+      return new T()
+      {
+        result = Failed,
+        message = e.Message
+      };
+    }
+  }
 }
 
 public class JobResponse : ResultResponse

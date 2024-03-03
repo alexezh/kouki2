@@ -1,10 +1,11 @@
-import { AlbumPhoto, PhotoId, UpdatePhotoContext } from "../photo/AlbumPhoto";
+import { AlbumPhoto, PhotoId } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
 import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler } from "./Commands";
 import { addStack, removeStack } from "../photo/PhotoStore";
 import { PhotoList, PhotoListPos } from "../photo/PhotoList";
-import { createQuickCollection, createQuickCollectionList, getQuickCollectionList } from "../photo/LoadPhotoList";
+import { createQuickCollection, getQuickCollectionList } from "../photo/LoadPhotoList";
+import { UpdatePhotoContext } from "../photo/UpdatePhotoContext";
 
 export function onMarkFavorite() {
   let ctx = new UpdatePhotoContext();

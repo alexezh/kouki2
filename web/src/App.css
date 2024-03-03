@@ -24,6 +24,7 @@
   --album-width: calc(var(--total-width) - var(--sidebar-width) - var(--calendarbar-width));
   --middlerow-height: calc(var(--total-height) - 2*var(--header-height));
   --zoom-list-height: 200px;
+  --sidebar-topitemfont-size: 16px;
   --sidebar-itemfont-size: 12px;
   --sidebar-areafont-size: 15em;
   --album-backcolor: #1d1d1d;
@@ -224,25 +225,36 @@
   width: 500px
 }
 
-.FolderItem {
+.Folder-item {
   font-size: var(--sidebar-itemfont-size);
   width: 100%;
   text-wrap: nowrap;
   display: flex;
 }
 
-.FolderItem-Count {
+.Folder-item-count {
   margin-left: auto;
 }
 
-.CatalogItem {
+.Catalog-item {
   display: flex;
   width: 100%;
   font-size: var(--sidebar-itemfont-size);
   text-wrap: nowrap;
 }
 
-.CatalogItem-Count {
+.Catalog-item-count {
+  margin-left: auto;
+}
+
+.Top-catalog-item {
+  display: flex;
+  width: 100%;
+  font-size: var(--sidebar-topitemfont-size);
+  text-wrap: nowrap;
+}
+
+.Top-catalog-item-count {
   margin-left: auto;
 }
 

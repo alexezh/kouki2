@@ -106,6 +106,25 @@ public static class CollectionsQueriesExt
     return null;
   }
 
+  public static void UpdateCollection(this PhotoDb self, Int64 id, string metaStr)
+  {
+    PhotoDbStatics.ExecuteVoidCommand(self.Connection, (SqliteCommand command) =>
+    {
+      command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={id}";
+      command.Parameters.AddWithValue("$metadata", metaStr);
+    });
+  }
+
+  public static void ExecuteVoidCommand(SqliteConnection connection, Action<SqliteCommand> cmd)
+  {
+    var command = connection.CreateCommand();
+    cmd(command);
+    using (var reader = command.ExecuteReader())
+    {
+    }
+  }
+
+
 
   public static List<CollectionEntry> GetCollections(this PhotoDb self)
   {

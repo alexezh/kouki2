@@ -228,6 +228,44 @@ public class PhotoFs
     };
   }
 
+  public void UpdateCollection(Int64 id, UpdateCollectionRequest request)
+  {
+    var entry = _photoDb.GetCollection(id);
+    if (entry == null)
+    {
+      throw new Exception("Collection not found");
+    }
+
+    string metaStr = null;
+    if (entry.kind == "folder")
+    {
+      metaStr = UpdateCollectionCount<FolderMetadata>(entry, request.totalPhotos);
+    }
+    else
+    {
+      metaStr = UpdateCollectionCount<CollectionMetadata>(entry, request.totalPhotos);
+    }
+
+    _photoDb.UpdateCollection(id, metaStr);
+  }
+
+  public static string UpdateCollectionCount<T>(CollectionEntry coll, Int64 count) where T : CollectionMetadata, new()
+  {
+    T metaObj;
+    if (coll.metadata != null)
+    {
+      metaObj = JsonSerializer.Deserialize<T>(coll.metadata);
+    }
+    else
+    {
+      metaObj = new T();
+    }
+
+    metaObj.totalPhotos = count;
+    var metaStr = JsonSerializer.Serialize<T>(metaObj);
+    return metaStr;
+  }
+
   public static void MoveFiles(FolderName dest, List<string> files)
   {
     foreach (var file in files)

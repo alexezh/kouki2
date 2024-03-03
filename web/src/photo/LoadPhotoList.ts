@@ -1,11 +1,12 @@
 import { nowAsISOString } from "../lib/date";
 import { wireAddCollection } from "../lib/photoclient";
-import { PhotoListId } from "./AlbumPhoto";
+import { AlbumPhoto, PhotoListId } from "./AlbumPhoto";
 import { getAllPhotos } from "./AllPhotosSource";
 import { CollectionPhotoSource } from "./CollectionPhotoSource";
-import { CollectionId, PhotoCollection, collectionMap, collectionMapChanged } from "./CollectionStore";
+import { CollectionId, collectionMap, collectionMapChanged } from "./CollectionStore";
 import { StaticPhotoSource, getFolderList } from "./FolderStore";
-import { HiddenPhotoSource } from "./HiddenPhotoSource";
+import { FilteredPhotoSource, HiddenPhotoSource } from "./HiddenPhotoSource";
+import { PhotoCollection } from "./PhotoCollection";
 import { PhotoList } from "./PhotoList";
 
 export function createCollectionPhotoList(listId: PhotoListId) {
@@ -62,6 +63,8 @@ export function loadPhotoList(id: PhotoListId): PhotoList {
     case 'import': return createCollectionPhotoList(id);
     case 'export': return createCollectionPhotoList(id);
     case 'hidden': return createHiddenCollectionList(id);
+    case 'favorite': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.favorite > 0));
+    case 'rejected': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.favorite < 0));
     default:
       return new PhotoList(id, new StaticPhotoSource([]));
   }
