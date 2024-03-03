@@ -117,55 +117,6 @@ export async function loadCollections(): Promise<boolean> {
   return true;
 }
 
-function onLibraryChanged(records: LibraryUpdateRecord[]) {
-  let hiddenDelta = 0, favoriteDelta = 0, rejectedDelta = 0;
-
-  for (let x of records) {
-    if (x.kind === LibraryUpdateRecordKind.update) {
-      if (x.hidden !== undefined) {
-        hiddenDelta += (x.hidden) ? 1 : -1;
-      }
-      else if (x.favorite !== undefined) {
-        if (x.favorite > 0) {
-          if (x.photo.favorite < 0) {
-            hiddenDelta--;
-          }
-          favoriteDelta++;
-        }
-        if (x.favorite < 0) {
-          if (x.photo.favorite > 0) {
-            favoriteDelta--;
-          }
-          rejectedDelta++;
-        }
-      }
-    }
-  }
-
-
-  if (hiddenDelta !== 0) {
-    hiddenColl!.updateCount(hiddenDelta);
-  }
-
-  if (rejectedDelta !== 0) {
-    rejectedColl!.updateCount(rejectedDelta);
-  }
-
-  if (favoriteDelta !== 0) {
-    favoriteColl!.updateCount(favoriteDelta);
-  }
-}
-
-export function getCollectionByKind(kind: PhotoListKind, maxItems?: number): PhotoCollection {
-  for (let [key, coll] of collectionMap) {
-    if (coll.id.kind === kind) {
-      return coll;
-    }
-  }
-
-  throw new Error("Collection not found");
-}
-
 export function getCollectionsByKind(kind: PhotoListKind, maxItems?: number): PhotoCollection[] {
   let list: PhotoCollection[] = [];
   for (let [key, coll] of collectionMap) {

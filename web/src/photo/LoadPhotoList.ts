@@ -5,8 +5,8 @@ import { getAllPhotos } from "./AllPhotosSource";
 import { CollectionPhotoSource } from "./CollectionPhotoSource";
 import { CollectionId, collectionMap, collectionMapChanged } from "./CollectionStore";
 import { StaticPhotoSource, getFolderList } from "./FolderStore";
-import { FilteredPhotoSource, HiddenPhotoSource } from "./HiddenPhotoSource";
 import { PhotoCollection } from "./PhotoCollection";
+import { FilteredPhotoSource, HiddenPhotoSource } from "./HiddenPhotoSource";
 import { PhotoList } from "./PhotoList";
 
 export function createCollectionPhotoList(listId: PhotoListId) {
