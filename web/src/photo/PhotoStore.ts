@@ -77,6 +77,8 @@ export async function loadLibrary() {
     maxPhotoId = Math.max(photo.id, maxPhotoId);
   }
 
+  console.log("Added photos: " + newPhotos.length);
+
   buildStacks(newPhotos);
   buildDuplicateBuckets(newPhotos);
   buildSimilarityInfo(pairs);
@@ -308,7 +310,15 @@ export function getDuplicateBucket(photo: AlbumPhoto): PhotoId[] {
 export function getPhotoById(id: PhotoId): AlbumPhoto {
   let photo = photoLibraryMap.get(id);
   if (!photo) {
-    throw new Error('Cannot find photo ' + id);
+    throw new Error('PhotoStore: Cannot find photo ' + id);
+  }
+  return photo;
+}
+
+export function tryGetPhotoById(id: PhotoId): AlbumPhoto | null {
+  let photo = photoLibraryMap.get(id);
+  if (!photo) {
+    return null;
   }
   return photo;
 }

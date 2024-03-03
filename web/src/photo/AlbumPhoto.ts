@@ -153,7 +153,7 @@ export class AlbumPhoto {
   }
 
   public get originalDate(): Date {
-    return new Date(this.wire.originalDateTime);
+    return new Date(this.wire.originalDt);
   }
 
   public constructor(wire: WirePhotoEntry) {

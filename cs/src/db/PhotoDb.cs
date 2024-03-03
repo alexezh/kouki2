@@ -24,7 +24,7 @@ public class PhotoEntry
   public int height { get; set; }
   // MagickFormat value
   public int format { get; set; }
-  public string originalDateTime { get; set; }
+  public string originalDt { get; set; }
   public string originalHash { get; set; }
   public Int64 stackId { get; set; }
   public string altText { get; set; }
@@ -87,8 +87,41 @@ public class ThumbnailEntry
   public byte[] data { get; set; }
 }
 
+public static class CommandExt
+{
+  public static void AddStringValue(this SqliteCommand self, string name, string val)
+  {
+    if (val != null)
+    {
+      self.Parameters.AddWithValue(name, val);
+    }
+    else
+    {
+      self.Parameters.AddWithValue(name, DBNull.Value);
+    }
+  }
+
+  public static void AddBlobValue(this SqliteCommand self, string name, byte[] val)
+  {
+    if (val != null)
+    {
+      self.Parameters.AddWithValue(name, val);
+    }
+    else
+    {
+      self.Parameters.AddWithValue(name, DBNull.Value);
+    }
+  }
+
+  public static void AddIntTimeValue(this SqliteCommand self, string name, string timeStr)
+  {
+    DateTime t = DateTime.Parse(timeStr);
+    self.Parameters.AddWithValue(name, t.ToBinary());
+  }
+}
 public static class ReaderExt
 {
+
   public static Int64 ExecuteIntCommand(SqliteConnection connection, Action<SqliteCommand> cmd, string name)
   {
     var command = connection.CreateCommand();
@@ -186,6 +219,18 @@ public static class ReaderExt
     CultureInfo provider = CultureInfo.InvariantCulture;
     return DateTime.ParseExact(dtStr, "yyyy:MM:dd HH:mm:ss", provider);
   }
+
+  public static string ParseMagicTime(string magicTime)
+  {
+    CultureInfo provider = CultureInfo.InvariantCulture;
+    return DateTime.ParseExact(magicTime, "yyyy:MM:dd HH:mm:ss", provider).ToString("o");
+  }
+
+  public static string ReadIntTime(this SqliteDataReader reader, string name)
+  {
+    var val = reader.ReadInt64(name);
+    return DateTime.FromBinary(val).ToString("o");
+  }
 }
 public class PhotoDb
 {
@@ -204,19 +249,19 @@ public class PhotoDb
   public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt, $phash) RETURNING id";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt2, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt2, $phash) RETURNING id";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
     command.Parameters.AddWithValue("$filesize", entry.fileSize);
-    AddBlobValue(command, "$phash", entry.phash);
+    command.AddBlobValue("$phash", entry.phash);
     command.Parameters.AddWithValue("$hash", entry.hash);
     command.Parameters.AddWithValue("$hidden", entry.hidden);
     command.Parameters.AddWithValue("$fav", entry.favorite);
     command.Parameters.AddWithValue("$width", entry.width);
     command.Parameters.AddWithValue("$height", entry.height);
     command.Parameters.AddWithValue("$format", entry.format);
-    AddStringValue(command, "$originalDt", entry.originalDateTime);
+    command.AddIntTimeValue("$originalDt2", entry.originalDt);
 
     using (var reader = command.ExecuteReader())
     {
@@ -228,31 +273,6 @@ public class PhotoDb
 
     return 0;
   }
-
-  public void AddStringValue(SqliteCommand command, string name, string val)
-  {
-    if (val != null)
-    {
-      command.Parameters.AddWithValue(name, val);
-    }
-    else
-    {
-      command.Parameters.AddWithValue(name, DBNull.Value);
-    }
-  }
-
-  public void AddBlobValue(SqliteCommand command, string name, byte[] val)
-  {
-    if (val != null)
-    {
-      command.Parameters.AddWithValue(name, val);
-    }
-    else
-    {
-      command.Parameters.AddWithValue(name, DBNull.Value);
-    }
-  }
-
 
   private static PhotoEntry ReadEntry(SqliteDataReader reader)
   {
@@ -271,7 +291,7 @@ public class PhotoDb
       width = unchecked((int)(Int64)reader["width"]),
       height = unchecked((int)(Int64)reader["height"]),
       format = unchecked((int)(Int64)reader["format"]),
-      originalDateTime = reader.ReadMagicTime("originalDt")?.ToString("o"),
+      originalDt = reader.ReadIntTime("originalDt2"),
       originalHash = reader.ReadString("originalHash"),
       stackId = reader.ReadInt64("stackId"),
       altText = reader.ReadString("alttext"),

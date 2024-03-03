@@ -36,7 +36,7 @@ public class ImportJob : IJob
     _request = request;
   }
 
-  public void Run()
+  public async void Run()
   {
     _status.result = ResultResponse.Processing;
 
@@ -81,7 +81,7 @@ public class ImportJob : IJob
           PhotoFs.Instance,
           PhotoFs.Instance.ThumbnailDb);
       }
-      FolderImporter.ScanFiles(
+      await FolderImporter.ScanFiles(
         new FolderName(path),
         importer,
         (ScanStatus status) =>
@@ -119,7 +119,7 @@ public class RescanJob : IJob
     _request = request;
   }
 
-  public void Run()
+  public async void Run()
   {
     _status.result = ResultResponse.Processing;
 
@@ -135,7 +135,7 @@ public class RescanJob : IJob
         PhotoFs.Instance.ThumbnailDb);
     }
 
-    FolderImporter.RescanFolder(
+    await FolderImporter.RescanFolder(
       importer,
       _request.folderId,
       (ScanStatus status) =>
@@ -272,8 +272,23 @@ public class FileImporter : IFileImporter, IDisposable
 
     var id = _fs.PhotoDb.AddPhoto(entry);
 
-    await UpdateAltText(id);
-    UpdatePHash(id);
+    try
+    {
+      await UpdateAltText(id);
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("Failed to update text: " + entry.fileName + " " + e.Message);
+    }
+
+    try
+    {
+      UpdatePHash(id);
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine("Failed to update phash: " + entry.fileName + " " + e.Message);
+    }
 
     UpdateImportCollection(id);
 
@@ -395,7 +410,7 @@ public class FileImporter : IFileImporter, IDisposable
     else
     {
       var original = profile.GetValue<string>(ExifTag.DateTimeOriginal);
-      entry.originalDateTime = original.ToString();
+      entry.originalDt = ReaderExt.ParseMagicTime(original.ToString());
 
       //var imageId = profile.GetValue<string>(ExifTag.ImageUniqueID);
       //entry.imageId = imageId?.ToString();
@@ -503,17 +518,17 @@ public class FileImportedDry : IFileImporter
 
 public class FolderImporter
 {
-  public static void RescanFolder(
+  public static Task RescanFolder(
     IFileImporter importer,
     Int64 folderId,
     Action<ScanStatus> onProgress)
   {
     var status = new ScanStatus();
     var folder = importer.GetFolderInfo(folderId);
-    ScanFolder(new FolderName(folder.path), folderId, importer, onProgress, status);
+    return ScanFolder(new FolderName(folder.path), folderId, importer, onProgress, status);
   }
 
-  public static async void ScanFiles(
+  public static async Task ScanFiles(
     FolderName folder,
     IFileImporter importer,
     Action<ScanStatus> onProgress,
@@ -524,7 +539,7 @@ public class FolderImporter
       status = status ?? new ScanStatus();
       foreach (var dir in Directory.EnumerateDirectories(folder.Path))
       {
-        ScanFiles(new FolderName(dir), importer, onProgress, status);
+        await ScanFiles(new FolderName(dir), importer, onProgress, status);
       }
     }
     catch (Exception e)

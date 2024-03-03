@@ -12,7 +12,7 @@ function getProperties(photo: AlbumPhoto | null): { name: string, value: string,
 
   let props = [];
   props.push({ name: 'Name:', value: photo.getFileName() });
-  props.push({ name: 'Date:', value: photo.wire.originalDateTime });
+  props.push({ name: 'Date:', value: photo.wire.originalDt });
   props.push({ name: 'Width:', value: photo.wire.width.toString() });
   props.push({ name: 'Height:', value: photo.wire.height.toString() });
   props.push({ name: 'Size:', value: photo.wire.fileSize.toString() });

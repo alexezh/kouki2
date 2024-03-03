@@ -1,7 +1,7 @@
 import { WireCollectionItem } from "../lib/photoclient";
 import { SimpleEventSource } from "../lib/synceventsource";
 import { AlbumPhoto, LibraryUpdateRecord, PhotoId, PhotoListId } from "./AlbumPhoto";
-import { getPhotoById } from "./PhotoStore";
+import { getPhotoById, tryGetPhotoById } from "./PhotoStore";
 
 export type FilterFavorite = "all" | "favorite" | "rejected";
 
@@ -118,11 +118,15 @@ export class PhotoList {
 
     let idx = 0;
     for (let item of items) {
-      let photo = getPhotoById(item.photoId as PhotoId);
-      this._photos.push(photo);
-      this._visible.push(!this._source.isHidden(photo));
-      this._idIndex.set(photo.id, idx as PhotoListPos);
-      idx++;
+      let photo = tryGetPhotoById(item.photoId as PhotoId);
+      if (photo) {
+        this._photos.push(photo);
+        this._visible.push(!this._source.isHidden(photo));
+        this._idIndex.set(photo.id, idx as PhotoListPos);
+        idx++;
+      } else {
+        console.error("PhotoList: cannot find photo " + item.photoId);
+      }
     }
 
     this._version++;

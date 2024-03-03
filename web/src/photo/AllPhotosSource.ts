@@ -16,6 +16,7 @@ export class AllPhotosSource extends LibraryPhotoSource {
   }
 
   protected override onLibraryChanged(updates: LibraryUpdateRecord[]): void {
+    console.log("AllPhotoSource.onLibraryChanged");
     this.uniquePhotos = null;
     super.onLibraryChanged(updates);
   }

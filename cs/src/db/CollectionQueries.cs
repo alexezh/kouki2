@@ -54,7 +54,7 @@ public static class CollectionsQueriesExt
       {
         var item = new CollectionItem();
         item.photoId = reader.ReadInt64("photoId");
-        item.updateDt = DateTime.FromBinary(reader.ReadInt64("updateDt")).ToString("o");
+        item.updateDt = reader.ReadIntTime("updateDt");
         items.Add(item);
       }
     }
@@ -138,7 +138,7 @@ public static class CollectionsQueriesExt
       id = (Int64)reader["id"],
       name = (string)reader["name"],
       kind = (string)reader["kind"],
-      createDt = DateTime.FromBinary(reader.ReadInt64("createDt")).ToString("o"),
+      createDt = reader.ReadIntTime("createDt"),
       metadata = reader.ReadString("metadata")
     };
   }

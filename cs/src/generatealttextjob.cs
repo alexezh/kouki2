@@ -104,6 +104,7 @@ public class GenerateAltTextJob : IJob
       }
     }
 
+    Console.WriteLine("GenerateAltText item: " + imageId);
     var imageData = GetImageBase64(imageId);
 
     var request = new LLamaRequest()
@@ -234,6 +235,7 @@ ASSISTANT:",
   {
     try
     {
+      Console.WriteLine("TextSearch");
       var itemMap = new HashSet<Int64>();
 
       List<Tuple<Int64, byte[]>> collItems;

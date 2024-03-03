@@ -45,7 +45,7 @@ public static class PhotoQueriesExt
         var entry = new CollectionItem()
         {
           photoId = reader.ReadInt64("id"),
-          updateDt = reader.ReadMagicTime("originalDt")?.ToString("o"),
+          updateDt = reader.ReadIntTime("originalDt2"),
         };
         entries.Add(entry);
       }
@@ -166,7 +166,7 @@ public static class PhotoQueriesExt
     command.CommandText = "UPDATE Photos SET phash=$phash WHERE id == $id";
 
     command.Parameters.AddWithValue("$id", photoId);
-    self.AddBlobValue(command, "$phash", phash);
+    command.AddBlobValue("$phash", phash);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)
@@ -200,7 +200,7 @@ public static class PhotoQueriesExt
     command.CommandText = "UPDATE Photos SET alttext=$altText WHERE id == $id";
 
     command.Parameters.AddWithValue("$id", photoId);
-    self.AddStringValue(command, "$altText", altText);
+    command.AddStringValue("$altText", altText);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)
@@ -216,7 +216,7 @@ public static class PhotoQueriesExt
     command.CommandText = "UPDATE Photos SET alttexte=$altTextEmb WHERE id == $id";
 
     command.Parameters.AddWithValue("$id", photoId);
-    self.AddBlobValue(command, "$altTextEmb", altTextEmb);
+    command.AddBlobValue("$altTextEmb", altTextEmb);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)
@@ -248,7 +248,7 @@ public static class PhotoQueriesExt
       var command = self.Connection.CreateCommand();
       command.CommandText = "UPDATE AltText SET text=$text WHERE photoId==$id";
       command.Parameters.AddWithValue("$id", photoId);
-      self.AddStringValue(command, "$text", altText);
+      command.AddStringValue("$text", altText);
 
       try
       {
@@ -265,7 +265,7 @@ public static class PhotoQueriesExt
       var command = self.Connection.CreateCommand();
       command.CommandText = "INSERT INTO AltText (text, photoId) VALUES($text, $id)";
       command.Parameters.AddWithValue("$id", photoId);
-      self.AddStringValue(command, "$text", altText);
+      command.AddStringValue("$text", altText);
       var added = command.ExecuteNonQuery();
       if (added != 1)
       {
@@ -279,18 +279,18 @@ public static class PhotoQueriesExt
   {
     var command = self.Connection.CreateCommand();
 
-    command.CommandText = "UPDATE Photos SET hash=$hash, filesize=$filesize, phash=$phash, width=$width, height=$height, format=$format, originalDt=$originalDt WHERE folder == $folderId AND filename == $filename AND fileext == $fileext";
+    command.CommandText = "UPDATE Photos SET hash=$hash, filesize=$filesize, phash=$phash, width=$width, height=$height, format=$format, originalDt2=$originalDt2 WHERE folder == $folderId AND filename == $filename AND fileext == $fileext";
 
     command.Parameters.AddWithValue("$folderId", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
     command.Parameters.AddWithValue("$hash", entry.hash);
     command.Parameters.AddWithValue("$filesize", entry.fileSize);
-    self.AddBlobValue(command, "$phash", entry.phash);
+    command.AddBlobValue("$phash", entry.phash);
     command.Parameters.AddWithValue("$width", entry.width);
     command.Parameters.AddWithValue("$height", entry.height);
     command.Parameters.AddWithValue("$format", entry.format);
-    self.AddStringValue(command, "$originalDt", entry.originalDateTime);
+    command.AddIntTimeValue("$originalDt2", entry.originalDt);
 
     var updated = command.ExecuteNonQuery();
     if (updated != 1)
