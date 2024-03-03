@@ -15,3 +15,5 @@ obj
 cs/data/*
 cs/wwwroot/*
 py/venv/*
+py/build/*
+py/dist/*

@@ -1,10 +1,14 @@
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
-public class FolderMetadata
+public class CollectionMetadata
+{
+  public Int64 totalPhotos { get; set; }
+}
+
+public class FolderMetadata : CollectionMetadata
 {
   public string path { get; set; }
-  public Int64 totalPhotos { get; set; }
 }
 
 public class PhotoDbStatics
@@ -129,37 +133,68 @@ public class PhotoDbStatics
   private static void UpdateLibraryStats(SqliteConnection connection)
   {
     var collections = CollectionsQueriesExt.GetCollections(connection);
+
+    var updateCollections = false;
+    var idx = collections.FindIndex((x) => x.kind == "all");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "all", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "favorite");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "favorite", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "rejected");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "rejected", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    idx = collections.FindIndex((x) => x.kind == "hidden");
+    if (idx == -1)
+    {
+      CollectionsQueriesExt.AddCollection(connection, "", "hidden", DateTime.Now.ToBinary());
+      updateCollections = true;
+    }
+
+    if (updateCollections)
+    {
+      collections = CollectionsQueriesExt.GetCollections(connection);
+    }
+
     try
     {
       foreach (var coll in collections)
       {
         if (coll.kind == "folder")
         {
-          var count = ExecuteIntCommand(connection,
-            (SqliteCommand command) =>
-            {
-              command.CommandText = $"SELECT COUNT(*) AS count FROM Photos WHERE folder == {coll.id}";
-            },
-            "count"
-          );
-
-          FolderMetadata metaObj;
-          if (coll.metadata != null)
-          {
-            metaObj = JsonSerializer.Deserialize<FolderMetadata>(coll.metadata);
-          }
-          else
-          {
-            metaObj = new FolderMetadata();
-          }
-
-          metaObj.totalPhotos = count;
-          var metaStr = JsonSerializer.Serialize<FolderMetadata>(metaObj);
-          ExecuteVoidCommand(connection, (SqliteCommand command) =>
-          {
-            command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={coll.id}";
-            command.Parameters.AddWithValue("$metadata", metaStr);
-          });
+          UpdateFolderStats(connection, coll);
+        }
+        else if (coll.kind == "all")
+        {
+          UpdateSyntheticCollection(connection, coll, "");
+        }
+        else if (coll.kind == "favorite")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE fav > 0");
+        }
+        else if (coll.kind == "rejected")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE fav < 0");
+        }
+        else if (coll.kind == "hidden")
+        {
+          UpdateSyntheticCollection(connection, coll, "WHERE hidden != 0");
+        }
+        else
+        {
+          UpdateCollection(connection, coll);
         }
       }
     }
@@ -168,6 +203,66 @@ public class PhotoDbStatics
       Console.WriteLine("Failed " + e.Message);
       throw;
     }
+  }
+
+  private static void UpdateFolderStats(SqliteConnection connection, CollectionEntry coll)
+  {
+    var count = ExecuteIntCommand(connection,
+      (SqliteCommand command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos WHERE folder == {coll.id}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<FolderMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateCollection(SqliteConnection connection, CollectionEntry coll)
+  {
+    var count = ExecuteIntCommand(connection,
+      (SqliteCommand command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM CollectionItems WHERE id == {coll.id}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateSyntheticCollection(SqliteConnection connection, CollectionEntry coll, string expr)
+  {
+    var count = ExecuteIntCommand(connection,
+      (SqliteCommand command) =>
+      {
+        command.CommandText = $"SELECT COUNT(*) AS count FROM Photos {expr}";
+      },
+      "count"
+    );
+
+    UpdateCollectionCount<CollectionMetadata>(connection, coll, count);
+  }
+
+  private static void UpdateCollectionCount<T>(SqliteConnection connection, CollectionEntry coll, Int64 count) where T : CollectionMetadata, new()
+  {
+    T metaObj;
+    if (coll.metadata != null)
+    {
+      metaObj = JsonSerializer.Deserialize<T>(coll.metadata);
+    }
+    else
+    {
+      metaObj = new T();
+    }
+
+    metaObj.totalPhotos = count;
+    var metaStr = JsonSerializer.Serialize<T>(metaObj);
+    ExecuteVoidCommand(connection, (SqliteCommand command) =>
+    {
+      command.CommandText = $"UPDATE Collections SET metadata=$metadata WHERE id={coll.id}";
+      command.Parameters.AddWithValue("$metadata", metaStr);
+    });
   }
 
   private static void ConvertFolders(SqliteConnection connection)

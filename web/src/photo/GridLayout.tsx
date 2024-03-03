@@ -71,7 +71,7 @@ export function GridLayout(props: GridAlbumProps) {
     let rowsId = getAppState().navRows.addOnChanged((arg: { scrollPos?: number, invalidatePos?: number }) => {
       // update layout when we navigate
       if (listRef.current) {
-        console.log("GridLayout: rows changed");
+        console.log("GridLayout: rows changed " + arg.invalidatePos);
         if (arg.invalidatePos !== undefined) {
           // @ts-ignore
           listRef.current.resetAfterIndex(arg.invalidatePos);

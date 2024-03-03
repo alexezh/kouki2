@@ -107,12 +107,14 @@ export class PhotoList {
     this.invokeOnListChanged({ ct: ct, photos: photos });
   }
 
-  public setFilteredItems(items: WireCollectionItem[]) {
-    let photos: AlbumPhoto[] = [];
-
+  private clear() {
     this._visible.length = 0;
     this._photos.length = 0;
     this._idIndex.clear();
+  }
+
+  public setFilteredItems(items: WireCollectionItem[]) {
+    this.clear();
 
     let idx = 0;
     for (let item of items) {
@@ -129,6 +131,8 @@ export class PhotoList {
   }
 
   public resetFilteredItems() {
+    this.clear();
+
     this.addPhotosWorker(this._source.getItems(), PhotoListChangeType.load);
     this._version++;
     this._filtered = false;

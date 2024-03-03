@@ -35,9 +35,12 @@ export type WirePhotoUpdate = {
   stackId?: number;
 }
 
-export type WireFolderMetadata = {
-  path: string;
+export type WireCollectionMetadata = {
   totalPhotos: number;
+}
+
+export type WireFolderMetadata = WireCollectionMetadata & {
+  path: string;
 }
 
 export type WireCollectionItem = {
@@ -45,7 +48,16 @@ export type WireCollectionItem = {
   updateDt: string;
 }
 
-export type PhotoListKind = 'quick' | 'all' | 'import' | 'export' | 'folder' | 'stack' | 'unknown' | 'hidden';
+export type PhotoListKind = 'quick' |
+  'all' |
+  'favorite' |
+  'rejected' |
+  'import' |
+  'export' |
+  'folder' |
+  'stack' |
+  'unknown' |
+  'hidden';
 
 export type WireCollection = {
   id: number;

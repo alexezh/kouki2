@@ -11,6 +11,7 @@ public class ImportFolderRequest
   public string folder { get; set; }
   public Int64 folderId { get; set; }
   public Int64 importCollection { get; set; }
+  public bool generateText { get; set; }
   public bool dryRun { get; set; }
 }
 

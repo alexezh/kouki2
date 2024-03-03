@@ -1,8 +1,6 @@
 import ListItemButton from "@mui/material/ListItemButton/ListItemButton";
 import { updateAppState } from "./AppState";
 import { useEffect, useState } from "react";
-import { PhotoListId } from "../photo/AlbumPhoto";
-import { loadPhotoList } from "../photo/LoadPhotoList";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import Collapse from "@mui/material/Collapse/Collapse";
@@ -10,53 +8,63 @@ import List from "@mui/material/List/List";
 import { PhotoCollection } from "../photo/CollectionStore";
 
 // catelog is either collection, or list of collections (like folder)
-export function CollectionItemLayout(props: { text: string, id: PhotoListId, paddingLeft: number }) {
-  const [count, setCount] = useState(0);
+export function CollectionItemLayout(props: { textClassName: string, text: string, coll: PhotoCollection, paddingLeft: number }) {
+  const [count, setCount] = useState(props.coll.totalPhotos);
 
   useEffect(() => {
-    if (props.id.kind === 'quick') {
-      console.log('load quick coll ' + props.id.id);
-    }
-    let list = loadPhotoList(props.id);
-    setCount(list.photoCount);
-    let collId = list.addOnListChanged(() => {
-      setCount(list!.photoCount);
+    let collId = props.coll.addOnChanged(() => {
+      setCount(props.coll.totalPhotos);
     });
 
     return () => {
-      if (collId > 0) {
-        list!.removeOnListChanged(collId);
-      }
+      props.coll.removeOnChanged(collId);
     }
-  }, [props.id.id]);
+  }, [props.coll.id]);
 
-  async function handleClick(event: React.MouseEvent<HTMLImageElement>) {
-    updateAppState({ navListId: props.id });
+  function handleClick(event: React.MouseEvent<HTMLImageElement>) {
+    updateAppState({ navListId: props.coll.id });
   }
 
   return (
-    <ListItemButton sx={{ pl: props.paddingLeft }} onClick={handleClick} key={'coll_' + props.id}>
-      <div className="CatalogItem">
+    <ListItemButton sx={{ pl: props.paddingLeft }} onClick={handleClick} key={'coll_' + props.coll.id.toString()}>
+      <div className={props.textClassName}>
         <div>{props.text}</div>
-        <div className="CatalogItem-Count">{count}</div>
+        <div className={props.textClassName + "-count"}>{count}</div>
       </div>
     </ListItemButton>);
 }
 
-export function CollectionListLayout(props: { text: string, lists: PhotoCollection[] }) {
+/**
+ * list of CollectionItemLayout
+ * navigates to top element 
+ */
+export function CollectionListLayout(props: { text: string, textClassName: string, lists: PhotoCollection[] }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div>
-      <ListItemButton onClick={() => setOpen(!open)} >
-        <div className="FolderItem">{props.text}</div>
-        {open ? <ExpandLess /> : <ExpandMore />}
+      <ListItemButton onClick={() => {
+        // load first element
+        if (props.lists.length > 0) {
+          updateAppState({ navListId: props.lists[0].id });
+        }
+      }} >
+        <div className={props.textClassName}>{props.text}</div>
+        {open ? <ExpandLess onClick={() => setOpen(!open)} /> : <ExpandMore onClick={() => setOpen(!open)} />}
       </ListItemButton >
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
-          {props.lists.map((x) => { return (<CollectionItemLayout paddingLeft={4} key={'list_' + x.id} text={x.createDt.toLocaleDateString()} id={x.id} />) })}
+          {props.lists.map((x) => {
+            return (
+              <CollectionItemLayout
+                paddingLeft={4}
+                key={'list_' + x.id}
+                textClassName="Catalog-item"
+                text={x.createDt.toLocaleDateString()}
+                coll={x} />)
+          })}
         </List>
       </Collapse>
-    </div>
+    </div >
   );
 }

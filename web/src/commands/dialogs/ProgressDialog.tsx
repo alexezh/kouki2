@@ -11,13 +11,13 @@ import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
 import { JobStatus, runJob, runRescanFolder } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
-import { CollectionId, getCollectioById } from "../../photo/CollectionStore";
+import { CollectionId, getCollectionById } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
 import { PhotoListId } from "../../photo/AlbumPhoto";
 
 export async function showBuildPhashDialog(collId: CollectionId): Promise<void> {
 
-  let coll = getCollectioById(collId);
+  let coll = getCollectionById(collId);
   if (!coll) {
     return;
   }

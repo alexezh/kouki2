@@ -1,6 +1,8 @@
 import { nowAsISOString } from "../lib/date";
 import {
   PhotoListKind, WireCollection,
+  WireCollectionMetadata,
+  WireFolderMetadata,
   wireAddCollection,
   wireGetCollections
 } from "../lib/photoclient";
@@ -16,17 +18,28 @@ export class PhotoCollection {
   public readonly wire: WireCollection;
   public readonly createDt: Date;
   private _id: PhotoListId;
+  private _metadata: WireCollectionMetadata;
+  private readonly onChanged: SimpleEventSource<void> = new SimpleEventSource();
 
   public constructor(wire: WireCollection) {
     this.wire = wire;
     this.createDt = new Date(Date.parse(wire.createDt));
     this._id = new PhotoListId(this.wire.kind, this.wire.id as CollectionId)
+    this._metadata = JSON.parse(this.wire.metadata);
   }
 
   public get id(): PhotoListId { return this._id }
+  public get metadata(): WireCollectionMetadata { return this._metadata }
+  public get totalPhotos(): number { return this._metadata?.totalPhotos ?? 0 }
 
   public update(wire: WireCollection): void {
     this.wire.metadata = wire.metadata;
+  }
+  public addOnChanged(func: () => void): number {
+    return this.onChanged.add(func);
+  }
+  public removeOnChanged(id: number) {
+    return this.onChanged.remove(id);
   }
 }
 
@@ -73,7 +86,7 @@ function findMostRecentCollection(kind: PhotoListKind): PhotoCollection | null {
   return coll;
 }
 
-export function getCollectioById(id: CollectionId): PhotoCollection | null {
+export function getCollectionById(id: CollectionId): PhotoCollection | null {
   let coll = collectionMap.get(id);
   if (!coll) {
     return null;
@@ -113,6 +126,16 @@ export async function loadCollections(): Promise<boolean> {
   collectionMapChanged.invoke();
 
   return true;
+}
+
+export function getCollectionByKind(kind: PhotoListKind, maxItems?: number): PhotoCollection {
+  for (let [key, coll] of collectionMap) {
+    if (coll.id.kind === kind) {
+      return coll;
+    }
+  }
+
+  throw new Error("Collection not found");
 }
 
 export function getCollectionsByKind(kind: PhotoListKind, maxItems?: number): PhotoCollection[] {

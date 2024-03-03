@@ -54,7 +54,7 @@ function generatePhotoFolders(colls: PhotoCollection[]): PhotoFolder[] {
   folderIdMap.clear();
 
   for (let coll of colls) {
-    let wf = JSON.parse(coll.wire.metadata) as WireFolderMetadata;
+    let wf = coll.metadata as WireFolderMetadata;
     if (wf.path === null) {
       console.log('folder invalid');
       continue;
