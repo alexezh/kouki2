@@ -26,6 +26,10 @@ public class PhotoLibraryController : Controller
         pattern: "/api/{controller=PhotoLibrary}/{action=RemoveCollectionItems}/{id}");
 
     app.MapControllerRoute(
+        name: "GetPhotos",
+        pattern: "/api/{controller=PhotoLibrary}/{action=GetPhotos}");
+
+    app.MapControllerRoute(
         name: "GetLibrary",
         pattern: "/api/{controller=PhotoLibrary}/{action=GetLibrary}");
 
@@ -99,31 +103,56 @@ public class PhotoLibraryController : Controller
   }
 
   [HttpPost]
-  public async Task<ResultResponse> AddCollectionItems(Int64 id)
+  public async Task<IEnumerable<PhotoEntry>> GetPhotos()
   {
-    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    try
     {
-      string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+      {
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<GetPhotosRequest>(content);
 
-      bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
-
-      return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
+        return PhotoFs.Instance.GetPhotos(request);
+      }
+    }
+    catch (Exception e)
+    {
+      return new PhotoEntry[0];
     }
   }
 
   [HttpPost]
-  public async Task<ResultResponse> RemoveCollectionItems(Int64 id)
+  public Task<ResultResponse> AddCollectionItems(Int64 id)
   {
-    using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+    return ResultResponse.CatchAll(async () =>
     {
-      string content = await reader.ReadToEndAsync();
-      var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+      {
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
 
-      bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
+        bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
 
-      return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
-    }
+        return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
+      }
+    });
+  }
+
+  [HttpPost]
+  public Task<ResultResponse> RemoveCollectionItems(Int64 id)
+  {
+    return ResultResponse.CatchAll(async () =>
+    {
+      using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+      {
+        string content = await reader.ReadToEndAsync();
+        var request = JsonSerializer.Deserialize<CollectionItem[]>(content);
+
+        bool exists = PhotoFs.Instance.AddCollectionItems(id, request);
+
+        return new ResultResponse() { result = (exists) ? ResultResponse.Ok : ResultResponse.NotFound };
+      }
+    });
   }
 
   [HttpGet]

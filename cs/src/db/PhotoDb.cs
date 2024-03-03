@@ -61,6 +61,16 @@ public class GetLibraryRequest
   public Int64 minId { get; set; }
 }
 
+public class GetPhotosRequest
+{
+  public Int64 minId { get; set; }
+  public string startDt { get; set; }
+
+  public Int64[] photoIds { get; set; }
+
+  public Int64 collectionId { get; set; }
+}
+
 public class AddCollectionRequest
 {
   public string kind { get; set; }

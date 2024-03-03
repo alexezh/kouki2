@@ -17,3 +17,9 @@ export function isEqualMonth(d1: Date, d2: Date): boolean {
 export function nowAsISOString(): string {
   return new Date(Date.now()).toISOString()
 }
+
+export function substractYears(date: Date, delta: number): Date {
+  let pd = new Date(date);
+  pd.setFullYear(pd.getFullYear() - delta);
+  return pd;
+}

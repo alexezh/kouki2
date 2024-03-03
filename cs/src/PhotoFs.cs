@@ -184,6 +184,40 @@ public class PhotoFs
     });
   }
 
+  public IEnumerable<PhotoEntry> GetPhotos(GetPhotosRequest request)
+  {
+    return _photoDb.SelectPhotos((command) =>
+    {
+      if (request.collectionId != 0)
+      {
+        var coll = PhotoDb.GetCollection(request.collectionId);
+        if (coll.kind == "folder")
+        {
+          command.CommandText = "SELECT * FROM Photos WHERE id>=$id AND folderId>=$folderId ORDER BY originalDt2 DESC";
+          command.Parameters.AddWithValue("$id", request.minId);
+          command.Parameters.AddWithValue("$folderId", request.collectionId);
+        }
+        else
+        {
+          throw new Exception("Not supported");
+        }
+      }
+      else if (request.startDt != null)
+      {
+        var startDt = DateTime.Parse(request.startDt);
+        command.CommandText = "SELECT * FROM Photos WHERE id>=$id AND originalDt2>=$startDt ORDER BY originalDt2 DESC";
+        command.Parameters.AddWithValue("$id", request.minId);
+        var startVal = startDt.Ticks;
+        command.Parameters.AddWithValue("$startDt", startVal);
+      }
+      else
+      {
+        command.CommandText = "SELECT * FROM Photos WHERE id>=$id ORDER BY originalDt2 DESC";
+        command.Parameters.AddWithValue("$id", request.minId);
+      }
+    });
+  }
+
   public IEnumerable<CollectionItem> GetCollectionItems(Int64 id)
   {
     return _photoDb.GetCollectionItems(id);

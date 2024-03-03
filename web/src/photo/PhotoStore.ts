@@ -1,9 +1,10 @@
 import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId } from "./AlbumPhoto";
-import { wireGetCorrelation, wireGetLibrary, wireUpdatePhoto } from "../lib/photoclient";
+import { wireGetCorrelation, wireGetLibrary, wireGetPhotos, wireUpdatePhoto } from "../lib/photoclient";
 import { WeakEventSource } from "../lib/synceventsource";
 import { loadCollections } from "./CollectionStore";
 import { loadFolders } from "./FolderStore";
 import { UpdatePhotoContext } from "./UpdatePhotoContext";
+import { substractYears } from "../lib/date";
 
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
@@ -12,6 +13,7 @@ export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
 let loadWaiters: (() => void)[] = [];
 let maxPhotoId: number = 0;
+let startDt = substractYears(new Date(), 3);
 
 export function invokeLibraryChanged(updates: LibraryUpdateRecord[]) {
   libraryChanged.invoke(updates);
@@ -50,7 +52,7 @@ export async function loadLibrary() {
   console.log("loadLibrary:" + maxPhotoId);
 
   // get photos from previous max
-  let wirePhotos = await wireGetLibrary(maxPhotoId);
+  let wirePhotos = await wireGetPhotos({ minId: maxPhotoId, startDt: startDt.toISOString() });
 
   let pairs: { left: PhotoId, right: PhotoId }[] = [];
   let prevPhoto: AlbumPhoto | null = null;

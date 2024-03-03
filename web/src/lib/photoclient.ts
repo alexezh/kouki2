@@ -111,15 +111,38 @@ export async function wireAddCollection(request: WireAddCollectionRequest): Prom
   return response;
 }
 
-export type GetLibraryRequest = {
+export type WireGetLibraryRequest = {
   minId: number
 }
 
 export async function wireGetLibrary(minId: number): Promise<WirePhotoEntry[]> {
-  let request: GetLibraryRequest = {
+  let request: WireGetLibraryRequest = {
     minId: minId
   }
   let response = await (await fetchAdapter!.post(`/api/photolibrary/getlibrary`, JSON.stringify(request))).json();
+  return response;
+}
+
+export type WireGetPhotosRequest = {
+  minId: number;
+  /**
+   * if set, start day for photos
+   */
+  startDt?: string;
+
+  /**
+   * if set, list of IDs to get
+   */
+  photoIds?: number[];
+
+  /**
+   * if set, collection to retrieve photos
+   */
+  collectionId?: number;
+}
+
+export async function wireGetPhotos(request: WireGetPhotosRequest): Promise<WirePhotoEntry[]> {
+  let response = await (await fetchAdapter!.post(`/api/photolibrary/getphotos`, JSON.stringify(request))).json();
   return response;
 }
 
