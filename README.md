@@ -13,7 +13,7 @@ Kouki2 is build around following key features:
 - Coming soon. Support for external editor - use whatever tool you want for editing photos. Kouki2 will save versions of photos as needed.
 - Coming soon. One click transfer from and to phone. [Phone integration](https://github.com/alexezh/kouki2/wiki/Phone)
 
-[<img src="./readme-screen1.jpeg" width="400" />]
+[<img src="./readme-screen.jpeg1" width="400" />]
 
 Installation instructions can be found [here](https://github.com/alexezh/kouki2/wiki/Installation). List of pending items is [here]([web](https://github.com/alexezh/kouki2/)https://github.com/alexezh/kouki2/web/todo.md)
 
