@@ -13,7 +13,7 @@ export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
 let loadWaiters: (() => void)[] = [];
 let maxPhotoId: number = 0;
-let startDt: Date | undefined = substractYears(new Date(), 3);
+let startDt: Date | undefined = undefined; // substractYears(new Date(), 3);
 
 export function setStartDt(date: Date | undefined) {
   startDt = date;
