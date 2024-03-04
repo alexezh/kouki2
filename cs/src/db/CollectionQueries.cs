@@ -6,7 +6,7 @@ public static class CollectionsQueriesExt
   public static List<CollectionItem> GetLibraryItems(this PhotoDb self)
   {
     var command = self.Connection.CreateCommand();
-    command.CommandText = "SELECT id, importedDt FROM Photos";
+    command.CommandText = "SELECT id, originalDt2 FROM Photos ORDER BY originalDt2 DESC";
 
     var items = new List<CollectionItem>();
     using (var reader = command.ExecuteReader())
@@ -15,7 +15,7 @@ public static class CollectionsQueriesExt
       {
         var item = new CollectionItem();
         item.photoId = reader.ReadInt64("id");
-        item.updateDt = reader.ReadString("importedDt");
+        item.updateDt = reader.ReadIntTime("originalDt2");
         items.Add(item);
       }
     }
@@ -26,14 +26,14 @@ public static class CollectionsQueriesExt
   public static List<Tuple<Int64, byte[]>> GetLibraryAltTextEmbedding(this PhotoDb self)
   {
     var command = self.Connection.CreateCommand();
-    command.CommandText = "select Photos.alttexte, CollectionItems.photoId from CollectionItems inner join Photos on Photos.id == CollectionItems.photoId where Photos.alttexte is not null;";
+    command.CommandText = "select Photos.alttexte, id from Photos where Photos.alttexte is not null;";
 
     var items = new List<Tuple<Int64, byte[]>>();
     using (var reader = command.ExecuteReader())
     {
       while (reader.Read())
       {
-        var item = new Tuple<long, byte[]>(reader.ReadInt64("photoId"), reader.ReadBlob("alttexte"));
+        var item = new Tuple<long, byte[]>(reader.ReadInt64("id"), reader.ReadBlob("alttexte"));
         items.Add(item);
       }
     }

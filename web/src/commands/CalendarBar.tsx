@@ -24,7 +24,7 @@ function CalendarBarYear(props: {
 
   return (
     <div key={'year_' + props.year.year}>
-      <div className="Calendar-bar-year" onClick={handleClick}>{props.year.year}</div>
+      <div className="Calendar-bar-year" onClick={handleClick}>{(props.year.older) ? "<" + props.year.year : props.year.year}</div>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
           {
@@ -64,7 +64,9 @@ export function CalendarBar(props: { className: string }) {
       <div className="Calendar-bar-area">
         <List component="div" disablePadding>
           {
-            years.map((year: YearEntry) => (<CalendarBarYear key={"year_" + year.year.toString()} year={year} isOpen={openedYear === year.year} onSelect={handleSelect} />))
+            years.map((year: YearEntry) => (<CalendarBarYear key={"year_" + year.year.toString()}
+              year={year}
+              isOpen={openedYear === year.year} onSelect={handleSelect} />))
           }
         </List>
       </div>

@@ -116,6 +116,10 @@ export class PhotoList {
   public setFilteredItems(items: WireCollectionItem[]) {
     this.clear();
 
+    if (items.length > 0) {
+      console.log("setFilteredItems:" + items[0].photoId);
+    }
+
     let idx = 0;
     for (let item of items) {
       let photo = tryGetPhotoById(item.photoId as PhotoId);

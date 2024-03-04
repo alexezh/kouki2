@@ -109,10 +109,12 @@ public class GenerateAltTextJob : IJob
 
     var request = new LLamaRequest()
     {
-      //      prompt = "Detailed image analysis dialogue.\nUSER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.\nASSISTANT:",
       prompt = @"Detailed image analysis dialogue.
-USER:[img-1] I need a thorough analysis of this image, including all elements, colors, and any noticeable features.
+USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
 ASSISTANT:",
+      //       prompt = @"Detailed image analysis dialogue.
+      // USER:[img-1] I need a thorough analysis of this image, including all elements, colors, and any noticeable features.
+      // ASSISTANT:",
 
       image_data = new LLamaImageData[1] { new LLamaImageData() { data = imageData, id = 1 } }
     };
@@ -235,7 +237,6 @@ ASSISTANT:",
   {
     try
     {
-      Console.WriteLine("TextSearch");
       var itemMap = new HashSet<Int64>();
 
       List<Tuple<Int64, byte[]>> collItems;
@@ -268,7 +269,14 @@ ASSISTANT:",
         {
           return Math.Sign(y.Item2 - x.Item2);
         });
-        return rankedItems.Select(x => new CollectionItem() { photoId = x.Item1, updateDt = DateTime.UtcNow.ToString("o") }).Take(100);
+
+        Console.WriteLine("TextSearch: top " + rankedItems[0].Item1 + " rank " + rankedItems[0].Item2);
+
+        return rankedItems.Select(x => new CollectionItem()
+        {
+          photoId = x.Item1,
+          updateDt = DateTime.UtcNow.ToString("o")
+        }).Take(100);
 
         // foreach (var item in collItems)
         // {

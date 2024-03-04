@@ -13,7 +13,15 @@ export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
 let loadWaiters: (() => void)[] = [];
 let maxPhotoId: number = 0;
-let startDt = substractYears(new Date(), 3);
+let startDt: Date | undefined = substractYears(new Date(), 3);
+
+export function setStartDt(date: Date | undefined) {
+  startDt = date;
+}
+
+export function getStartDt(): Date | undefined {
+  return startDt;
+}
 
 export function invokeLibraryChanged(updates: LibraryUpdateRecord[]) {
   libraryChanged.invoke(updates);
@@ -52,7 +60,7 @@ export async function loadLibrary() {
   console.log("loadLibrary:" + maxPhotoId);
 
   // get photos from previous max
-  let wirePhotos = await wireGetPhotos({ minId: maxPhotoId, startDt: startDt.toISOString() });
+  let wirePhotos = await wireGetPhotos({ minId: maxPhotoId, startDt: (startDt) ? startDt.toISOString() : undefined });
 
   let pairs: { left: PhotoId, right: PhotoId }[] = [];
   let prevPhoto: AlbumPhoto | null = null;

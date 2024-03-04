@@ -179,7 +179,7 @@ public class PhotoFs
   {
     return _photoDb.SelectPhotos((command) =>
     {
-      command.CommandText = "SELECT * FROM Photos WHERE id>=$id ORDER BY originalDt DESC";
+      command.CommandText = "SELECT * FROM Photos WHERE id>=$id ORDER BY originalDt2 DESC";
       command.Parameters.AddWithValue("$id", minId);
     });
   }

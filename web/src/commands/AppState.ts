@@ -3,7 +3,7 @@ import { SimpleEventSource } from "../lib/synceventsource";
 import { selectionManager } from "./SelectionManager";
 import { FilterFavorite, PhotoList } from "../photo/PhotoList";
 import { loadPhotoList } from "../photo/LoadPhotoList";
-import { getPhotoById, getStack } from "../photo/PhotoStore";
+import { getPhotoById, getStack, getStartDt } from "../photo/PhotoStore";
 import { StaticPhotoSource } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
 import { RowCollection } from "../photo/RowCollection";
@@ -62,6 +62,7 @@ export type MonthEntry = {
 }
 
 export type YearEntry = {
+  older: boolean;
   year: number;
   months: number[];
 }
@@ -182,7 +183,7 @@ function buildYears(photos: PhotoList): YearEntry[] {
       let yearVal = photo.originalDate.getFullYear();
       let year = yearMap.get(yearVal);
       if (!year) {
-        year = { year: yearVal, months: [] }
+        year = { older: false, year: yearVal, months: [] }
         yearMap.set(yearVal, year);
       }
       year.months[month] = 1;
@@ -200,6 +201,11 @@ function buildYears(photos: PhotoList): YearEntry[] {
         }
       }
       year.months = months;
+    }
+
+    // if start date set, make entry
+    if (getStartDt()) {
+      years.push({ older: true, year: getStartDt()!.getFullYear(), months: [] });
     }
 
     return years;

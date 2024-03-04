@@ -132,6 +132,9 @@ export class RowCollection {
 
   private resetRows() {
     if (this.photoList?.filtered) {
+      if (this.photoList.photoCount > 0) {
+        console.log("resetRows:" + this.photoList.getItem(0 as PhotoListPos).id);
+      }
       this.rowsIt = makeFlatRows(this.photoList!, this.width, photoPadding);
     } else {
       this.rowsIt = makeByMonthRows(this.photoList!, this.width, photoPadding);

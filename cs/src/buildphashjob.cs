@@ -19,7 +19,7 @@ public class BuildPHashJob : IJob
 
     var photoObjs = PhotoFs.Instance.PhotoDb.SelectPhotos((command) =>
     {
-      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt DESC";
+      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt2 DESC";
     });
 
     var pending = new List<Task>();
