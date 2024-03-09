@@ -1,6 +1,6 @@
 import { AlbumPhoto, PhotoId } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
-import { selectionManager } from "./SelectionManager";
+import { computeAggregatedFavs, selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler } from "./Commands";
 import { addStack, removeStack } from "../photo/PhotoStore";
 import { PhotoList, PhotoListPos } from "../photo/PhotoList";
@@ -8,14 +8,19 @@ import { createQuickCollection, getQuickCollectionList } from "../photo/LoadPhot
 import { UpdatePhotoContext } from "../photo/UpdatePhotoContext";
 
 export function onMarkFavorite() {
+  // if all photos already fav, reset them
+  let aggFav = computeAggregatedFavs();
+
   let ctx = new UpdatePhotoContext();
-  selectionManager.forEach((x) => { x.setFavorite(1, ctx); });
+  selectionManager.forEach((x) => { x.setFavorite(aggFav === 1 ? 0 : 1, ctx); });
   ctx.commit();
 }
 
 export function onMarkRejected() {
+  let aggFav = computeAggregatedFavs();
+
   let ctx = new UpdatePhotoContext();
-  selectionManager.forEach((x) => { x.setFavorite(-1, ctx); });
+  selectionManager.forEach((x) => { x.setFavorite(aggFav === -1 ? 0 : -1, ctx); });
   ctx.commit();
 }
 

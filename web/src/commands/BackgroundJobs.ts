@@ -107,7 +107,7 @@ export function runRescanFolder(listId: PhotoListId): IBackgroundJob {
   return runJob(
     'rescan' + listId.kind,
     'Rescan Folder',
-    () => wireProcessCollectionJob('rescan', listId.kind, listId.id),
+    () => wireProcessCollectionJob({ cmd: 'rescan', collKind: listId.kind, collId: listId.id, forceUpdate: false }),
     (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
   );
   //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),

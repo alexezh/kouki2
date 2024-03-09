@@ -61,10 +61,18 @@ export type MonthEntry = {
   month: string;
 }
 
-export type YearEntry = {
-  older: boolean;
+export class YearEntry {
+  lessThen: boolean = false;
   year: number;
-  months: number[];
+  months: number[] = [];
+
+  public constructor(year: number) {
+    this.year = year;
+  }
+
+  public toString() {
+    return (this.lessThen) ? "<" + this.year.toString() : this.year.toString();
+  }
 }
 
 export enum ViewMode {
@@ -147,6 +155,7 @@ export function updateAppState(update: AppStateUpdate) {
       // set both work and nav list
       state.navList = photos;
       state.workList = photos;
+      selectionManager.setList(photos);
       state.listChangeId = state.navList.addOnListChanged(() => {
         console.log('Update current collection: ' + state.navList.photoCount);
         // reset rows so layout code can regenerate
@@ -183,7 +192,7 @@ function buildYears(photos: PhotoList): YearEntry[] {
       let yearVal = photo.originalDate.getFullYear();
       let year = yearMap.get(yearVal);
       if (!year) {
-        year = { older: false, year: yearVal, months: [] }
+        year = new YearEntry(yearVal);
         yearMap.set(yearVal, year);
       }
       year.months[month] = 1;
@@ -205,7 +214,7 @@ function buildYears(photos: PhotoList): YearEntry[] {
 
     // if start date set, make entry
     if (getStartDt()) {
-      years.push({ older: true, year: getStartDt()!.getFullYear(), months: [] });
+      years.push({ lessThen: true, year: getStartDt()!.getFullYear(), months: [] });
     }
 
     return years;
@@ -239,7 +248,12 @@ export async function setTextFilter(val: string): Promise<void> {
   try {
     if (val && val.length > 0) {
       let id = getAppState().navList.id;
-      let items = await wireTextSearch({ collKind: id.kind, collId: id.id, search: val });
+      let items = await wireTextSearch({
+        collKind: id.kind,
+        collId: id.id,
+        search: val,
+        startDt: getStartDt()?.toISOString()
+      });
       getAppState().navList.setFilteredItems(items);
     } else {
       getAppState().navList.resetFilteredItems();

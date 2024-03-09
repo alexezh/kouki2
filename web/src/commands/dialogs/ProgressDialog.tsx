@@ -14,6 +14,7 @@ import { DialogProps, showDialog } from "./DialogManager";
 import { CollectionId, getCollectionById } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
 import { PhotoListId } from "../../photo/AlbumPhoto";
+import { loadLibrary } from "../../photo/PhotoStore";
 
 export async function showBuildPhashDialog(collId: CollectionId): Promise<void> {
 
@@ -35,7 +36,7 @@ export async function showBuildPhashDialog(collId: CollectionId): Promise<void> 
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     await runJob<ImportJobStatusResponse>("alt_" + collId,
       'Build PHash',
-      () => wireProcessCollectionJob('phash', coll!.id.kind, collId),
+      () => wireProcessCollectionJob({ cmd: 'phash', collKind: coll!.id.kind, collId: collId, forceUpdate: false }),
       (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
 
     triggerRefreshFolders();
@@ -74,7 +75,7 @@ export function showAltTextDialog(listId: PhotoListId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     let job = runJob<ImportJobStatusResponse>("alt_" + listId.id,
       'Generate Alternative Text',
-      () => wireProcessCollectionJob('alttext', listId.kind, listId.id),
+      () => wireProcessCollectionJob({ cmd: 'alttext', collKind: listId.kind, collId: listId.id, forceUpdate: false }),
       (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
 
     job.addOnStatus((status: JobStatus) => setStatusText(status.text));
@@ -94,6 +95,30 @@ export function showAltTextDialog(listId: PhotoListId) {
   });
 }
 
+export function showSimilarityIndexDialog(listId: PhotoListId) {
+  let func = async (setStatusText: (val: string) => void): Promise<void> => {
+    let job = runJob<ImportJobStatusResponse>("sim_" + listId.id,
+      'Build Similarity Index',
+      () => wireProcessCollectionJob({ cmd: 'similarity', collKind: 'all', collId: 0, forceUpdate: false }),
+      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
+
+    job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+
+    await job.task;
+    await loadLibrary({ minId: 0 });
+  }
+
+  showDialog((props: DialogProps) => {
+    return (
+      <ProgressDialog
+        title='Build similarity index'
+        contentText='Find similar photos using PHash'
+        statusText=""
+        onClose={props.onClose}
+        actionButtonText="Run"
+        onAction={func} />)
+  });
+}
 export type ProgressDialogProps = {
   onClose: () => void,
   title: string,

@@ -1,4 +1,5 @@
 import { SimpleEventSource } from "../lib/synceventsource";
+import { YearEntry } from "./AppState";
 
 export enum Command {
   ScrollAlbumToDate = 1,
@@ -16,6 +17,7 @@ export enum Command {
   BuildPHash = 25,
   BuildAltText = 26,
   RescanFolder = 27,
+  BuildSimilarityIndex = 28,
 }
 
 let commandHandlers = new Map<Command, SimpleEventSource<any>>();

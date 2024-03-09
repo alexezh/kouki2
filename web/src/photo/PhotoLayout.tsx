@@ -40,6 +40,7 @@ export type PhotoPropTypes = {
   style?: CSSProperties;
   onClick?: (event: React.MouseEvent<HTMLImageElement>, photo: AlbumPhoto) => void;
   photo: AlbumPhoto;
+  hideFavIcon?: boolean;
   hideStackIcon?: boolean;
   padding: number;
   visibility?: CSS.Property.Visibility;
@@ -72,7 +73,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
       selectionManager.removeOnSelected(props.photo, idSelected);
       props.photo.removeOnChanged(idChanged);
     }
-  })
+  }, [props.photo.favorite])
 
   const handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
     if (props.onClick) {
@@ -151,7 +152,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
 
   return (
     <div className="Photo-layout" key={props.photo.wire.hash} style={divStyle}>
-      {(favIcon) ?
+      {(!props.hideFavIcon && favIcon) ?
         (<img
           className="Photo-layout-fav-icon"
           width={20}
@@ -168,15 +169,13 @@ export function PhotoLayout(props: PhotoPropTypes) {
         />) : null}
 
       <img
+        key={props.photo.id}
         style={props.onClick ? { ...imgStyle, ...imgWithClick } : imgStyle}
         width={props.photo.width * props.photo.scale}
         height={props.photo.height * props.photo.scale}
         src={src}
         onClick={handleClick}
       />
-      {
-        (props.photo.dupCount > 1) ? (<div className="PhotoDupCounter">{props.photo.dupCount.toString()}</div>) : null
-      }
     </div>
   );
 };

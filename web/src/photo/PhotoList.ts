@@ -248,6 +248,11 @@ export class PhotoList {
     return this._photos[pos];
   }
 
+  public getItemIndex(photo: AlbumPhoto): number {
+    let idx = this._idIndex.get(photo.id);
+    return (idx !== undefined) ? idx : -1;
+  }
+
   public findPhotoPos(photo: AlbumPhoto | null): PhotoListPos {
     if (!photo) {
       return -1 as PhotoListPos;

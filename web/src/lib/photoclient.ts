@@ -20,8 +20,9 @@ export type WirePhotoEntry = {
   originalDt: string;
   // if stacked, id of photo which is main in the stack
   // stack makes sense when original photo is included in the list
-  originalId: number;
   stackId: number;
+  originalId: number;
+  originalCorrelation: number;
   altText: string;
 }
 
@@ -31,7 +32,6 @@ export type WirePhotoUpdate = {
   hidden?: boolean;
   stars?: number;
   color?: UpdateString;
-  originalHash?: UpdateString;
   stackId?: number;
 }
 
@@ -88,7 +88,6 @@ export type UpdatePhotoRequest =
     favorite: number;
     stars: number;
     color: UpdateString;
-    originalHash: UpdateString;
     stackHash: UpdateString;
   }
 
@@ -162,9 +161,10 @@ export async function wireRemoveCollectionItems(id: number, items: WireCollectio
 }
 
 export type TextSearchRequest = {
-  collKind: string,
-  collId: number,
-  search: string
+  collKind: string;
+  collId: number;
+  search: string;
+  startDt?: string;
 }
 
 export async function wireTextSearch(request: TextSearchRequest): Promise<WireCollectionItem[]> {
@@ -177,6 +177,10 @@ let photoUpdateQueue = new BatchDelayedQueue<WirePhotoUpdate>(1000, async (items
 });
 
 export function wireUpdatePhotos(wire: WirePhotoUpdate[]) {
+  if (wire.length === 0) {
+    return;
+  }
+
   photoUpdateQueue.queue(wire);
 }
 
@@ -203,19 +207,16 @@ export async function wireImportFolder(request: ImportFolderRequest): Promise<Im
   return response;
 }
 
-export type CollectionJobKind = 'phash' | 'alttext' | 'rescan';
+export type CollectionJobKind = 'phash' | 'alttext' | 'rescan' | 'similarity';
 export type ProcessCollectionJobRequest = {
   cmd: CollectionJobKind;
   collKind: string;
   collId: number;
+  forceUpdate: boolean;
 }
 
-export async function wireProcessCollectionJob(
-  cmd: CollectionJobKind,
-  collKind: PhotoListKind,
-  collId: number): Promise<StartJobResponse> {
+export async function wireProcessCollectionJob(request: ProcessCollectionJobRequest): Promise<StartJobResponse> {
 
-  let request: ProcessCollectionJobRequest = { cmd: cmd, collKind: collKind, collId: collId };
   let response = await (await fetchAdapter!.post(`/api/job/processcollection`, JSON.stringify(request))).json();
   return response;
 }

@@ -109,13 +109,12 @@ public class GenerateAltTextJob : IJob
 
     var request = new LLamaRequest()
     {
-      prompt = @"Detailed image analysis dialogue.
-USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
-ASSISTANT:",
       //       prompt = @"Detailed image analysis dialogue.
-      // USER:[img-1] I need a thorough analysis of this image, including all elements, colors, and any noticeable features.
+      // USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
       // ASSISTANT:",
-
+      prompt = @"Detailed image analysis dialogue.
+USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words followed by a thorough analysis of this image, including all elements, colors, and any noticeable features
+ASSISTANT:",
       image_data = new LLamaImageData[1] { new LLamaImageData() { data = imageData, id = 1 } }
     };
 
@@ -239,17 +238,25 @@ ASSISTANT:",
     {
       var itemMap = new HashSet<Int64>();
 
+      var startDt = (request.startDt != null) ? DateTime.Parse(request.startDt).Ticks : 0;
       List<Tuple<Int64, byte[]>> collItems;
-      if (request.collKind != "all")
+      if (request.collKind == "all")
       {
-        //collItems = PhotoFs.Instance.GetCollectionItems(request.collId);
-        return null;
+        collItems = PhotoFs.Instance.PhotoDb.GetAltTextEmbedding((command) =>
+        {
+          command.CommandText = $"select Photos.alttexte, id from Photos where originalDt2 > {startDt} and alttexte is not null;";
+        });
+      }
+      else if (request.collKind == "favorite")
+      {
+        collItems = PhotoFs.Instance.PhotoDb.GetAltTextEmbedding((command) =>
+        {
+          command.CommandText = $"select Photos.alttexte, id from Photos where originalDt2 > {startDt} and fav > 0 and alttexte is not null;";
+        });
       }
       else
       {
-
-        //collItems = PhotoFs.Instance.PhotoDb.GetLibraryItems();
-        collItems = PhotoFs.Instance.PhotoDb.GetLibraryAltTextEmbedding();
+        return null;
       }
 
       var rankedItems = new List<Tuple<Int64, double>>();
@@ -270,7 +277,7 @@ ASSISTANT:",
           return Math.Sign(y.Item2 - x.Item2);
         });
 
-        Console.WriteLine("TextSearch: top " + rankedItems[0].Item1 + " rank " + rankedItems[0].Item2);
+        Console.WriteLine($"TextSearch: total:{collItems.Count} top:{rankedItems[0].Item1} rank: {rankedItems[0].Item2}");
 
         return rankedItems.Select(x => new CollectionItem()
         {

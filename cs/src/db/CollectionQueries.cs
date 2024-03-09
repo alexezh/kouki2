@@ -23,10 +23,35 @@ public static class CollectionsQueriesExt
     return items;
   }
 
-  public static List<Tuple<Int64, byte[]>> GetLibraryAltTextEmbedding(this PhotoDb self)
+
+  public static List<PhotoIds> GetLibraryPhotoIds(this PhotoDb self)
   {
     var command = self.Connection.CreateCommand();
-    command.CommandText = "select Photos.alttexte, id from Photos where Photos.alttexte is not null;";
+    command.CommandText = "SELECT id, hash, stackId, originalId, phash FROM Photos ORDER BY originalDt2 DESC";
+
+    var items = new List<PhotoIds>();
+    using (var reader = command.ExecuteReader())
+    {
+      while (reader.Read())
+      {
+        var item = new PhotoIds()
+        {
+          id = (Int64)reader["id"],
+          hash = (string)reader["hash"],
+          stackId = reader.ReadInt64("stackId"),
+          originalId = reader.ReadInt64("originalId"),
+          phash = reader.ReadBlob("phash"),
+        };
+        items.Add(item);
+      }
+    }
+    return items;
+  }
+
+  public static List<Tuple<Int64, byte[]>> GetAltTextEmbedding(this PhotoDb self, Action<SqliteCommand> func)
+  {
+    var command = self.Connection.CreateCommand();
+    func(command);
 
     var items = new List<Tuple<Int64, byte[]>>();
     using (var reader = command.ExecuteReader())

@@ -264,12 +264,6 @@
   flex-direction: row
 }
 
-.PhotoDupCounter {
-  position: absolute;
-  right: 10px;
-  top: 3px;
-}
-
 .DayHeaderRow {
   font-size: larger;
   margin-top: 5px;

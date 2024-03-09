@@ -74,14 +74,8 @@ export class AlbumPhoto {
   private _stackHidden: boolean = false;
 
   // ID of first similar
-  public similarId: PhotoId = 0 as PhotoId;
-  public correlation: number = 0;
-
-
-  /**
-   * number of duplicates set by buildDuplicateBuckets
-   */
-  public dupCount: number = 1;
+  //public similarId: PhotoId = 0 as PhotoId;
+  //public correlation: number = 0;
 
   public get favorite(): number {
     return this.wire.favorite;
@@ -140,17 +134,28 @@ export class AlbumPhoto {
     return this.wire.id as PhotoId;
   }
 
+  /**
+   * id of the stack; which is the first photo we decided to use
+   * this is different from photo we display; as we select fav
+   * 
+   * so the logic is; for each photo in collection, take stack and include
+   * all photos of the stack. We then hide all stack photos
+   * 
+   * the same rules apply to duplicates; we just add them to stack
+   * the only trick is rebuilding; we do not know if photo added to stack
+   * because it was similar. Which means that we need a flag
+   */
   public get stackId(): PhotoId {
     return this.wire.stackId as PhotoId;
   }
 
-  public get originalId(): number {
-    return this.wire.originalId;
-  }
+  // public get originalId(): number {
+  //   return this.wire.originalId;
+  // }
 
-  public set originalId(val: number) {
-    this.wire.originalId = val;
-  }
+  // public set originalId(val: number) {
+  //   this.wire.originalId = val;
+  // }
 
   public get originalDate(): Date {
     return new Date(this.wire.originalDt);

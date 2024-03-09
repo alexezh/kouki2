@@ -1,6 +1,10 @@
-import { AlbumPhoto, AlbumRow } from "../photo/AlbumPhoto";
+import { ListItemProps } from "@mui/material";
+import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
+import { PhotoList, PhotoListChangedArg, PhotoListPos } from "../photo/PhotoList";
 
 export class SelectionManager {
+  private _list: PhotoList | null = null;
+  private _listChangedId: number = 0;
   private _selected = new Map<string, AlbumPhoto>();
   private nextId = 1;
   private onSelected = new Map<string, {
@@ -15,6 +19,20 @@ export class SelectionManager {
   private _lastSelectedPhoto: AlbumPhoto | null = null;
   public get lastSelectedPhoto(): AlbumPhoto | null { return this._lastSelectedPhoto }
   public get selectedPhotos(): ReadonlyMap<string, AlbumPhoto> { return this._selected };
+
+  public setList(list: PhotoList) {
+    if (this._list === list) {
+      return;
+    }
+
+    if (this._listChangedId) {
+      this._list!.removeOnListChanged(this._listChangedId);
+      this._listChangedId = 0;
+    }
+    this._list = list;
+    this.clear();
+    this._listChangedId = this._list.addOnListChanged(this.onListChanged.bind(this));
+  }
 
   public clear() {
     for (let x of this._selected) {
@@ -77,13 +95,53 @@ export class SelectionManager {
 
   public map<T>(func: (x: AlbumPhoto) => T): T[] {
     let ret: T[] = [];
-    for (let x of this._selected.values()) {
-      ret.push(func(x));
+    for (let [key, photo] of this._selected) {
+      ret.push(func(photo));
     }
     return ret;
   }
 
   public get items(): ReadonlyMap<string, AlbumPhoto> { return this._selected }
+
+  private onListChanged(arg: PhotoListChangedArg) {
+    console.log('SelectionManager:onListChanged');
+
+    if (!this._list) {
+      return;
+    }
+
+    // check if selection still valid
+    for (let [key, photo] of this._selected) {
+      let idx = this._list.getItemIndex(photo);
+      if (idx === -1) {
+        this._selected.delete(key);
+      }
+    }
+
+    // if we deleted everything, select next 
+    if (this._selected.size === 0) {
+      if (this._lastSelectedPhoto) {
+        let prev: AlbumPhoto | null = null;
+        let findIdx = this._list.find(0 as PhotoListPos, (x: AlbumPhoto) => {
+          if (this._lastSelectedPhoto!.originalDate.valueOf() < x.originalDate.valueOf()) {
+            return true;
+          }
+
+          prev = x;
+          return false;
+        });
+
+        if (findIdx >= 0) {
+          let findPhoto = this._list.getItem(findIdx);
+          console.log('SelectionManager: select next photo ' + findPhoto.id)
+          this.add([findPhoto]);
+        } else if (prev) {
+          console.log('SelectionManager: select prev photo ' + (prev as AlbumPhoto).id);
+          this.add(prev);
+        }
+      }
+    }
+  }
 
   private invokeOnSelected(p: AlbumPhoto, value: boolean) {
     let entry = this.onSelected.get(p.wire.hash);

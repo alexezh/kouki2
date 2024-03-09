@@ -27,6 +27,8 @@ public class PhotoEntry
   public string originalDt { get; set; }
   public string originalHash { get; set; }
   public Int64 stackId { get; set; }
+  public Int64 originalId { get; set; }
+  public double originalCorrelation { get; set; }
   public string altText { get; set; }
   [JsonIgnore]
   public byte[] phash;
@@ -39,8 +41,9 @@ public class UpdatePhotoRequest
   public bool? hidden { get; set; }
   public int? stars { get; set; }
   public UpdateString? color { get; set; }
-  public UpdateString? originalHash { get; set; }
   public Int64? stackId { get; set; }
+  public Int64? originalId { get; set; }
+  public double? originalCorrelation { get; set; }
   public string altText { get; set; }
 }
 
@@ -49,6 +52,7 @@ public class TextSearchRequest
   public string collKind { get; set; }
   public Int64 collId { get; set; }
   public string search { get; set; }
+  public string startDt { get; set; }
 }
 
 public class UpdatePhotoResponse : ResultResponse
@@ -218,6 +222,30 @@ public static class ReaderExt
     }
   }
 
+  public static double ReadDouble(this SqliteDataReader reader, string name)
+  {
+    var val = reader[name];
+    if (val == DBNull.Value)
+    {
+      return 0;
+    }
+    else
+    {
+      if (val.GetType() == typeof(Int64))
+      {
+        return unchecked((Int64)val);
+      }
+      else if (val.GetType() == typeof(Double))
+      {
+        return unchecked((double)val);
+      }
+      else
+      {
+        throw new ArgumentException("Unknown type");
+      }
+    }
+  }
+
   public static DateTime? ReadMagicTime(this SqliteDataReader reader, string name)
   {
     var dtStr = reader.ReadString("originalDt");
@@ -304,6 +332,8 @@ public class PhotoDb
       originalDt = reader.ReadIntTime("originalDt2"),
       originalHash = reader.ReadString("originalHash"),
       stackId = reader.ReadInt64("stackId"),
+      originalId = reader.ReadInt64("originalId"),
+      originalCorrelation = reader.ReadDouble("originalCorrelation"),
       altText = reader.ReadString("alttext"),
       phash = reader.ReadBlob("phash"),
     };

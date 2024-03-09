@@ -99,8 +99,14 @@ public class PhotoDbStatics
       if (userVersion < 5)
       {
         ConvertPhotoTime2(connection);
+      }
 
-        userVersion = 5;
+      if (userVersion < 6)
+      {
+        AddColumn(connection, "Photos", "originalId", "INTEGER");
+        AddColumn(connection, "Photos", "originalCorrelation", "NUMBER");
+
+        userVersion = 6;
         ReaderExt.ExecuteVoidCommand(connection, (command) =>
         {
           command.CommandText = $"PRAGMA user_version = {userVersion};";

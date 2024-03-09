@@ -43,7 +43,7 @@ export function triggerRefreshFolders() {
   console.log('triggerRefreshFolders');
 
   setTimeout(async () => {
-    await loadLibrary();
+    await loadLibrary({});
     return true;
   });
 }

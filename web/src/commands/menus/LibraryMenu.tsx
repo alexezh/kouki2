@@ -40,6 +40,11 @@ export function LibraryMenu(props: CommandMenuProps) {
     invokeCommand(Command.BuildAltText);
   }
 
+  function handleBuildSimilarityIndex() {
+    props.onMenuClose();
+    invokeCommand(Command.BuildSimilarityIndex);
+  }
+
   return (
     <CommandMenu {...props}>
       <MenuItem key="lib_addfolder" onClick={handleImportFolder}>Import Folder</MenuItem>
@@ -50,7 +55,8 @@ export function LibraryMenu(props: CommandMenuProps) {
       <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Build Folder Thumbnails</MenuItem>
       <MenuItem key="lib_buildpash" onClick={handleBuildPHash}>Update Folder PHash</MenuItem>
       <Divider />
-      <MenuItem key="lib_describe" onClick={handleBuildAltText}>Build Alt Text</MenuItem>
+      <MenuItem key="lib_alt_text" onClick={handleBuildAltText}>Build Alt Text</MenuItem>
+      <MenuItem key="lib_similarity" onClick={handleBuildSimilarityIndex}>Build Similarity Index</MenuItem>
     </CommandMenu>
   )
 }

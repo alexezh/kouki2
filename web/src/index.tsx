@@ -29,7 +29,7 @@ registerLibraryCommands();
 
 // start load of library
 setTimeout(async () => {
-  await loadLibrary();
+  await loadLibrary({});
   await loadDevices();
   if (photoLibraryMap.size === 0) {
     showDialog((props: DialogProps) => {

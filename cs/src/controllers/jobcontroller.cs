@@ -41,6 +41,9 @@ public class JobController : Controller
         case "alttext":
           id = JobRunner.Instance.RunJob(new GenerateAltTextJob(request));
           break;
+        case "similarity":
+          id = JobRunner.Instance.RunJob(new BuildSimilarityIndexJob(request));
+          break;
         default:
           return new JobResponse() { result = ResultResponse.Failed };
       }

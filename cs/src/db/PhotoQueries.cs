@@ -107,42 +107,52 @@ public static class PhotoQueriesExt
   public static bool UpdatePhoto(this PhotoDb self, UpdatePhotoRequest updateReqest)
   {
     var command = self.Connection.CreateCommand();
-    var setFields = "";
+    var setFields = new List<string>();
     if (updateReqest.favorite != null)
     {
-      setFields += "fav = $fav";
+      setFields.Add("fav = $fav");
       command.Parameters.AddWithValue("$fav", updateReqest.favorite);
     }
     if (updateReqest.hidden != null)
     {
-      setFields += "hidden = $hidden";
+      setFields.Add("hidden = $hidden");
       command.Parameters.AddWithValue("$hidden", updateReqest.hidden);
     }
     if (updateReqest.stars != null)
     {
-      setFields += "stars = $stars";
+      setFields.Add("stars = $stars");
       command.Parameters.AddWithValue("$stars", updateReqest.stars);
     }
     if (updateReqest.color != null)
     {
-      setFields += "color = $color";
+      setFields.Add("color = $color");
       command.Parameters.AddWithValue("$color", updateReqest.color);
     }
     if (updateReqest.stackId != null)
     {
-      setFields += "stackId = $stackId";
+      setFields.Add("stackId = $stackId");
       command.Parameters.AddWithValue("$stackId", updateReqest.stackId);
+    }
+    if (updateReqest.originalId != null)
+    {
+      setFields.Add("originalId = $originalId");
+      command.Parameters.AddWithValue("$originalId", updateReqest.originalId);
+    }
+    if (updateReqest.originalCorrelation != null)
+    {
+      setFields.Add("originalCorrelation = $originalCorrelation");
+      command.Parameters.AddWithValue("$originalCorrelation", updateReqest.originalCorrelation);
     }
 
     if (updateReqest.altText != null)
     {
-      setFields += "altText = $altText";
+      setFields.Add("altText = $altText");
       command.Parameters.AddWithValue("$altText", updateReqest.altText);
     }
 
-    if (setFields.Length > 0)
+    if (setFields.Count > 0)
     {
-      command.CommandText = $"UPDATE Photos SET {setFields} WHERE hash == $hash";
+      command.CommandText = $"UPDATE Photos SET {String.Join(",", setFields)} WHERE hash == $hash";
       command.Parameters.AddWithValue("$hash", updateReqest.hash);
 
       var updated = command.ExecuteNonQuery();

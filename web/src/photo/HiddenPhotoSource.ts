@@ -3,6 +3,9 @@ import { LibraryPhotoSource } from "./LibraryPhotoSource";
 import { AppFilter } from "./PhotoList";
 import { filterPhotos, photoLibraryMap, sortByDate } from "./PhotoStore";
 
+/**
+ * used for favority
+ */
 export class FilteredPhotoSource extends LibraryPhotoSource {
   private filter: (x: AlbumPhoto) => boolean;
 
@@ -16,6 +19,9 @@ export class FilteredPhotoSource extends LibraryPhotoSource {
   }
 
   public isHidden(photo: AlbumPhoto): boolean {
+    if (photo.stackHidden || photo.hidden) {
+      return true;
+    }
     return false;
   }
 

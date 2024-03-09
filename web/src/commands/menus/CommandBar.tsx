@@ -10,6 +10,7 @@ import { PhotoList } from '../../photo/PhotoList';
 import { addOnStateChanged, getAppState, removeOnStateChanged, setTextFilter } from '../AppState';
 import TextField from '@mui/material/TextField/TextField';
 import { Divider } from '@mui/material';
+import { CommandMenu } from './CommandMenu';
 
 export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
@@ -37,6 +38,7 @@ export function CommandBar(props: { className?: string }) {
   return (
     <AppBar position="static" className={props.className}>
       <Toolbar variant="dense">
+        <CommandMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} label="Grid" id="grid" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <EditMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} label="Edit" id="edit" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         <LibraryMenu open={anchorEl?.id === "library"} anchorEl={anchorEl?.elem ?? null} label='Library' id='library' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         {

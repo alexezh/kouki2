@@ -2,12 +2,12 @@ import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoListId }
 import { CollectionId } from "./CollectionStore";
 import { LibraryPhotoSource } from "./LibraryPhotoSource";
 import { AppFilter, FilterFavorite, PhotoList } from "./PhotoList";
-import { filterUnique, photoLibraryMap, sortByDate } from "./PhotoStore";
+import { photoLibraryMap, sortByDate } from "./PhotoStore";
 
 let allPhotos: PhotoList | undefined;
 
 export class AllPhotosSource extends LibraryPhotoSource {
-  private uniquePhotos: AlbumPhoto[] | null = null;
+  private photos: AlbumPhoto[] | null = null;
   private filterFavorite: FilterFavorite = 'all';
   private filterDups: boolean = false;
 
@@ -17,7 +17,7 @@ export class AllPhotosSource extends LibraryPhotoSource {
 
   protected override onLibraryChanged(updates: LibraryUpdateRecord[]): void {
     console.log("AllPhotoSource.onLibraryChanged");
-    this.uniquePhotos = null;
+    this.photos = null;
     super.onLibraryChanged(updates);
   }
 
@@ -45,10 +45,6 @@ export class AllPhotosSource extends LibraryPhotoSource {
       return true;
     }
 
-    if (this.filterDups && photo.similarId === 0) {
-      return true;
-    }
-
     if (photo.stackHidden || photo.hidden) {
       return true;
     }
@@ -65,12 +61,17 @@ export class AllPhotosSource extends LibraryPhotoSource {
       return [];
     }
 
-    if (!this.uniquePhotos) {
-      this.uniquePhotos = filterUnique(photoLibraryMap);
-      sortByDate(this.uniquePhotos);
+    if (!this.photos) {
+      this.photos = [];
+
+      for (let [key, p] of photoLibraryMap) {
+        this.photos.push(p);
+      }
+
+      sortByDate(this.photos);
     }
 
-    return this.uniquePhotos;
+    return this.photos;
   }
 }
 

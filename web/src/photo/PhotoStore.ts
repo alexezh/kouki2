@@ -1,5 +1,5 @@
 import { AlbumPhoto, LibraryUpdateRecord, LibraryUpdateRecordKind, PhotoId } from "./AlbumPhoto";
-import { wireGetCorrelation, wireGetLibrary, wireGetPhotos, wireUpdatePhoto } from "../lib/photoclient";
+import { WirePhotoEntry, wireGetCorrelation, wireGetPhotos } from "../lib/photoclient";
 import { WeakEventSource } from "../lib/synceventsource";
 import { loadCollections } from "./CollectionStore";
 import { loadFolders } from "./FolderStore";
@@ -8,16 +8,11 @@ import { substractYears } from "../lib/date";
 
 export const photoLibraryMap = new Map<PhotoId, AlbumPhoto>();
 export const stackMap = new Map<PhotoId, ReadonlyArray<PhotoId>>();
-const duplicateByHashBuckets = new Map<string, PhotoId[]>();
 export const libraryChanged = new WeakEventSource<LibraryUpdateRecord[]>();
 let loaded = false;
 let loadWaiters: (() => void)[] = [];
 let maxPhotoId: number = 0;
-let startDt: Date | undefined = undefined; // substractYears(new Date(), 3);
-
-export function setStartDt(date: Date | undefined) {
-  startDt = date;
-}
+let startDt: Date | undefined = substractYears(new Date(), 3);
 
 export function getStartDt(): Date | undefined {
   return startDt;
@@ -56,14 +51,24 @@ function completeLoad() {
   });
 }
 
-export async function loadLibrary() {
+export async function loadLibrary(options: { minId?: number, startDt?: Date }) {
   console.log("loadLibrary:" + maxPhotoId);
 
-  // get photos from previous max
-  let wirePhotos = await wireGetPhotos({ minId: maxPhotoId, startDt: (startDt) ? startDt.toISOString() : undefined });
+  let wirePhotos: WirePhotoEntry[];
 
-  let pairs: { left: PhotoId, right: PhotoId }[] = [];
-  let prevPhoto: AlbumPhoto | null = null;
+  if (options.startDt) {
+    maxPhotoId = 0;
+    startDt = options.startDt;
+    wirePhotos = await wireGetPhotos({ minId: 0, startDt: startDt?.toISOString() });
+  } else {
+    if (options.minId !== undefined) {
+      maxPhotoId = options.minId;
+    }
+
+    // get photos from previous max
+    wirePhotos = await wireGetPhotos({ minId: maxPhotoId, startDt: startDt?.toISOString() });
+  }
+
   let newPhotos: AlbumPhoto[] = [];
 
   // for photos with the same ti,e. get similarity
@@ -77,21 +82,13 @@ export async function loadLibrary() {
       newPhotos.push(photo);
     }
 
-    if (prevPhoto) {
-      if (photo.originalDate.valueOf() === prevPhoto.originalDate.valueOf()) {
-        pairs.push({ left: prevPhoto.wire.id as PhotoId, right: photo.wire.id as PhotoId });
-      }
-    }
-
-    prevPhoto = photo;
     maxPhotoId = Math.max(photo.id, maxPhotoId);
   }
 
   console.log("Added photos: " + newPhotos.length);
 
   buildStacks(newPhotos);
-  buildDuplicateBuckets(newPhotos);
-  buildSimilarityInfo(pairs);
+  processSimilarityIndex(newPhotos);
 
   await loadCollections();
   loadFolders();
@@ -100,48 +97,30 @@ export async function loadLibrary() {
 }
 
 /**
- * this is a ever going question on storage vs runtime
- * for now we are going to do runtime because it is cheaper
- * 
- * for dupes, we are going to store hash and signature
- * in this function we are first going to first get photos which are dupes
- * and then choose which one is good. 
+ * uses originalId to add photos to stack
  */
-function buildDuplicateBuckets(photos: AlbumPhoto[]) {
-  // make list of dupes by hash; we will also make list by signature
-  duplicateByHashBuckets.clear();
-  for (let photo of photos) {
-    let ids = duplicateByHashBuckets.get(photo.wire.hash);
-    if (ids) {
-      ids.push(photo.wire.id as PhotoId);
-    } else {
-      duplicateByHashBuckets.set(photo.wire.hash, [photo.wire.id as PhotoId]);
-    }
-  }
+function processSimilarityIndex(photos: AlbumPhoto[]) {
+
+  // we do not want to send to the wire
+  let ctx = new UpdatePhotoContext(false);
 
   for (let photo of photos) {
-    let ids = duplicateByHashBuckets.get(photo.wire.hash);
-    photo.dupCount = ids!.length;
-  }
-}
-
-async function buildSimilarityInfo(pairs: { left: PhotoId, right: PhotoId }[]): Promise<void> {
-  let corrResp = await wireGetCorrelation({ photos: pairs });
-  for (let i = 0; i < pairs.length; i++) {
-    let correlation = corrResp.corrections[i];
-    if (correlation < 0.9) {
+    if (!photo.wire.originalId || photo.wire.originalId === photo.wire.id) {
       continue;
     }
 
-    let left = photoLibraryMap.get(pairs[i].left)!;
-    let right = photoLibraryMap.get(pairs[i].right)!;
-    if (left.similarId) {
-      right.similarId = left.similarId;
-    } else {
-      right.similarId = left.wire.id as PhotoId;
-      left.similarId = left.wire.id as PhotoId;
+    let origPhoto = photoLibraryMap.get(photo.wire.originalId as PhotoId);
+    if (!origPhoto) {
+      console.log('cannot get original photo ' + photo.wire.originalId);
+      continue;
     }
-    right.correlation = correlation;
+
+    if (origPhoto.stackId !== origPhoto.id) {
+      addStack(origPhoto.stackId, photo, ctx);
+    } else {
+      addStack(origPhoto.id, origPhoto, ctx);
+      addStack(origPhoto.stackId, photo, ctx);
+    }
   }
 }
 
@@ -274,30 +253,6 @@ export function filterPhotos(photos: Map<number, AlbumPhoto> | ReadonlyArray<Alb
   return filtered;
 }
 
-export function filterUnique(photos: Map<number, AlbumPhoto> | ReadonlyArray<AlbumPhoto>): AlbumPhoto[] {
-  // make list of non-duplicate photos while including at least one into collection
-  let dupPhotos = new Map<number, boolean>();
-  let uniquePhotos = filterPhotos(photos, (x: AlbumPhoto) => {
-
-    // ensure that we only have one photo in collection
-    if (x.dupCount > 1) {
-      let isDup = dupPhotos.get(x.wire.id);
-      if (isDup) {
-        return false;
-      }
-
-      let ids = getDuplicateBucket(x);
-      for (let id of ids) {
-        dupPhotos.set(id, true);
-      }
-    }
-
-    return true;
-  });
-
-  return uniquePhotos;
-}
-
 export function sortByDate(photos: AlbumPhoto[]): void {
   photos.sort((x: AlbumPhoto, y: AlbumPhoto) => {
     let xn = x.originalDate.valueOf();
@@ -310,11 +265,6 @@ export function sortByDate(photos: AlbumPhoto[]): void {
       return 0;
     }
   })
-}
-
-export function getDuplicateBucket(photo: AlbumPhoto): PhotoId[] {
-  let ids = duplicateByHashBuckets.get(photo.wire.hash);
-  return ids ?? [photo.wire.id as PhotoId];
 }
 
 export function getPhotoById(id: PhotoId): AlbumPhoto {
