@@ -29,7 +29,7 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
     setProcessing(true);
 
     try {
-      let photos = selectionManager.map((x: AlbumPhoto) => x.wire.id);
+      let photos = selectionManager.map((x: AlbumPhoto) => x.id);
 
       let exportColl = await createCollectionOfKind('export');
       let exportList = createCollectionPhotoList(exportColl.id);

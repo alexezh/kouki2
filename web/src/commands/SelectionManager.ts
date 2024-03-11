@@ -1,13 +1,13 @@
 import { ListItemProps } from "@mui/material";
-import { AlbumPhoto, PhotoListId } from "../photo/AlbumPhoto";
+import { AlbumPhoto, PhotoId, PhotoListId } from "../photo/AlbumPhoto";
 import { PhotoList, PhotoListChangedArg, PhotoListPos } from "../photo/PhotoList";
 
 export class SelectionManager {
   private _list: PhotoList | null = null;
   private _listChangedId: number = 0;
-  private _selected = new Map<string, AlbumPhoto>();
+  private _selected = new Map<PhotoId, AlbumPhoto>();
   private nextId = 1;
-  private onSelected = new Map<string, {
+  private onSelected = new Map<PhotoId, {
     id: number;
     func: (p: AlbumPhoto, value: boolean) => void
   }[]>();
@@ -18,7 +18,7 @@ export class SelectionManager {
 
   private _lastSelectedPhoto: AlbumPhoto | null = null;
   public get lastSelectedPhoto(): AlbumPhoto | null { return this._lastSelectedPhoto }
-  public get selectedPhotos(): ReadonlyMap<string, AlbumPhoto> { return this._selected };
+  public get selectedPhotos(): ReadonlyMap<PhotoId, AlbumPhoto> { return this._selected };
 
   public setList(list: PhotoList) {
     if (this._list === list) {
@@ -41,7 +41,7 @@ export class SelectionManager {
 
     // it is important to reset rather than clear
     // otherwise we can get into weird loops
-    this._selected = new Map<string, AlbumPhoto>();
+    this._selected = new Map<PhotoId, AlbumPhoto>();
 
     this._lastSelectedPhoto = null;
     this.invokeOnSelectionChanged();
@@ -54,13 +54,13 @@ export class SelectionManager {
 
     // it is important to reset rather than clear
     // otherwise we can get into weird loops
-    this._selected = new Map<string, AlbumPhoto>();
+    this._selected = new Map<PhotoId, AlbumPhoto>();
 
     this.add(photos);
   }
 
   public isSelected(photo: AlbumPhoto): boolean {
-    return !!this._selected.get(photo.wire.hash);
+    return !!this._selected.get(photo.id);
   }
 
   public add(photos: ReadonlyArray<AlbumPhoto>) {
@@ -69,7 +69,7 @@ export class SelectionManager {
       if (!p) {
         continue;
       }
-      this._selected.set(p.wire.hash, p);
+      this._selected.set(p.id, p);
       this.invokeOnSelected(p, true);
       lastSelected = p;
     }
@@ -83,7 +83,7 @@ export class SelectionManager {
 
   public remove(photos: ReadonlyArray<AlbumPhoto>) {
     for (let p of photos) {
-      this._selected.delete(p.wire.hash);
+      this._selected.delete(p.id);
       this.invokeOnSelected(p, false);
     }
     this.invokeOnSelectionChanged();
@@ -101,7 +101,7 @@ export class SelectionManager {
     return ret;
   }
 
-  public get items(): ReadonlyMap<string, AlbumPhoto> { return this._selected }
+  public get items(): ReadonlyMap<PhotoId, AlbumPhoto> { return this._selected }
 
   private onListChanged(arg: PhotoListChangedArg) {
     console.log('SelectionManager:onListChanged');
@@ -144,7 +144,7 @@ export class SelectionManager {
   }
 
   private invokeOnSelected(p: AlbumPhoto, value: boolean) {
-    let entry = this.onSelected.get(p.wire.hash);
+    let entry = this.onSelected.get(p.id);
     if (!entry) {
       return;
     }
@@ -161,10 +161,10 @@ export class SelectionManager {
   }
 
   public addOnSelected(photo: AlbumPhoto, func: (p: AlbumPhoto, value: boolean) => void): number {
-    let entry = this.onSelected.get(photo.wire.hash);
+    let entry = this.onSelected.get(photo.id);
     if (!entry) {
       entry = [];
-      this.onSelected.set(photo.wire.hash, entry);
+      this.onSelected.set(photo.id, entry);
     }
     let id = this.nextId++;
     entry.push({ id: id, func: func });
@@ -172,7 +172,7 @@ export class SelectionManager {
   }
 
   public removeOnSelected(photo: AlbumPhoto, id: number) {
-    let entry = this.onSelected.get(photo.wire.hash);
+    let entry = this.onSelected.get(photo.id);
     if (!entry) {
       return;
     }

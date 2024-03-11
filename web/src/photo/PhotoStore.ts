@@ -110,12 +110,16 @@ function processSimilarityIndex(photos: AlbumPhoto[]) {
     }
 
     let origPhoto = photoLibraryMap.get(photo.wire.originalId as PhotoId);
+    if (origPhoto!.id === 19900) {
+      console.log("well");
+    }
     if (!origPhoto) {
       console.log('cannot get original photo ' + photo.wire.originalId);
       continue;
     }
 
-    if (origPhoto.stackId !== origPhoto.id) {
+    // if original part of stack, use it
+    if (origPhoto.stackId !== 0) {
       addStack(origPhoto.stackId, photo, ctx);
     } else {
       addStack(origPhoto.id, origPhoto, ctx);

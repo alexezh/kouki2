@@ -47,20 +47,7 @@ public class GenerateAltTextJob : IJob
   {
     _status.result = ResultResponse.Processing;
 
-    IEnumerable<CollectionItem> items;
-
-    if (_request.collKind == "all")
-    {
-      items = PhotoFs.Instance.PhotoDb.GetLibraryItems();
-    }
-    else if (_request.collKind == "folder")
-    {
-      items = PhotoFs.Instance.GetCollectionItems(_request.collId);
-    }
-    else
-    {
-      items = PhotoFs.Instance.GetCollectionItems(_request.collId);
-    }
+    IEnumerable<CollectionItem> items = PhotoFs.Instance.PhotoDb.GetCollectionItemsByKind(_request.collKind, _request.collId);
 
     using (var client = new HttpClient())
     {

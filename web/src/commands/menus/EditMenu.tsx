@@ -5,11 +5,8 @@ import { ExportSelectionDialog } from "../dialogs/ExportSelectionDialog";
 import { selectionManager } from "../SelectionManager";
 import { AlbumPhoto } from "../../photo/AlbumPhoto";
 import { useState } from "react";
-import { PhotoList } from "../../photo/PhotoList";
-import ListItemText from "@mui/material/ListItemText/ListItemText";
-import Typography from "@mui/material/Typography/Typography";
 import { MyMenuItem } from "./MyMenuItem";
-import { Command, invokeCommand } from "../Commands";
+import { Command } from "../Commands";
 import { getAppState } from "../AppState";
 
 export function EditMenu(props: CommandMenuProps) {
@@ -28,7 +25,7 @@ export function EditMenu(props: CommandMenuProps) {
   function handleInvertSelect() {
     let select: AlbumPhoto[] = [];
     for (let x of getAppState().workList.asArray()) {
-      if (!selectionManager.items.get(x.wire.hash)) {
+      if (!selectionManager.items.get(x.id)) {
         select.push(x);
       }
     }

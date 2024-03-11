@@ -80,7 +80,11 @@ export function DateRowLayout(props: DateRowLayoutProps) {
     text = props.row.dt?.toLocaleDateString(undefined, options);
   } else {
     className = "DayHeaderRow";
-    text = props.row.dt?.toLocaleDateString();
+    if (props.row.dtEnd) {
+      text = props.row.dtEnd?.toLocaleDateString() + '-' + props.row.dt?.toLocaleDateString();
+    } else {
+      text = props.row.dt?.toLocaleDateString();
+    }
   }
 
   return (

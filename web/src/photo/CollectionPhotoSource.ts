@@ -61,13 +61,13 @@ export class CollectionPhotoSource implements IPhotoListSource {
   public addItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>) {
     if (Array.isArray(items)) {
       wireAddCollectionItems(this.coll!.id.id, items.map((x) => {
-        return { photoId: x.wire.id, updateDt: nowAsISOString() }
+        return { photoId: x.id, updateDt: nowAsISOString() }
       }));
     } else {
       let photo = items as AlbumPhoto;
       wireAddCollectionItems(this.coll!.id.id, [
         {
-          photoId: photo.wire.id, updateDt: nowAsISOString()
+          photoId: photo.id, updateDt: nowAsISOString()
         }
       ]);
     }
@@ -76,13 +76,13 @@ export class CollectionPhotoSource implements IPhotoListSource {
   public removeItems(items: AlbumPhoto | ReadonlyArray<AlbumPhoto>) {
     if (Array.isArray(items)) {
       wireRemoveCollectionItems(this.coll!.id.id, items.map((x) => {
-        return { photoId: x.wire.id, updateDt: nowAsISOString() }
+        return { photoId: x.id, updateDt: nowAsISOString() }
       }));
     } else {
       let photo = items as AlbumPhoto;
       wireRemoveCollectionItems(this.coll!.id.id, [
         {
-          photoId: photo.wire.id, updateDt: nowAsISOString()
+          photoId: photo.id, updateDt: nowAsISOString()
         }
       ]);
     }

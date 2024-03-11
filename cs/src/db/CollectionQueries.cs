@@ -24,22 +24,24 @@ public static class CollectionsQueriesExt
   }
 
 
-  public static List<PhotoIds> GetLibraryPhotoIds(this PhotoDb self)
+  public static List<MinPhotoEntry> GetMinPhotoEntries(this PhotoDb self, Action<SqliteCommand, string> func)
   {
     var command = self.Connection.CreateCommand();
-    command.CommandText = "SELECT id, hash, stackId, originalId, phash FROM Photos ORDER BY originalDt2 DESC";
+    //command.CommandText = "SELECT id, hash, stackId, filesize, originalId, phash FROM Photos ORDER BY originalDt2 DESC";
+    func(command, "Photos.Id as id, hash, stackId, filesize, originalId, phash");
 
-    var items = new List<PhotoIds>();
+    var items = new List<MinPhotoEntry>();
     using (var reader = command.ExecuteReader())
     {
       while (reader.Read())
       {
-        var item = new PhotoIds()
+        var item = new MinPhotoEntry()
         {
           id = (Int64)reader["id"],
           hash = (string)reader["hash"],
           stackId = reader.ReadInt64("stackId"),
           originalId = reader.ReadInt64("originalId"),
+          fileSize = reader.ReadInt64("filesize"),
           phash = reader.ReadBlob("phash"),
         };
         items.Add(item);
@@ -48,6 +50,30 @@ public static class CollectionsQueriesExt
     return items;
   }
 
+  public static List<MinPhotoEntry> GetMinPhotoEntriesByKind(this PhotoDb self, string kind, long collId = 0)
+  {
+    if (kind == "all")
+    {
+      return self.GetMinPhotoEntries((command, fields) =>
+      {
+        command.CommandText = $"SELECT {fields} FROM Photos ORDER BY originalDt2 DESC";
+      });
+    }
+    else if (kind == "folder")
+    {
+      return self.GetMinPhotoEntries((command, fields) =>
+      {
+        command.CommandText = $"SELECT {fields} FROM Photos WHERE folderId=={collId} ORDER BY originalDt2 DESC";
+      });
+    }
+    else
+    {
+      return self.GetMinPhotoEntries((command, fields) =>
+      {
+        command.CommandText = $"SELECT {fields} FROM Photos inner join CollectionItems on Photos.id == CollectionItems.photoId WHERE CollectionItems.id=={collId} ORDER BY originalDt2 DESC";
+      });
+    }
+  }
   public static List<Tuple<Int64, byte[]>> GetAltTextEmbedding(this PhotoDb self, Action<SqliteCommand> func)
   {
     var command = self.Connection.CreateCommand();
@@ -149,7 +175,21 @@ public static class CollectionsQueriesExt
     }
   }
 
-
+  public static IEnumerable<CollectionItem> GetCollectionItemsByKind(this PhotoDb self, string kind, long collId = 0)
+  {
+    if (kind == "all")
+    {
+      return self.GetLibraryItems();
+    }
+    else if (kind == "folder")
+    {
+      return self.GetCollectionItems(collId);
+    }
+    else
+    {
+      return self.GetCollectionItems(collId);
+    }
+  }
 
   public static List<CollectionEntry> GetCollections(this PhotoDb self)
   {

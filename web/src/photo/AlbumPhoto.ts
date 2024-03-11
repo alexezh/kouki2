@@ -215,6 +215,7 @@ export type AlbumRow = {
   hash: number;
   photos?: AlbumPhoto[];
   dt?: Date;
+  dtEnd?: Date;
   height: number;
   padding: number;
 }

@@ -1,20 +1,31 @@
 import AppBar from '@mui/material/AppBar/AppBar';
 import Toolbar from '@mui/material/Toolbar/Toolbar';
-import { AlbumPhoto } from '../../photo/AlbumPhoto';
 import { useEffect, useState } from 'react';
 import React from 'react';
 import { EditMenu } from './EditMenu';
 import { LibraryMenu } from './LibraryMenu';
-import { FilterMenu } from './FilterMenu';
-import { PhotoList } from '../../photo/PhotoList';
-import { addOnStateChanged, getAppState, removeOnStateChanged, setTextFilter } from '../AppState';
+import { ViewMode, addOnStateChanged, getAppState, removeOnStateChanged, setTextFilter } from '../AppState';
 import TextField from '@mui/material/TextField/TextField';
-import { Divider } from '@mui/material';
-import { CommandMenu } from './CommandMenu';
+import { Command, invokeCommand } from '../Commands';
+import Button from '@mui/material/Button/Button';
+import Divider from '@mui/material/Divider/Divider';
+import ToggleButton from '@mui/material/ToggleButton/ToggleButton';
+import { IconButton } from '@mui/material';
 
 export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
+  const [viewMode, setViewMode] = useState(getAppState().viewMode);
   const [value, setValue] = useState("");
+
+  useEffect(() => {
+    let id = addOnStateChanged(() => {
+      setViewMode(getAppState().viewMode);
+    });
+
+    return () => {
+      removeOnStateChanged(id);
+    }
+  }, []);
 
   function handleMenuClick(id: string, event: React.MouseEvent<HTMLElement>) {
     setAnchorEl({ elem: event.currentTarget, id: id });
@@ -24,6 +35,10 @@ export function CommandBar(props: { className?: string }) {
     if (anchorEl) {
       setAnchorEl(null);
     }
+  }
+
+  function handleBack() {
+    invokeCommand(Command.NavigateBack);
   }
 
   function handleChanged(event: React.ChangeEvent) {
@@ -38,8 +53,23 @@ export function CommandBar(props: { className?: string }) {
   return (
     <AppBar position="static" className={props.className}>
       <Toolbar variant="dense">
-        <CommandMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} label="Grid" id="grid" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
-        <EditMenu open={anchorEl?.id === "edit"} anchorEl={anchorEl?.elem ?? null} label="Edit" id="edit" onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
+        <Button
+          onClick={(event: React.MouseEvent<HTMLElement>) => {
+            handleBack();
+          }}
+          disabled={viewMode === ViewMode.grid}
+          sx={{ p: 0 }}>{"<Back"}
+        </Button>
+        <IconButton sx={{ fontSize: 20 }} value="grinning">&#x1F600;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="purpleheart">&#x1FA77;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="thumbsup">&#x1F44D;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="thumbsdown">&#x1F44E;</IconButton>
+        <EditMenu
+          open={anchorEl?.id === "edit"}
+          anchorEl={anchorEl?.elem ?? null}
+          label="Edit" id="edit"
+          onMenuClick={handleMenuClick}
+          onMenuClose={closeMenu} />
         <LibraryMenu open={anchorEl?.id === "library"} anchorEl={anchorEl?.elem ?? null} label='Library' id='library' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />
         {
           // <FilterMenu open={anchorEl?.id === "filter"} anchorEl={anchorEl?.elem ?? null} label='Filter' id='filter' onMenuClick={handleMenuClick} onMenuClose={closeMenu} />

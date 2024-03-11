@@ -152,8 +152,16 @@ public static class PhotoQueriesExt
 
     if (setFields.Count > 0)
     {
-      command.CommandText = $"UPDATE Photos SET {String.Join(",", setFields)} WHERE hash == $hash";
-      command.Parameters.AddWithValue("$hash", updateReqest.hash);
+      if (updateReqest.hash != null)
+      {
+        command.CommandText = $"UPDATE Photos SET {String.Join(",", setFields)} WHERE hash == $hash";
+        command.Parameters.AddWithValue("$hash", updateReqest.hash);
+      }
+      else
+      {
+        command.CommandText = $"UPDATE Photos SET {String.Join(",", setFields)} WHERE id == $id";
+        command.Parameters.AddWithValue("$id", updateReqest.id);
+      }
 
       var updated = command.ExecuteNonQuery();
       if (updated != 1)

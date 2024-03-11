@@ -1,11 +1,6 @@
-using System.Data.SqlTypes;
+using System.Drawing;
 using System.Globalization;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.Sqlite;
 
 public class PhotoEntry
@@ -34,8 +29,20 @@ public class PhotoEntry
   public byte[] phash;
 }
 
+public class MinPhotoEntry
+{
+  public Int64 id;
+  public string hash;
+  public Int64 stackId;
+  public Int64 originalId;
+  public double originalCorrelation;
+  public byte[] phash;
+  public Int64 fileSize;
+}
+
 public class UpdatePhotoRequest
 {
+  public Int64 id { get; set; }
   public string hash { get; set; }
   public int? favorite { get; set; }
   public bool? hidden { get; set; }

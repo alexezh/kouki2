@@ -8,6 +8,7 @@ import { StaticPhotoSource } from "../photo/FolderStore";
 import { CollectionId } from "../photo/CollectionStore";
 import { RowCollection } from "../photo/RowCollection";
 import { wireTextSearch } from "../lib/photoclient";
+import { assert } from "../lib/assert";
 
 /**
  * general note. react useEffect/useState should only be used to manage state related to UI
@@ -229,6 +230,11 @@ export function openPhotoStack(photo: AlbumPhoto) {
 
   if (photo.stackId) {
     let stack = getStack(photo.stackId);
+    if (!stack) {
+      assert(false, 'Cannot file stack:' + photo.stackId);
+      return;
+    }
+
     for (let id of stack!) {
       let sp = getPhotoById(id);
       photos.push(sp);

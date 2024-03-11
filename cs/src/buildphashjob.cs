@@ -17,18 +17,15 @@ public class BuildPHashJob : IJob
   {
     _status.result = ResultResponse.Processing;
 
-    var photoObjs = PhotoFs.Instance.PhotoDb.SelectPhotos((command) =>
-    {
-      command.CommandText = "SELECT * FROM Photos ORDER BY originalDt2 DESC";
-    });
+    var photoObjs = PhotoFs.Instance.PhotoDb.GetMinPhotoEntriesByKind(_request.collKind, _request.collId);
 
     var pending = new List<Task>();
     foreach (var photo in photoObjs)
     {
-      if (photo.phash != null)
-      {
-        continue;
-      }
+      // if (photo.phash != null)
+      // {
+      //   continue;
+      // }
 
       pending.Add(Task.Run(() =>
       {
@@ -44,7 +41,7 @@ public class BuildPHashJob : IJob
         }
       }));
 
-      if (pending.Count == 4)
+      if (pending.Count == 1)
       {
         await Task.WhenAll(pending.ToArray());
         pending.Clear();
@@ -72,7 +69,7 @@ public class BuildPHashJob : IJob
     using (var pixels = image.GetPixels())
     {
       var bytes = pixels.ToByteArray("RGB");
-      var bitmap = new ByteImage(image.Width, image.Height, bytes);
+      var bitmap = new ByteImage(image.Width, image.Height, image.Orientation, bytes);
       var hash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
       return hash;
     }

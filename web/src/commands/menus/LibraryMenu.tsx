@@ -45,16 +45,15 @@ export function LibraryMenu(props: CommandMenuProps) {
     invokeCommand(Command.BuildSimilarityIndex);
   }
 
+  // <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>
   return (
     <CommandMenu {...props}>
       <MenuItem key="lib_addfolder" onClick={handleImportFolder}>Import Folder</MenuItem>
+      <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Rescan Folder</MenuItem>
       <Divider />
       <MyMenuItem key="add_quick" command={Command.CreateQuickCollection} text="New quick collection" />
-      <MenuItem key="add_device" onClick={handleAddDevice}>Add Device</MenuItem>
       <Divider />
-      <MenuItem key="lib_rescanfolder" onClick={handleRescanFolder}>Build Folder Thumbnails</MenuItem>
-      <MenuItem key="lib_buildpash" onClick={handleBuildPHash}>Update Folder PHash</MenuItem>
-      <Divider />
+      <MenuItem key="lib_buildpash" onClick={handleBuildPHash}>Build PHash</MenuItem>
       <MenuItem key="lib_alt_text" onClick={handleBuildAltText}>Build Alt Text</MenuItem>
       <MenuItem key="lib_similarity" onClick={handleBuildSimilarityIndex}>Build Similarity Index</MenuItem>
     </CommandMenu>

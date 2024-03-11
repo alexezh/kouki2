@@ -63,16 +63,6 @@ public class CollectionItem
   public string updateDt { get; set; }
 }
 
-public class PhotoIds
-{
-  public Int64 id;
-  public string hash;
-  public Int64 stackId;
-  public Int64 originalId;
-  public double originalCorrelation;
-  public byte[] phash;
-}
-
 public interface IJob
 {
   void Run();

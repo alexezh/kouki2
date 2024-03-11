@@ -1,8 +1,10 @@
 using System.Buffers.Text;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using ImageMagick;
 using kouki2.Controllers;
+using Microsoft.Extensions.ObjectPool;
 using Shipwreck.Phash;
 
 public class BuildSimilarityIndexJob : IJob
@@ -24,49 +26,93 @@ public class BuildSimilarityIndexJob : IJob
   {
     _status.result = ResultResponse.Processing;
 
-    List<PhotoIds> items = PhotoFs.Instance.PhotoDb.GetLibraryPhotoIds();
-    Dictionary<string, Int64> duplicates = new Dictionary<string, long>();
-    PhotoIds prevIds = null;
+    List<MinPhotoEntry> items = PhotoFs.Instance.PhotoDb.GetMinPhotoEntries((command, fields) =>
+    {
+      command.CommandText = $"SELECT {fields} FROM Photos ORDER BY originalDt2 DESC";
+    });
+    Dictionary<string, MinPhotoEntry> duplicateMap = new Dictionary<string, MinPhotoEntry>();
     Int64 dupPhotos = 0;
     Int64 simPhotos = 0;
 
+    // run throuhg items and update duplicates by hash
+    // then run similarities as a chain; possibly updating original for dups
     foreach (var item in items)
     {
       _status.processedFiles++;
 
-      if (duplicates.TryGetValue(item.hash, out var id))
+      if (item.id == 20331)
       {
-        item.originalId = id;
+        Console.WriteLine("Hello++");
+      }
+
+      if (duplicateMap.TryGetValue(item.hash, out var dup))
+      {
+        item.originalId = dup.id;
         PhotoFs.Instance.PhotoDb.UpdatePhoto(new UpdatePhotoRequest()
         {
           hash = item.hash,
-          originalId = id,
+          originalId = item.originalId,
           originalCorrelation = 1.0
         });
         dupPhotos++;
         continue;
       }
-      duplicates.Add(item.hash, item.id);
-
-      if (prevIds != null)
+      else if (item.originalId != 0)
       {
-        double correlation = ComputeCorrelation(prevIds, item);
+        item.originalId = 0;
+        PhotoFs.Instance.PhotoDb.UpdatePhoto(new UpdatePhotoRequest()
+        {
+          hash = item.hash,
+          originalId = 0,
+          originalCorrelation = 1.0
+        });
+      }
+
+      duplicateMap.Add(item.hash, item);
+    }
+
+    MinPhotoEntry prevItem = null;
+    List<MinPhotoEntry> currentBucket = new List<MinPhotoEntry>();
+    foreach (var item in items)
+    {
+      if (item.id == 19900)
+      {
+        Console.WriteLine("Hello++");
+      }
+
+      // check if previous linked to bucket
+      if (prevItem != null)
+      {
+        double correlation = ComputeCorrelation(prevItem, item);
         if (correlation >= 0.9)
         {
-          item.originalId = id;
-          item.originalCorrelation = correlation;
-          PhotoFs.Instance.PhotoDb.UpdatePhoto(new UpdatePhotoRequest()
+          if (currentBucket.Count == 0)
           {
-            hash = item.hash,
-            originalId = id,
-            originalCorrelation = correlation
-          });
+            currentBucket.Add(prevItem);
+          }
+          currentBucket.Add(item);
+          item.originalCorrelation = correlation;
+          // item.originalId = id;
+          // PhotoFs.Instance.PhotoDb.UpdatePhoto(new UpdatePhotoRequest()
+          // {
+          //   hash = item.hash,
+          //   originalId = id,
+          //   originalCorrelation = correlation
+          // });
           simPhotos++;
           continue;
         }
+        else
+        {
+          if (currentBucket.Count > 0)
+          {
+            WriteSimilarityBucket(currentBucket, duplicateMap);
+            currentBucket.Clear();
+          }
+        }
       }
 
-      prevIds = item;
+      prevItem = item;
     }
 
     Console.WriteLine($"BuildSimilarityIndexJob dup:{dupPhotos} sim:{simPhotos}");
@@ -75,7 +121,63 @@ public class BuildSimilarityIndexJob : IJob
     _completed = true;
   }
 
-  private double ComputeCorrelation(PhotoIds left, PhotoIds right)
+  private void WriteSimilarityBucket(List<MinPhotoEntry> bucket, Dictionary<string, MinPhotoEntry> duplicateMap)
+  {
+    var bestIdx = 0;
+    for (var idx = 1; idx < bucket.Count; idx++)
+    {
+      if (bucket[idx].fileSize > bucket[bestIdx].fileSize)
+      {
+        bestIdx = idx;
+      }
+    }
+
+    int origCount = bucket.Count;
+    for (var idx = 0; idx < origCount; idx++)
+    {
+      var item = bucket[idx];
+      // at this point, if bucket element has original ID, it points to dup
+      // we want to include dup into bucket. We might already have it; but it does not matter
+      if (item.originalId != 0)
+      {
+        if (duplicateMap.TryGetValue(item.hash, out var dup))
+        {
+          if (item.id != dup.id)
+          {
+            bucket.Add(dup);
+          }
+        }
+        else
+        {
+          Console.WriteLine("WriteSimilarityBucket: cannot find dup");
+        }
+      }
+    }
+
+    var bestItem = bucket[bestIdx];
+    if (bestItem.id == 12694)
+    {
+      Console.WriteLine("Hello");
+    }
+
+    for (var idx = 0; idx < bucket.Count; idx++)
+    {
+      if (idx != bestIdx)
+      {
+        var item = bucket[idx];
+
+        item.originalId = bestItem.id;
+        PhotoFs.Instance.PhotoDb.UpdatePhoto(new UpdatePhotoRequest()
+        {
+          id = item.id,
+          originalId = item.originalId,
+          originalCorrelation = item.originalCorrelation
+        });
+      }
+    }
+  }
+
+  private double ComputeCorrelation(MinPhotoEntry left, MinPhotoEntry right)
   {
     if (left.phash == null || right.phash == null)
     {

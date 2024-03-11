@@ -129,6 +129,8 @@ export function makeFlatRows(photosList: PhotoList, targetWidth: number, padding
 
 export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padding: number): IterableIterator<AlbumRow> {
   let currentMonth: Date | null = null;
+  let lastDayCount = 0;
+  let lastDayRow: AlbumRow | null = null;
 
   return makeRows(photosList, {
     optimalHeight: 200,
@@ -141,6 +143,7 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
           let d1 = photos.getItem(prevIdx).originalDate;
           let d2 = photo.originalDate;
           if (isEqualDay(d1, d2)) {
+            lastDayCount++;
             return null;
           }
         }
@@ -157,17 +160,26 @@ export function makeByMonthRows(photosList: PhotoList, targetWidth: number, padd
             padding: 0,
           });
           currentMonth = photo.originalDate;
+          lastDayRow = null;
+          lastDayCount = 0;
         }
 
         let day = toDayStart(photo.originalDate);
-        rows.push({
+        if (lastDayRow && lastDayCount < 3) {
+          lastDayRow.dtEnd = day;
+          return null;
+        }
+
+        lastDayRow = {
           key: 'day_' + day,
           hash: 0,
           kind: RowKind.day,
           dt: day,
           height: 0,
           padding: 0,
-        });
+        }
+        lastDayCount = 0;
+        rows.push(lastDayRow);
 
         return rows;
       }
