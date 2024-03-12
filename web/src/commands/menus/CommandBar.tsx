@@ -11,6 +11,7 @@ import Button from '@mui/material/Button/Button';
 import Divider from '@mui/material/Divider/Divider';
 import ToggleButton from '@mui/material/ToggleButton/ToggleButton';
 import { IconButton } from '@mui/material';
+import { ReactionKind } from '../../lib/photoclient';
 
 export function CommandBar(props: { className?: string }) {
   const [anchorEl, setAnchorEl] = useState<null | { elem: HTMLElement, id: string }>(null);
@@ -48,8 +49,10 @@ export function CommandBar(props: { className?: string }) {
     setTextFilter(val);
   }
 
-  // <Button variant="text" onClick={handleSelectAll}>Add Quick</Button>
-  //  <Button variant="text" onClick={handleSelectAll}>Select All</Button>
+  function handleReaction(val: ReactionKind) {
+    invokeCommand(Command.AddReaction, val)
+  }
+
   return (
     <AppBar position="static" className={props.className}>
       <Toolbar variant="dense">
@@ -60,10 +63,10 @@ export function CommandBar(props: { className?: string }) {
           disabled={viewMode === ViewMode.grid}
           sx={{ p: 0 }}>{"<Back"}
         </Button>
-        <IconButton sx={{ fontSize: 20 }} value="grinning">&#x1F600;</IconButton>
-        <IconButton sx={{ fontSize: 20 }} value="purpleheart">&#x1FA77;</IconButton>
-        <IconButton sx={{ fontSize: 20 }} value="thumbsup">&#x1F44D;</IconButton>
-        <IconButton sx={{ fontSize: 20 }} value="thumbsdown">&#x1F44E;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="grinning" onClick={() => handleReaction(ReactionKind.Grinning)}>&#x1F600;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="purpleheart" onClick={() => handleReaction(ReactionKind.PurpleHeart)}>&#x1FA77;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="thumbsup" onClick={() => handleReaction(ReactionKind.ThumbsUp)}>&#x1F44D;</IconButton>
+        <IconButton sx={{ fontSize: 20 }} value="thumbsdown" onClick={() => handleReaction(ReactionKind.ThumbsDown)}>&#x1F44E;</IconButton>
         <EditMenu
           open={anchorEl?.id === "edit"}
           anchorEl={anchorEl?.elem ?? null}

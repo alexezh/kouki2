@@ -2,6 +2,23 @@ import { AlbumPhoto } from "../photo/AlbumPhoto";
 import { BatchDelayedQueue } from "./DispatchQueue";
 import { ResultResponse, fetchAdapter } from "./fetchadapter";
 
+export enum ReactionKind {
+  Grinning = '1',
+  PurpleHeart = '2',
+  ThumbsUp = '3',
+  ThumbsDown = '4',
+}
+
+export function reactionKindToEmoji(c: string) {
+  switch (c) {
+    case ReactionKind.Grinning: return String.fromCodePoint(0x1F600);
+    case ReactionKind.PurpleHeart: return String.fromCodePoint(0x1FA77);
+    case ReactionKind.ThumbsUp: return String.fromCodePoint(0x1F44D);
+    case ReactionKind.ThumbsDown: return String.fromCodePoint(0x1F44E);
+    default: return "Unknown";
+  }
+}
+
 export type WirePhotoEntry = {
   id: number;
   hash: string;
@@ -9,7 +26,7 @@ export type WirePhotoEntry = {
   fileName: string;
   fileExt: string;
   fileSize: number;
-  favorite: number;
+  reactions?: string;
   stars: number;
   // indicates that photo is hidden from "all phptos" collection
   hidden: boolean;
@@ -33,6 +50,7 @@ export type WirePhotoUpdate = {
   stars?: number;
   color?: UpdateString;
   stackId?: number;
+  reactions?: string;
 }
 
 export type WireCollectionMetadata = {

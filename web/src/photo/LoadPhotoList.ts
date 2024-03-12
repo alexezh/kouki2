@@ -63,8 +63,8 @@ export function loadPhotoList(id: PhotoListId): PhotoList {
     case 'import': return createCollectionPhotoList(id);
     case 'export': return createCollectionPhotoList(id);
     case 'hidden': return createHiddenCollectionList(id);
-    case 'favorite': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.favorite > 0));
-    case 'rejected': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.favorite < 0));
+    case 'favorite': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.reactions.isFavorite));
+    case 'rejected': return new PhotoList(id, new FilteredPhotoSource((x: AlbumPhoto) => x.reactions.isRejected));
     default:
       return new PhotoList(id, new StaticPhotoSource([]));
   }

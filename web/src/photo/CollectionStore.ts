@@ -127,13 +127,13 @@ function onLibraryChanged(records: LibraryUpdateRecord[]) {
       }
       else if (x.favorite !== undefined) {
         if (x.favorite > 0) {
-          if (x.photo.favorite < 0) {
+          if (x.photo.reactions.isRejected) {
             hiddenDelta--;
           }
           favoriteDelta++;
         }
         if (x.favorite < 0) {
-          if (x.photo.favorite > 0) {
+          if (x.photo.reactions.isFavorite) {
             favoriteDelta--;
           }
           rejectedDelta++;

@@ -149,6 +149,11 @@ public static class PhotoQueriesExt
       setFields.Add("altText = $altText");
       command.Parameters.AddWithValue("$altText", updateReqest.altText);
     }
+    if (updateReqest.reactions != null)
+    {
+      setFields.Add("reactions = $reactions");
+      command.Parameters.AddWithValue("$reactions", updateReqest.reactions);
+    }
 
     if (setFields.Count > 0)
     {

@@ -8,7 +8,6 @@ import Drawer from '@mui/material/Drawer/Drawer';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { NavigationBar } from './commands/NatigationBar';
-import { StatusBar } from './commands/StatusBar';
 import Typography from '@mui/material/Typography/Typography';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -108,7 +107,6 @@ function App() {
               </AutoSizer>
             </div>
             <CommandBar className="CommandBar"></CommandBar>
-            <StatusBar className="Status-bar"></StatusBar>
             <CalendarBar className="Calendar-bar"></CalendarBar>
             <DialogAnchor className="Dialog-anchor" />
           </div>

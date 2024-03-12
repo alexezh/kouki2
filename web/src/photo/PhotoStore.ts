@@ -163,7 +163,7 @@ function buildStacks(photos: AlbumPhoto[]) {
 function updateStackCover(stack: ReadonlyArray<PhotoId>, ctx: UpdatePhotoContext) {
   let cover: PhotoId | undefined = undefined;
 
-  let favIdx = stack.findIndex((x: PhotoId) => getPhotoById(x)!.favorite);
+  let favIdx = stack.findIndex((x: PhotoId) => getPhotoById(x)!.reactions);
   if (favIdx === -1) {
     cover = stack[0];
   } else {

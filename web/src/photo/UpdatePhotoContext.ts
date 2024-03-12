@@ -18,7 +18,8 @@ export class UpdatePhotoContext {
         hash: update.photo.wire.hash,
         hidden: update.hidden,
         favorite: update.favorite,
-        stackId: update.stackId
+        stackId: update.stackId,
+        reactions: update.reactions
       }
       this.wireUpdates.push(wireUpdate);
     }

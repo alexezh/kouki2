@@ -38,13 +38,6 @@ export class AllPhotosSource extends LibraryPhotoSource {
   }
 
   public isHidden(photo: AlbumPhoto): boolean {
-    if (this.filterFavorite === 'favorite' && photo.favorite <= 0) {
-      return true;
-    }
-    else if (this.filterFavorite === 'rejected' && photo.favorite >= 0) {
-      return true;
-    }
-
     if (photo.stackHidden || photo.hidden) {
       return true;
     }

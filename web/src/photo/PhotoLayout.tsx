@@ -1,11 +1,12 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { AlbumPhoto } from "./AlbumPhoto";
+import { AlbumPhoto, PhotoReactions } from "./AlbumPhoto";
 import { selectionManager } from "../commands/SelectionManager";
 import { ViewMode } from "../commands/AppState";
 import smiley from "../assets/smiley.svg"
 import smiley_sad from "../assets/smiley-sad.svg"
 import stack from "../assets/stack.svg"
 import * as CSS from "csstype";
+import { ReactionsLayout } from "./ReactionsLayout";
 
 // function getFavIcon(favorite: number): string {
 //   if (favorite > 0) {
@@ -17,15 +18,15 @@ import * as CSS from "csstype";
 //   }
 // }
 
-function getFavIcon(favorite: number): string | null {
-  if (favorite > 0) {
-    return smiley;
-  } else if (favorite < 0) {
-    return smiley_sad;
-  } else {
-    return null;
-  }
-}
+// function getFavIcon(reactions: PhotoReactions): string | null {
+//   if (reactions.isFavorite) {
+//     return smiley;
+//   } else if (reactions.isRejected) {
+//     return smiley_sad;
+//   } else {
+//     return null;
+//   }
+// }
 
 function getStackIcon(hasStack: boolean): string | null {
   if (hasStack) {
@@ -58,7 +59,7 @@ const imgWithClick = { cursor: 'pointer' };
 
 export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
-  let [favIcon, setIconFav] = useState(getFavIcon(props.photo.favorite));
+  let [reactions, setReactions] = useState(props.photo.reactions);
   let [stackIcon, setStackIcon] = useState(getStackIcon(props.photo.hasStack));
 
   useEffect(() => {
@@ -67,13 +68,13 @@ export function PhotoLayout(props: PhotoPropTypes) {
     })
 
     let idChanged = props.photo.addOnChanged((photo: AlbumPhoto) => {
-      setIconFav(getFavIcon(photo.favorite));
+      setReactions(photo.reactions);
     });
     return () => {
       selectionManager.removeOnSelected(props.photo, idSelected);
       props.photo.removeOnChanged(idChanged);
     }
-  }, [props.photo.favorite])
+  }, [])
 
   const handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
     if (props.onClick) {
@@ -152,14 +153,6 @@ export function PhotoLayout(props: PhotoPropTypes) {
 
   return (
     <div className="Photo-layout" key={props.photo.wire.hash} style={divStyle}>
-      {(!props.hideFavIcon && favIcon) ?
-        (<img
-          className="Photo-layout-fav-icon"
-          width={20}
-          height={20}
-          src={favIcon}
-        />) : null}
-
       {(!props.hideStackIcon && stackIcon) ?
         (<img
           className="Photo-layout-stack-icon"
@@ -176,6 +169,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
         src={src}
         onClick={handleClick}
       />
+      <ReactionsLayout reactions={reactions} />
     </div>
   );
 };

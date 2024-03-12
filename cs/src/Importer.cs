@@ -306,7 +306,7 @@ public class FileImporter : IFileImporter, IDisposable
       return null;
     }
 
-    entry.favorite = (favorite) ? 1 : 0;
+    entry.reactions = (favorite) ? "3" : "4";
 
     var id = _fs.PhotoDb.AddPhoto(entry);
     UpdateImportCollection(id);

@@ -1,28 +1,12 @@
 import { AlbumPhoto, PhotoId } from "../photo/AlbumPhoto";
 import { ViewMode, closePhotoStack, getAppState, updateAppState } from "./AppState";
-import { computeAggregatedFavs, selectionManager } from "./SelectionManager";
+import { selectionManager } from "./SelectionManager";
 import { Command, addCommandHandler } from "./Commands";
 import { addStack, removeStack } from "../photo/PhotoStore";
 import { PhotoList, PhotoListPos } from "../photo/PhotoList";
 import { createQuickCollection, getQuickCollectionList } from "../photo/LoadPhotoList";
 import { UpdatePhotoContext } from "../photo/UpdatePhotoContext";
-
-export function onMarkFavorite() {
-  // if all photos already fav, reset them
-  let aggFav = computeAggregatedFavs();
-
-  let ctx = new UpdatePhotoContext();
-  selectionManager.forEach((x) => { x.setFavorite(aggFav === 1 ? 0 : 1, ctx); });
-  ctx.commit();
-}
-
-export function onMarkRejected() {
-  let aggFav = computeAggregatedFavs();
-
-  let ctx = new UpdatePhotoContext();
-  selectionManager.forEach((x) => { x.setFavorite(aggFav === -1 ? 0 : -1, ctx); });
-  ctx.commit();
-}
+import { ReactionKind } from "../lib/photoclient";
 
 export function onMarkHidden() {
   console.log('onMarkHidden');
@@ -45,6 +29,14 @@ export function onMarkHidden() {
   } else if (prevPhoto !== -1) {
     selectionManager.reset([list.getItem(prevPhoto)]);
   }
+}
+
+export function onAddReaction(val: ReactionKind) {
+  console.log('onAddReaction');
+
+  let ctx = new UpdatePhotoContext();
+  selectionManager.forEach((x) => { x.addReaction(val, ctx); });
+  ctx.commit();
 }
 
 /**
@@ -179,12 +171,11 @@ function onNewQuickCollection() {
 }
 
 export function registerEditCommands() {
-  addCommandHandler(Command.MarkFavorite, onMarkFavorite);
-  addCommandHandler(Command.MarkRejected, onMarkRejected);
   addCommandHandler(Command.AddStack, onAddStack);
   addCommandHandler(Command.MarkHidden, onMarkHidden);
   addCommandHandler(Command.RemoveStack, onRemoveStack);
   addCommandHandler(Command.AddQuickCollection, onAddQuickCollection);
   addCommandHandler(Command.CreateQuickCollection, onNewQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);
+  addCommandHandler(Command.AddReaction, onAddReaction);
 }

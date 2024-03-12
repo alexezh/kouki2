@@ -1,10 +1,66 @@
-import { Key } from "react";
-import { PhotoListKind, WirePhotoEntry, WirePhotoUpdate, wireUpdatePhotos } from "../lib/photoclient";
+import { PhotoListKind, ReactionKind, WirePhotoEntry } from "../lib/photoclient";
 import { CollectionId } from "./CollectionStore";
 import type { UpdatePhotoContext } from "./UpdatePhotoContext";
 
 export type PhotoId = number & {
   __tag_photo: boolean;
+}
+
+export class PhotoReactions {
+  private value: string | undefined = undefined;
+  private _favorite: boolean = false;
+  private _rejected: boolean = false;
+
+  public constructor(val: string | undefined) {
+    this.value = val;
+
+    if (val && val.length) {
+      for (let i = 0; i < val.length; i++) {
+        let c = val.charAt(i);
+        if (c === ReactionKind.ThumbsDown) {
+          this._rejected = true;
+        } else {
+          this._favorite = true;
+        }
+      }
+    }
+  }
+
+  public map<T>(func: (c: string) => T): T[] {
+    if (!this.value) {
+      return [];
+    }
+
+    var ret = [];
+    for (let i = 0; i < this.value.length; i++) {
+      ret.push(func(this.value!.charAt(i)));
+    }
+    return ret;
+  }
+
+  addReaction(c: ReactionKind): void {
+    if (this.value) {
+      for (let i = 0; i < this.value.length; i++) {
+        if (this.value.charAt(i) === c) {
+          this.value = this.value!.substring(0, i) + c + this.value!.substring(i);
+          return;
+        }
+      }
+      this.value = this.value + c;
+      return;
+    } else {
+      this.value = c;
+      return;
+    }
+  }
+
+  public get isFavorite(): boolean {
+    return this._favorite;
+  }
+
+  public get isRejected(): boolean {
+    return this._rejected;
+  }
 }
 
 export class PhotoListId {
@@ -38,6 +94,7 @@ export type PhotoUpdateRecord = {
   stars?: number;
   stackId?: number;
   stackHidden?: boolean;
+  reactions?: string;
 }
 
 export type LibraryLoadRecord = {
@@ -72,23 +129,16 @@ export class AlbumPhoto {
   public height: number = 0;
   public scale: number = 1;
   private _stackHidden: boolean = false;
+  private _reactions: PhotoReactions;
 
-  // ID of first similar
-  //public similarId: PhotoId = 0 as PhotoId;
-  //public correlation: number = 0;
+  public get reactions(): PhotoReactions { return this._reactions }
 
-  public get favorite(): number {
-    return this.wire.favorite;
-  }
-
-  public setFavorite(val: number, ctx: UpdatePhotoContext) {
-    this.wire.favorite = val;
-    this.invokeOnChanged();
-    ctx.addPhoto({
-      kind: LibraryUpdateRecordKind.update,
-      photo: this,
-      favorite: val
-    });
+  public constructor(wire: WirePhotoEntry) {
+    this.wire = wire;
+    // set width/height to default size to avoid divide by 0 cases
+    this.width = wire.width ?? 200;
+    this.height = wire.height ?? 200;
+    this._reactions = new PhotoReactions(this.wire.reactions);
   }
 
   public get hidden(): boolean {
@@ -102,6 +152,21 @@ export class AlbumPhoto {
       kind: LibraryUpdateRecordKind.update,
       photo: this,
       hidden: val
+    });
+  }
+
+  public addReaction(val: ReactionKind, ctx: UpdatePhotoContext) {
+    if (!this.wire.reactions) {
+      this.wire.reactions = "";
+    }
+    this.wire.reactions = this.wire.reactions + val;
+    this.reactions.addReaction(val);
+
+    this.invokeOnChanged();
+    ctx.addPhoto({
+      kind: LibraryUpdateRecordKind.update,
+      photo: this,
+      reactions: this.wire.reactions
     });
   }
 
@@ -159,13 +224,6 @@ export class AlbumPhoto {
 
   public get originalDate(): Date {
     return new Date(this.wire.originalDt);
-  }
-
-  public constructor(wire: WirePhotoEntry) {
-    this.wire = wire;
-    // set width/height to default size to avoid divide by 0 cases
-    this.width = wire.width ?? 200;
-    this.height = wire.height ?? 200;
   }
 
   public getPhotoUrl(): string {

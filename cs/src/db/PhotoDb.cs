@@ -11,7 +11,7 @@ public class PhotoEntry
   public string fileName { get; set; }
   public string fileExt { get; set; }
   public Int64 fileSize { get; set; }
-  public int favorite { get; set; }
+  public string reactions { get; set; }
   public bool hidden { get; set; }
   public int stars { get; set; }
   public string color { get; set; }
@@ -52,6 +52,7 @@ public class UpdatePhotoRequest
   public Int64? originalId { get; set; }
   public double? originalCorrelation { get; set; }
   public string altText { get; set; }
+  public string reactions { get; set; }
 }
 
 public class TextSearchRequest
@@ -302,7 +303,7 @@ public class PhotoDb
     command.AddBlobValue("$phash", entry.phash);
     command.Parameters.AddWithValue("$hash", entry.hash);
     command.Parameters.AddWithValue("$hidden", entry.hidden);
-    command.Parameters.AddWithValue("$fav", entry.favorite);
+    command.Parameters.AddWithValue("$reactions", entry.reactions);
     command.Parameters.AddWithValue("$width", entry.width);
     command.Parameters.AddWithValue("$height", entry.height);
     command.Parameters.AddWithValue("$format", entry.format);
@@ -330,7 +331,7 @@ public class PhotoDb
       fileExt = (string)reader["fileext"],
       fileSize = (Int64)reader["filesize"],
       hidden = reader.ReadBoolean("hidden"),
-      favorite = reader.ReadInt32("fav"),
+      reactions = reader.ReadString("reactions"),
       stars = reader.ReadInt32("stars"),
       color = reader.ReadString("color"),
       width = unchecked((int)(Int64)reader["width"]),
@@ -345,6 +346,10 @@ public class PhotoDb
       phash = reader.ReadBlob("phash"),
     };
 
+    if (en.reactions != null)
+    {
+      ;
+    }
     return en;
   }
 

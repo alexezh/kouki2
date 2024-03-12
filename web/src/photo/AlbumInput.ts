@@ -3,6 +3,7 @@ import { selectionManager } from "../commands/SelectionManager";
 import { isEqualDay, isEqualMonth } from "../lib/date";
 import { AlbumPhoto, AlbumRow, RowKind } from "./AlbumPhoto";
 import { Command, invokeCommand } from "../commands/Commands";
+import { ReactionKind } from "../lib/photoclient";
 
 export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   let viewMode = getAppState().viewMode;
@@ -83,10 +84,10 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         invokeCommand(Command.RemoveStack);
         break;
       case 'p':
-        invokeCommand(Command.MarkFavorite);
+        invokeCommand(Command.AddReaction, ReactionKind.ThumbsUp);
         break;
       case 'x':
-        invokeCommand(Command.MarkRejected);
+        invokeCommand(Command.AddReaction, ReactionKind.ThumbsDown);
         break;
       case 'h':
         invokeCommand(Command.MarkHidden);

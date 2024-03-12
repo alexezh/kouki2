@@ -6,8 +6,6 @@ export enum Command {
   SetFocusAlbum = 2,
   ScrollAlbumToStart = 3,
   AddStack = 13,
-  MarkFavorite = 14,
-  MarkRejected = 15,
   MarkHidden = 16,
   AddQuickCollection = 20,
   NavigateBack = 21,
@@ -18,6 +16,7 @@ export enum Command {
   BuildAltText = 26,
   RescanFolder = 27,
   BuildSimilarityIndex = 28,
+  AddReaction = 29,
 }
 
 let commandHandlers = new Map<Command, SimpleEventSource<any>>();
