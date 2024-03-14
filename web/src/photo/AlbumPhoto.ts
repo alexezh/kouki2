@@ -7,12 +7,14 @@ export type PhotoId = number & {
 }
 
 export class PhotoReactions {
-  private value: string | undefined = undefined;
+  private _value: string | undefined = undefined;
   private _favorite: boolean = false;
   private _rejected: boolean = false;
 
+  public get value(): string | undefined { return this._value }
+
   public constructor(val: string | undefined) {
-    this.value = val;
+    this._value = val;
 
     if (val && val.length) {
       for (let i = 0; i < val.length; i++) {
@@ -26,30 +28,34 @@ export class PhotoReactions {
     }
   }
 
-  public map<T>(func: (c: string) => T): T[] {
-    if (!this.value) {
+  public map<T>(func: (c: string, idx?: number) => T): T[] {
+    if (!this._value) {
       return [];
     }
 
     var ret = [];
-    for (let i = 0; i < this.value.length; i++) {
-      ret.push(func(this.value!.charAt(i)));
+    for (let i = 0; i < this._value.length; i++) {
+      ret.push(func(this._value!.charAt(i), i));
     }
     return ret;
   }
 
+  clearReactions(): void {
+    this._value = undefined;
+  }
+
   addReaction(c: ReactionKind): void {
-    if (this.value) {
-      for (let i = 0; i < this.value.length; i++) {
-        if (this.value.charAt(i) === c) {
-          this.value = this.value!.substring(0, i) + c + this.value!.substring(i);
+    if (this._value) {
+      for (let i = 0; i < this._value.length; i++) {
+        if (this._value.charAt(i) === c) {
+          this._value = this._value!.substring(0, i) + c + this._value!.substring(i);
           return;
         }
       }
-      this.value = this.value + c;
+      this._value = this._value + c;
       return;
     } else {
-      this.value = c;
+      this._value = c;
       return;
     }
   }
@@ -161,6 +167,18 @@ export class AlbumPhoto {
     }
     this.wire.reactions = this.wire.reactions + val;
     this.reactions.addReaction(val);
+
+    this.invokeOnChanged();
+    ctx.addPhoto({
+      kind: LibraryUpdateRecordKind.update,
+      photo: this,
+      reactions: this.wire.reactions
+    });
+  }
+
+  public clearReactions(ctx: UpdatePhotoContext) {
+    this.wire.reactions = undefined;
+    this.reactions.clearReactions();
 
     this.invokeOnChanged();
     ctx.addPhoto({

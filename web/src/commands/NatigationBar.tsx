@@ -42,11 +42,11 @@ export function collapsablePane(
   renderPane: () => JSX.Element) {
 
   return [(
-    <ListItemButton onClick={() => setOpen(!open)} key={'cat_' + text}>
+    <ListItemButton onClick={() => setOpen(!open)} key={'pane_' + text}>
       <ListItemText primary={text} />
       {open ? <ExpandLess /> : <ExpandMore />}
     </ListItemButton>),
-  (<Collapse in={open} timeout="auto" unmountOnExit>
+  (<Collapse key="pane_collapse" in={open} timeout="auto" unmountOnExit>
     {renderPane()}
   </Collapse>)]
 }
@@ -63,24 +63,24 @@ function FolderLayout(props: { folder: PhotoFolder }) {
   if (props.folder.children.length > 0) {
     return (
       <div>
-        <ListItemButton onClick={() => setOpenFolders(!openFolders)} key={'cat_' + props.folder.path} >
+        <ListItemButton onClick={() => setOpenFolders(!openFolders)} key={'button'} >
           <div className="Folder-item">{props.folder.relname}</div>
           {openFolders ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton >
-        <Collapse in={openFolders} timeout="auto" unmountOnExit>
+        <Collapse key="collapse" in={openFolders} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            {props.folder.children.map((x) => { return (<FolderLayout folder={x} />) })}
+            {props.folder.children.map((x) => { return (<FolderLayout key={"folder_" + x.id} folder={x} />) })}
           </List>
         </Collapse>
       </div>)
   } else {
     return (
-      <ListItemButton className="Folder-item" sx={{ pl: 4 }} onClick={handleClick} key={'folder_' + props.folder.id}>
+      <ListItemButton className="Folder-item" sx={{ pl: 4 }} onClick={handleClick}>
         <div className="Folder-item">
-          <div>
+          <div key="name">
             {props.folder.relname}
           </div>
-          <div className="Folder-item-count">
+          <div key="count" className="Folder-item-count">
             {count}
           </div>
         </div>
@@ -175,7 +175,7 @@ export function NavigationBar() {
     <div>
       <CollectionListLayout key='quick' textClassName="Top-catalog-item" text="Quich collection"
         lists={getCollectionsByKind('quick', maxCollectionHistory)} />
-      <CollectionItemLayout paddingLeft={2} key='recent' textClassName="Top-catalog-item" text="All Photos"
+      <CollectionItemLayout paddingLeft={2} key='all' textClassName="Top-catalog-item" text="All Photos"
         coll={getCollectionByKind('all')} />
       <CollectionItemLayout paddingLeft={2} key='favorite' textClassName="Top-catalog-item" text="Favorite"
         coll={getCollectionByKind('favorite')} />

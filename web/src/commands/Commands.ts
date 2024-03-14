@@ -17,6 +17,7 @@ export enum Command {
   RescanFolder = 27,
   BuildSimilarityIndex = 28,
   AddReaction = 29,
+  ClearReactions = 30,
 }
 
 let commandHandlers = new Map<Command, SimpleEventSource<any>>();

@@ -153,6 +153,12 @@
   font-size: 20px;
 }
 
+.Photo-reactions-big {
+  display: flex;
+  flex-direction: column;
+  font-size: 30px;
+}
+
 .Photo-layout-stack-icon {
   position: absolute;
   display: block;

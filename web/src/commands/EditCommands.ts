@@ -39,6 +39,14 @@ export function onAddReaction(val: ReactionKind) {
   ctx.commit();
 }
 
+export function onClearReactions(val: ReactionKind) {
+  console.log('onClearReaction');
+
+  let ctx = new UpdatePhotoContext();
+  selectionManager.forEach((x) => { x.clearReactions(ctx); });
+  ctx.commit();
+}
+
 /**
  * preserve selection around position
  */
@@ -83,6 +91,8 @@ export function onAddStack() {
       // otherwise create new stack
       if (prevPhoto.stackId) {
         addStack(prevPhoto.stackId, photo, ctx);
+      } else if (photo.stackId) {
+        addStack(photo.stackId, prevPhoto, ctx);
       } else {
         addStack(prevPhoto.id, prevPhoto, ctx);
         addStack(prevPhoto.id, photo, ctx);
@@ -178,4 +188,5 @@ export function registerEditCommands() {
   addCommandHandler(Command.CreateQuickCollection, onNewQuickCollection);
   addCommandHandler(Command.NavigateBack, onNavigateBack);
   addCommandHandler(Command.AddReaction, onAddReaction);
+  addCommandHandler(Command.ClearReactions, onClearReactions);
 }

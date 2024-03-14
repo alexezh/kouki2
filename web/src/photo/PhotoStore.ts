@@ -98,6 +98,7 @@ export async function loadLibrary(options: { minId?: number, startDt?: Date }) {
 
 /**
  * uses originalId to add photos to stack
+ * com
  */
 function processSimilarityIndex(photos: AlbumPhoto[]) {
 
@@ -109,10 +110,12 @@ function processSimilarityIndex(photos: AlbumPhoto[]) {
       continue;
     }
 
-    let origPhoto = photoLibraryMap.get(photo.wire.originalId as PhotoId);
-    if (origPhoto!.id === 19900) {
-      console.log("well");
+    // if photo already part of stack; ignore
+    if (photo.stackId) {
+      continue;
     }
+
+    let origPhoto = photoLibraryMap.get(photo.wire.originalId as PhotoId);
     if (!origPhoto) {
       console.log('cannot get original photo ' + photo.wire.originalId);
       continue;
@@ -163,7 +166,7 @@ function buildStacks(photos: AlbumPhoto[]) {
 function updateStackCover(stack: ReadonlyArray<PhotoId>, ctx: UpdatePhotoContext) {
   let cover: PhotoId | undefined = undefined;
 
-  let favIdx = stack.findIndex((x: PhotoId) => getPhotoById(x)!.reactions);
+  let favIdx = stack.findIndex((x: PhotoId) => getPhotoById(x)!.reactions.isFavorite);
   if (favIdx === -1) {
     cover = stack[0];
   } else {
@@ -204,6 +207,7 @@ export function addStack(stackId: PhotoId, photo: AlbumPhoto, ctx: UpdatePhotoCo
       console.log('addStack: cannot get stack');
       return;
     }
+    console.log(`combine stacks ${photo.stackId} ${photo.id}`);
     for (let spId of stackPhotos) {
       let sp = getPhotoById(spId);
       addStackPhoto(sp);

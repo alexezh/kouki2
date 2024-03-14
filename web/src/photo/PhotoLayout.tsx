@@ -59,7 +59,9 @@ const imgWithClick = { cursor: 'pointer' };
 
 export function PhotoLayout(props: PhotoPropTypes) {
   let [selected, setSelected] = useState(props.selected);
-  let [reactions, setReactions] = useState(props.photo.reactions);
+  // bit of a hack; we are using value since it is immutable
+  // but reactions object is mutable
+  let [reactions, setReactions] = useState(props.photo.reactions.value);
   let [stackIcon, setStackIcon] = useState(getStackIcon(props.photo.hasStack));
 
   useEffect(() => {
@@ -68,7 +70,8 @@ export function PhotoLayout(props: PhotoPropTypes) {
     })
 
     let idChanged = props.photo.addOnChanged((photo: AlbumPhoto) => {
-      setReactions(photo.reactions);
+      console.log("PhotoLayout - change reactions");
+      setReactions(photo.reactions.value);
     });
     return () => {
       selectionManager.removeOnSelected(props.photo, idSelected);
@@ -169,7 +172,7 @@ export function PhotoLayout(props: PhotoPropTypes) {
         src={src}
         onClick={handleClick}
       />
-      <ReactionsLayout reactions={reactions} />
+      <ReactionsLayout key="reactions" thumbnail={props.viewMode !== ViewMode.zoom} reactions={props.photo.reactions} />
     </div>
   );
 };

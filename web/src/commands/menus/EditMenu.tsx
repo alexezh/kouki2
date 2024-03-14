@@ -68,6 +68,8 @@ export function EditMenu(props: CommandMenuProps) {
       <MenuItem key="edit_none" onClick={handleSelectNone}>Select None</MenuItem>
       <MenuItem key="invert_select" onClick={handleInvertSelect}>Invert Selection</MenuItem>
       <Divider />
+      <MyMenuItem key="clear_reactions" command={Command.ClearReactions} text="Clear reactions" shortcut="X" />
+      <Divider />
       <MyMenuItem key="add_quick" command={Command.AddQuickCollection} text="Add quick collection" shortcut="B" />
       <MyMenuItem key="add_stack" command={Command.AddStack} text="Add to Stack" shortcut="K" />
       <MyMenuItem key="remove_stack" command={Command.RemoveStack} text="Remove from Stack" shortcut="U" />

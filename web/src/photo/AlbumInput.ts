@@ -86,8 +86,11 @@ export function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
       case 'p':
         invokeCommand(Command.AddReaction, ReactionKind.ThumbsUp);
         break;
-      case 'x':
+      case 'd':
         invokeCommand(Command.AddReaction, ReactionKind.ThumbsDown);
+        break;
+      case 'x':
+        invokeCommand(Command.ClearReactions);
         break;
       case 'h':
         invokeCommand(Command.MarkHidden);

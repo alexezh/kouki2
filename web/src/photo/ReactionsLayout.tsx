@@ -7,8 +7,8 @@ import { PhotoReactions } from "./AlbumPhoto";
 // height={20}
 // src={favIcon}
 
-export function ReactionsLayout(props: { reactions: PhotoReactions }) {
-  return (<div className="Photo-reactions-thumbnail">
-    {props.reactions.map((c: string) => (<div>{reactionKindToEmoji(c)}</div>))}
-  </div >)
+export function ReactionsLayout(props: { reactions: PhotoReactions, thumbnail: boolean }) {
+  return (<div className={(props.thumbnail) ? "Photo-reactions-thumbnail" : "Photo-reactions-big"}>
+    {props.reactions.map((c: string, idx?: number) => (<div key={"r_" + idx}>{reactionKindToEmoji(c)}</div>))}
+  </ div >)
 }
