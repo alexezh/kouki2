@@ -33,8 +33,13 @@ static public class DbMigration
     if (userVersion < 7)
     {
       ConvertFavs(connection);
+    }
 
-      userVersion = 7;
+    if (userVersion < 8)
+    {
+      PhotoDbStatics.AddColumn(connection, "Photos", "reactionsDt", "INTEGER");
+
+      userVersion = 8;
       ReaderExt.ExecuteVoidCommand(connection, (command) =>
       {
         command.CommandText = $"PRAGMA user_version = {userVersion};";

@@ -1,11 +1,13 @@
-import { CSSProperties, useEffect, useRef, useState } from "react";
-import { AlbumRow, RowKind } from "./AlbumPhoto";
+import { CSSProperties, MutableRefObject, useEffect, useRef, useState } from "react";
+import { AlbumRow, PhotoListId, RowKind } from "./AlbumPhoto";
 import { getAppState } from "../commands/AppState";
 import { selectionManager } from "../commands/SelectionManager";
 import { Command, addCommandHandler } from "../commands/Commands";
 import { DateRowLayout, PhotoRowLayout } from "./RowLayout";
 import { handleDateSelected, handlePhotoClick } from "./AlbumInput";
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
+import { RowCollectionChangedArg } from "./RowCollection";
+import { PhotoList } from "./PhotoList";
 
 type GridAlbumProps = {
   style: CSSProperties,
@@ -13,10 +15,34 @@ type GridAlbumProps = {
   height: number
 }
 
+let scrollOffsets = new Map<string, number>();
+
+function saveGridLayoutScrollOffset(id: PhotoListId | undefined, offset: number | undefined) {
+  if (!id) {
+    return;
+  }
+  if (offset === undefined) {
+    return;
+  }
+
+  scrollOffsets.set(id.toString(), offset);
+}
+
+function getGridLayoutScrollOffset(id: PhotoListId | undefined): number {
+  if (!id) {
+    return 0;
+  }
+
+  let offset = scrollOffsets.get(id.toString());
+  return offset ?? 0;
+}
+
+
 export function GridLayout(props: GridAlbumProps) {
-  let [version, setVersion] = useState(0);
+  let [version, setVersion] = useState(getAppState().navRows.version);
   const ref = useRef(null);
   const listRef = useRef(null);
+  const photoListRef = useRef<PhotoList>(getAppState().navRows.photoList) as MutableRefObject<PhotoList>;
 
   getAppState().navRows.setRowWidth(props.width);
 
@@ -26,8 +52,6 @@ export function GridLayout(props: GridAlbumProps) {
     // add listener to selection manager to track current
     let selectId = selectionManager.addOnSelectionChanged(() => {
 
-      let rows = getAppState().navRows;
-
       console.log('Selection changed');
 
       if (listRef.current) {
@@ -36,7 +60,7 @@ export function GridLayout(props: GridAlbumProps) {
           console.log("ScrollSelect to " + idx);
           if (idx !== -1) {
             // @ts-ignore
-            listRef.current.scrollToItem(idx);
+            listRef.current.scrollToItem(idx, "start");
           }
         }
       }
@@ -53,7 +77,7 @@ export function GridLayout(props: GridAlbumProps) {
           console.log("ScrollAlbum to " + idx);
           if (idx >= 0) {
             // @ts-ignore
-            listRef.current.scrollToItem(idx);
+            listRef.current.scrollToItem(idx, "start");
           }
         }
       }
@@ -68,7 +92,7 @@ export function GridLayout(props: GridAlbumProps) {
 
 
     // add listener for state changes
-    let rowsId = getAppState().navRows.addOnChanged((arg: { scrollPos?: number, invalidatePos?: number }) => {
+    let rowsId = getAppState().navRows.addOnChanged((arg: RowCollectionChangedArg) => {
       // update layout when we navigate
       if (listRef.current) {
         console.log("GridLayout: rows changed " + arg.invalidatePos);
@@ -76,11 +100,19 @@ export function GridLayout(props: GridAlbumProps) {
           // @ts-ignore
           listRef.current.resetAfterIndex(arg.invalidatePos);
         }
-        if (arg.scrollPos !== undefined) {
+        if (arg.kind === "load") {
           // @ts-ignore
-          listRef.current.scrollToItem(arg.scrollPos);
+          let currentOffset = listRef.current.state.scrollOffset;
+
+          saveGridLayoutScrollOffset(photoListRef.current?.id, currentOffset);
+
+          let offset = getGridLayoutScrollOffset(arg.list?.id);
+
+          // @ts-ignore
+          listRef.current.scrollTo(offset, "start");
         }
       }
+      photoListRef.current = arg.list!;
       setVersion(getAppState().navRows.version);
     });
 
@@ -139,7 +171,7 @@ export function GridLayout(props: GridAlbumProps) {
     }
   }
 
-  console.log('render grid:' + getAppState()?.navRows?.getRowCount());
+  console.log('render grid:' + getAppState().navRows?.getRowCount());
 
   return (<List
     ref={listRef}

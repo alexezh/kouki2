@@ -9,10 +9,11 @@ import Button from "@mui/material/Button/Button";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
 import { wireImportFolder, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
-import { JobStatus, runJob } from "../BackgroundJobs";
+import { runJob } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { showConfirmationDialog } from "./ConfirmationDialog";
 import { createCollectionOfKind } from "../../photo/CollectionStore";
+import { ResultResponse } from "../../lib/fetchadapter";
 
 export function onImportFolder() {
   showDialog((props: DialogProps) => {
@@ -47,10 +48,6 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
             importCollection: importColl.id.id
           });
           return addResponse;
-        },
-        (status: GetJobStatusResponse) => {
-          let importStatus = status as ImportJobStatusResponse;
-          return 'Scanned: ' + importStatus.addedFiles + ' files';
         });
 
       let dryResult = (await dryJob.task) as ImportJobStatusResponse;
@@ -77,13 +74,12 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
             importCollection: importColl.id.id
           });
           return addResponse;
-        },
-        (status: GetJobStatusResponse) => {
-          let importStatus = status as ImportJobStatusResponse;
-          return 'Added: ' + importStatus.addedFiles + ' files';
         });
 
-      job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+      job.addOnStatus((status: ResultResponse) => {
+        let importStatus = status as ImportJobStatusResponse;
+        setStatusText('Added: ' + importStatus.addedFiles + ' files')
+      });
       let jobResult = await job.task;
 
       setProcessing(false);

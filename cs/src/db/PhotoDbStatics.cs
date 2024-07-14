@@ -45,8 +45,8 @@ public class PhotoDbStatics
           "id integer primary key",
           "hash TEXT",
           "originalHash TEXT", // hash of original picture
-          "originalDt TEXT",
-          "importedDt TEXT",
+          "originalDt TEXT", // deprecated
+          "importedDt TEXT", // deprecated
           "stackId NUMBER", // hash of any photo in the stack
           "folder INTEGER",
           "filename TEXT",

@@ -426,12 +426,12 @@ public class FileImporter : IFileImporter, IDisposable
     {
       case OrientationType.Undefined:
       case OrientationType.TopLeft:
-      case OrientationType.BottomLeft:
-      case OrientationType.LeftBotom:
-      case OrientationType.LeftTop:
-        return new Size(width, height);
       case OrientationType.TopRight:
       case OrientationType.BottomRight:
+      case OrientationType.BottomLeft:
+        return new Size(width, height);
+      case OrientationType.LeftBotom:
+      case OrientationType.LeftTop:
       case OrientationType.RightTop:
       case OrientationType.RightBottom:
         return new Size(height, width);

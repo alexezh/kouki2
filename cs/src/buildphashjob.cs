@@ -41,7 +41,7 @@ public class BuildPHashJob : IJob
         }
       }));
 
-      if (pending.Count == 1)
+      if (pending.Count == 4)
       {
         await Task.WhenAll(pending.ToArray());
         pending.Clear();

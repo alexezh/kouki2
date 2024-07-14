@@ -5,7 +5,7 @@ import { showAltTextDialog, showBuildPhashDialog, showRescanFolderDialog, showSi
 
 export function registerLibraryCommands() {
   addCommandHandler(Command.ImportFolder, onImportFolder);
-  addCommandHandler(Command.BuildPHash, () => showBuildPhashDialog(getAppState().navListId.id));
+  addCommandHandler(Command.BuildPHash, () => showBuildPhashDialog(getAppState().navListId));
   addCommandHandler(Command.RescanFolder, () => showRescanFolderDialog(getAppState().navListId.id));
   addCommandHandler(Command.BuildAltText, () => showAltTextDialog(getAppState().navListId));
   addCommandHandler(Command.BuildSimilarityIndex, () => showSimilarityIndexDialog(getAppState().navListId));

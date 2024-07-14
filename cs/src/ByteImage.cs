@@ -42,8 +42,6 @@ public class ByteImage : IByteImage
     byte[] r = new byte[Width * Height];
     var yc = new Vector3(66, 129, 25);
     var i = 0;
-    var reverseX = (_orientation == OrientationType.TopRight);
-    int srcPixelStride = (reverseX) ? -3 : 3;
 
     switch (_orientation)
     {
@@ -68,6 +66,7 @@ public class ByteImage : IByteImage
 
         return new ByteImage(Height, Width, OrientationType.LeftTop, r);
 
+      // flip horizonal
       case OrientationType.TopRight:
         for (var dy = 0; dy < Height; dy++)
         {
@@ -75,7 +74,8 @@ public class ByteImage : IByteImage
 
           for (var dx = 0; dx < Width; dx++)
           {
-            i = srcLineStart + dx * 3;
+            // -1 since we positioned on the right of pixel
+            i = srcLineStart - (dx + 1) * 3;
             Vector3 sv;
             sv.Z = _data[i++]; // B
             sv.Y = _data[i++]; // G

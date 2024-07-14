@@ -12,6 +12,7 @@ public class PhotoEntry
   public string fileExt { get; set; }
   public Int64 fileSize { get; set; }
   public string reactions { get; set; }
+  public string reactionsDt { get; set; }
   public bool hidden { get; set; }
   public int stars { get; set; }
   public string color { get; set; }
@@ -295,7 +296,7 @@ public class PhotoDb
   public Int64 AddPhoto(PhotoEntry entry)
   {
     var command = _connection.CreateCommand();
-    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, fav, width, height, format, originalDt2, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $fav, $width, $height, $format, $originalDt2, $phash) RETURNING id";
+    command.CommandText = "INSERT INTO Photos(folder, filename, fileext, filesize, hash, hidden, width, height, format, originalDt2, phash) VALUES($folder, $filename, $fileext, $filesize, $hash, $hidden, $width, $height, $format, $originalDt2, $phash) RETURNING id";
     command.Parameters.AddWithValue("$folder", entry.folderId);
     command.Parameters.AddWithValue("$filename", entry.fileName);
     command.Parameters.AddWithValue("$fileext", entry.fileExt);
@@ -332,6 +333,7 @@ public class PhotoDb
       fileSize = (Int64)reader["filesize"],
       hidden = reader.ReadBoolean("hidden"),
       reactions = reader.ReadString("reactions"),
+      reactionsDt = reader.ReadIntTime("reactionsDt"),
       stars = reader.ReadInt32("stars"),
       color = reader.ReadString("color"),
       width = unchecked((int)(Int64)reader["width"]),

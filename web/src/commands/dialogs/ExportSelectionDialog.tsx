@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GetJobStatusResponse, ProcessCollectionStatusResponse, wireExportPhotos, wireGetJobStatus } from "../../lib/photoclient";
+import { ExportJobStatusResponse, GetJobStatusResponse, ProcessCollectionStatusResponse, wireExportPhotos, wireGetJobStatus } from "../../lib/photoclient";
 import DialogTitle from "@mui/material/DialogTitle/DialogTitle";
 import DialogContent from "@mui/material/DialogContent/DialogContent";
 import Dialog from "@mui/material/Dialog/Dialog";
@@ -15,11 +15,15 @@ import { AlbumPhoto } from "../../photo/AlbumPhoto";
 import { createCollectionOfKind, triggerRefreshCollections } from "../../photo/CollectionStore";
 import { createCollectionPhotoList } from "../../photo/LoadPhotoList";
 import { runJob } from "../BackgroundJobs";
+import { ResultResponse } from "../../lib/fetchadapter";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
 
 export function ExportSelectionDialog(props: { onClose: () => void }) {
   const [path, setPath] = useState("");
   const [processing, setProcessing] = useState(false);
   const [statusText, setStatusText] = useState('');
+  const [symLink, setSymbolicLink] = useState(false);
 
   function handleClose() {
     props.onClose();
@@ -37,14 +41,21 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
 
       let job = runJob('export',
         'Export folders',
-        () => wireExportPhotos({ path: path, format: "jpeg", photos: photos, exportCollection: exportList.id.id }),
-        (response: GetJobStatusResponse) => `Exported: ${(response as ProcessCollectionStatusResponse).processedFiles} files`);
+        () => wireExportPhotos({ path: path, format: "jpeg", useSymLink: symLink, photos: photos, exportCollection: exportList.id.id }));
 
+      job.addOnStatus((status: ResultResponse) => setStatusText(`Exported: ${(status as ExportJobStatusResponse).exportedFiles} files`));
       let exportResult = await job.task;
 
-      if (exportResult.result !== 'Ok') {
-        props.onClose();
-        return;
+      let jobResult = await job.task;
+
+      setProcessing(false);
+      if (jobResult) {
+        if (jobResult.result === "Done") {
+          triggerRefreshFolders();
+          props.onClose();
+        } else {
+          setStatusText(jobResult.message);
+        }
       }
     }
     catch (e: any) {
@@ -80,6 +91,9 @@ export function ExportSelectionDialog(props: { onClose: () => void }) {
           value={path}
           onChange={handleChanged}
         />) : (<Typography variant="body1">{statusText}</Typography>)}
+        <FormControlLabel label="Use symbolic links"
+          control={
+            <Checkbox checked={symLink} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSymbolicLink(event.target.checked) }} />} />
       </DialogContent>
       <DialogActions>
         <Button disabled={processing} onClick={handleExport}>Export</Button>

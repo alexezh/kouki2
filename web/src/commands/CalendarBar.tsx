@@ -2,7 +2,7 @@ import Collapse from "@mui/material/Collapse/Collapse";
 import List from "@mui/material/List/List";
 import { useEffect, useState } from "react";
 import { YearEntry, addOnStateChanged, getAppState, removeOnStateChanged } from "./AppState";
-import { Command, invokeCommand, scrollAlbumToDate } from "./Commands";
+import { Command, scrollAlbumToDate } from "./Commands";
 import { getStartDt, loadLibrary } from "../photo/PhotoStore";
 import { substractYears } from "../lib/date";
 
@@ -20,7 +20,7 @@ function CalendarBarYear(props: {
     if (!props.year.lessThen) {
       setOpen(!open);
     }
-    props.onSelect(props.year, 0);
+    props.onSelect(props.year, (props.year.months.length > 0) ? props.year.months[0] : 0);
   }
 
   function handleMonthClick(month: number) {

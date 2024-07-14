@@ -20,6 +20,7 @@ public class ExportPhotosRequest
   /// original or jpeg
   /// </summary>
   public string format { get; set; }
+  public bool useSymLink { get; set; }
   public Int64[] photos { get; set; }
   public Int64 exportCollection { get; set; }
 }
@@ -28,11 +29,10 @@ public class ExportPhotosResponse : JobResponse
 {
 }
 
-public class ExportJobResponse
+public class ExportJobResponse : GetJobStatusResponse
 {
   public int exportedFiles { get; set; }
   public int skippedFiles { get; set; }
-  public string result { get; set; }
 }
 
 public class ExportJob : IJob
@@ -132,11 +132,17 @@ public class Exporter
             var destPath = Path.GetFullPath(photo.fileName + ".jpg", exportFolder);
             CopyJpeg(destPath, targetPath);
           }
-          else
+          else if (request.useSymLink)
           {
             var linkPath = Path.GetFullPath(photo.fileName + photo.fileExt, exportFolder);
             File.CreateSymbolicLink(linkPath, targetPath);
           }
+          else
+          {
+            var linkPath = Path.GetFullPath(photo.fileName + photo.fileExt, exportFolder);
+            File.Copy(linkPath, targetPath);
+          }
+
           status.Exported++;
 
           UpdateExportCollection(photoFs, exportColl.id, photo.id);

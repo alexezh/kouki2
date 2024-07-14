@@ -8,24 +8,18 @@ import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
 import Typography from "@mui/material/Typography/Typography";
 import { triggerRefreshFolders } from "../../photo/FolderStore";
-import { catchAllAsync } from "../../lib/error";
-import { JobStatus, runJob, runRescanFolder } from "../BackgroundJobs";
+import { runJob } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { CollectionId, getCollectionById } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
 import { PhotoListId } from "../../photo/AlbumPhoto";
 import { loadLibrary } from "../../photo/PhotoStore";
 
-export async function showBuildPhashDialog(collId: CollectionId): Promise<void> {
-
-  let coll = getCollectionById(collId);
-  if (!coll) {
-    return;
-  }
+export async function showBuildPhashDialog(listId: PhotoListId): Promise<void> {
 
   let contentText: string;
 
-  switch (coll.id.kind) {
+  switch (listId.kind) {
     case 'all': contentText = 'Update phash for all photos'; break;
     case 'folder': contentText = 'Update phash for folder'; break;
     default: contentText = 'Update phash for collection'; break;
@@ -34,11 +28,14 @@ export async function showBuildPhashDialog(collId: CollectionId): Promise<void> 
   //getCollectionsByKind(collId);
 
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
-    await runJob<ImportJobStatusResponse>("alt_" + collId,
+    let job = runJob<ImportJobStatusResponse>("phash_" + listId.id,
       'Build PHash',
-      () => wireProcessCollectionJob({ cmd: 'phash', collKind: coll!.id.kind, collId: collId, forceUpdate: false }),
-      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
+      () => wireProcessCollectionJob({ cmd: 'phash', collKind: listId.kind, collId: listId.id, forceUpdate: false }))
 
+    job.addOnStatus((status: ResultResponse) =>
+      setStatusText(`Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`));
+
+    await job.task;
     triggerRefreshFolders();
   }
 
@@ -46,7 +43,7 @@ export async function showBuildPhashDialog(collId: CollectionId): Promise<void> 
     return (
       <ProgressDialog
         title='Build phash'
-        contentText='Compute PHash for'
+        contentText={contentText}
         statusText=""
         onClose={props.onClose}
         actionButtonText="Run"
@@ -75,10 +72,10 @@ export function showAltTextDialog(listId: PhotoListId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     let job = runJob<ImportJobStatusResponse>("alt_" + listId.id,
       'Generate Alternative Text',
-      () => wireProcessCollectionJob({ cmd: 'alttext', collKind: listId.kind, collId: listId.id, forceUpdate: false }),
-      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
+      () => wireProcessCollectionJob({ cmd: 'alttext', collKind: listId.kind, collId: listId.id, forceUpdate: false }));
 
-    job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+    job.addOnStatus((status: ResultResponse) =>
+      setStatusText(`Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`));
 
     await job.task;
   }
@@ -99,10 +96,10 @@ export function showSimilarityIndexDialog(listId: PhotoListId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     let job = runJob<ImportJobStatusResponse>("sim_" + listId.id,
       'Build Similarity Index',
-      () => wireProcessCollectionJob({ cmd: 'similarity', collKind: 'all', collId: 0, forceUpdate: false }),
-      (status: ResultResponse) => `Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`)
+      () => wireProcessCollectionJob({ cmd: 'similarity', collKind: 'all', collId: 0, forceUpdate: false }));
 
-    job.addOnStatus((status: JobStatus) => setStatusText(status.text));
+    job.addOnStatus((status: ResultResponse) =>
+      setStatusText(`Processed: ${(status as ProcessCollectionStatusResponse).processedFiles} files`));
 
     await job.task;
     await loadLibrary({ minId: 0 });

@@ -7,11 +7,6 @@ import { CollectionId } from "../photo/CollectionStore";
 
 let jobColl: BackgroundJob[] = [];
 
-export type JobStatus = {
-  text: string;
-  response: GetJobStatusResponse;
-}
-
 /**
  * jobs run in background and we do not want to block UI
  * an application can wait for job to complete; or it can sign for status notifications
@@ -20,23 +15,20 @@ export type JobStatus = {
 export interface IBackgroundJob {
   readonly description: string;
   readonly task: Promise<ResultResponse>;
-  addOnStatus(func: (status: JobStatus) => void): number;
+  addOnStatus(func: (status: ResultResponse) => void): number;
   removeOnStatus(id: number): void;
 }
 
 export class BackgroundJob implements IBackgroundJob {
   readonly task: Promise<ResultResponse>;
   public readonly description: string;
-  private readonly _onStatus: SimpleEventSource<JobStatus> = new SimpleEventSource();
-  private readonly makeStatusText: (response: GetJobStatusResponse) => string;
+  private readonly _onStatus: SimpleEventSource<ResultResponse> = new SimpleEventSource();
 
   public constructor(
     descrition: string,
-    worker: () => Promise<StartJobResponse>,
-    makeStatusText: (response: GetJobStatusResponse) => string) {
+    worker: () => Promise<StartJobResponse>) {
 
     this.description = descrition;
-    this.makeStatusText = makeStatusText;
     this.task = new Promise<ResultResponse>((resolve) => {
       setTimeout(async () => {
         let jobStatusResponse: GetJobStatusResponse | null = null;
@@ -74,7 +66,7 @@ export class BackgroundJob implements IBackgroundJob {
     });
   }
 
-  addOnStatus(func: (status: JobStatus) => void): number {
+  addOnStatus(func: (status: ResultResponse) => void): number {
     return this._onStatus.add(func);
   }
 
@@ -83,7 +75,7 @@ export class BackgroundJob implements IBackgroundJob {
   }
 
   private invokeOnStatus(res: GetJobStatusResponse) {
-    this._onStatus.invoke({ response: res, text: this.makeStatusText(res) });
+    this._onStatus.invoke(res);
   }
 }
 
@@ -93,23 +85,11 @@ export class BackgroundJob implements IBackgroundJob {
 export function runJob<T extends GetJobStatusResponse>(
   key: string,
   descrition: string,
-  worker: () => Promise<StartJobResponse>,
-  makeStatusText: (response: GetJobStatusResponse) => string): IBackgroundJob {
+  worker: () => Promise<StartJobResponse>): IBackgroundJob {
 
-  let job = new BackgroundJob(descrition, worker, makeStatusText);
+  let job = new BackgroundJob(descrition, worker);
   jobColl.push(job);
 
   return job;
 }
-
-
-export function runRescanFolder(listId: PhotoListId): IBackgroundJob {
-  return runJob(
-    'rescan' + listId.kind,
-    'Rescan Folder',
-    () => wireProcessCollectionJob({ cmd: 'rescan', collKind: listId.kind, collId: listId.id, forceUpdate: false }),
-    (response: GetJobStatusResponse) => `Processed ${(response as ProcessCollectionStatusResponse).processedFiles} files`
-  );
-  //    onStatus: (status: PHashJobStatusResponse) => setStatusText(`Processed: {status.processedFiles} files`),
-};
 

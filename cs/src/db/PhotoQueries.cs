@@ -153,6 +153,9 @@ public static class PhotoQueriesExt
     {
       setFields.Add("reactions = $reactions");
       command.Parameters.AddWithValue("$reactions", updateReqest.reactions);
+
+      setFields.Add("reactionsDt = $reactionsDt");
+      command.Parameters.AddWithValue("$reactions", DateTime.Now.ToBinary());
     }
 
     if (setFields.Count > 0)

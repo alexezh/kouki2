@@ -63,7 +63,7 @@ public static class CollectionsQueriesExt
     {
       return self.GetMinPhotoEntries((command, fields) =>
       {
-        command.CommandText = $"SELECT {fields} FROM Photos WHERE folderId=={collId} ORDER BY originalDt2 DESC";
+        command.CommandText = $"SELECT {fields} FROM Photos WHERE folder=={collId} ORDER BY originalDt2 DESC";
       });
     }
     else

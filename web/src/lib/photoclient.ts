@@ -27,6 +27,7 @@ export type WirePhotoEntry = {
   fileExt: string;
   fileSize: number;
   reactions?: string;
+  reactionsDt?: string;
   stars: number;
   // indicates that photo is hidden from "all phptos" collection
   hidden: boolean;
@@ -251,6 +252,11 @@ export type ProcessCollectionStatusResponse = GetJobStatusResponse & {
   processedFiles: number;
 }
 
+export type ExportJobStatusResponse = GetJobStatusResponse & {
+  exportedFiles: number;
+  skippedFiles: number;
+}
+
 export async function wireGetJobStatus<T extends ResultResponse>(id: string): Promise<T> {
   try {
     let response = await (await fetchAdapter!.get(`/api/job/getjobstatus/${id}`)).json();
@@ -265,6 +271,7 @@ export type ExportPhotosRequest = {
   path: string;
   exportCollection: number;
   format: string;
+  useSymLink: boolean;
   photos: number[];
 }
 
