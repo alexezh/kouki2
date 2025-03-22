@@ -183,7 +183,7 @@ public static class CollectionsQueriesExt
     }
     else if (kind == "folder")
     {
-      return self.GetCollectionItems(collId);
+      return self.GetPhotosByFolder(collId);
     }
     else
     {

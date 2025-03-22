@@ -13,13 +13,41 @@ public class LLamaImageData
 
 public class LLamaRequest
 {
+  public string model { get; set; }
   public string prompt { get; set; }
-  public LLamaImageData[] image_data { get; set; }
+  public string[] images { get; set; }
+  public bool stream { get; set; }
+}
+
+public class LLamaEmbeddingResponse
+{
+  public double[] embedding { get; set; }
 }
 
 public class LLamaResponse
 {
-  public string content { get; set; }
+  public string response { get; set; }
+
+  public static string trimText(string s)
+  {
+    if (s.Length > 0)
+    {
+      var i = s.Length;
+      for (; i > 0; i--)
+      {
+        if (s[i - 1] == '}')
+        {
+          break;
+        }
+      }
+      if (i != s.Length)
+      {
+        s = s.Substring(0, i);
+      }
+    }
+
+    return s;
+  }
 }
 
 public class ComputeTextEmbeddingRequest
@@ -82,6 +110,8 @@ public class GenerateAltTextJob : IJob
 
   public static async Task<bool> ProcessItem(HttpClient client, Int64 imageId, bool forceUpdate = false)
   {
+    forceUpdate = true;
+
     if (!forceUpdate)
     {
       var alttext = PhotoFs.Instance.PhotoDb.GetPhotoAltText(imageId);
@@ -96,29 +126,29 @@ public class GenerateAltTextJob : IJob
 
     var request = new LLamaRequest()
     {
+      model = "llama3.2-vision:latest",
       //       prompt = @"Detailed image analysis dialogue.
       // USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
       // ASSISTANT:",
-      prompt = @"Detailed image analysis dialogue.
-USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words followed by a thorough analysis of this image, including all elements, colors, and any noticeable features
-ASSISTANT:",
-      image_data = new LLamaImageData[1] { new LLamaImageData() { data = imageData, id = 1 } }
+      prompt = @"Provide a brief, concise description of this image, highlighting only the most essential elements in a few words followed by a thorough analysis of this image, including all elements, colors, and any noticeable features",
+      images = new string[1] { imageData },
+      stream = false
     };
 
     var requestData = JsonSerializer.Serialize(request);
-    using (var response = await client.PostAsync("http://localhost:8080/completion", new StringContent(requestData)))
+    using (var response = await client.PostAsync("http://localhost:11434/api/generate", new StringContent(requestData)))
     {
-      var responseText = await response.Content.ReadAsStringAsync();
+      var responseText = LLamaResponse.trimText(await response.Content.ReadAsStringAsync());
 
       //Console.WriteLine(responseText);
       var responseObj = JsonSerializer.Deserialize<LLamaResponse>(responseText);
-      if (responseObj.content != null)
+      if (responseObj.response != null)
       {
-        PhotoFs.Instance.PhotoDb.UpdatePhotoAltText(imageId, responseObj.content);
-        PhotoFs.Instance.PhotoDb.UpdateAltText(imageId, responseObj.content);
+        PhotoFs.Instance.PhotoDb.UpdatePhotoAltText(imageId, responseObj.response);
+        PhotoFs.Instance.PhotoDb.UpdateAltText(imageId, responseObj.response);
       }
 
-      var emb = await ComputeTextEmbedding(client, responseObj.content);
+      var emb = await ComputeTextEmbedding(client, responseObj.response);
       var embBuf = SerializeEmbedding(emb);
       PhotoFs.Instance.PhotoDb.UpdatePhotoAltTextEmbedding(imageId, embBuf);
     }
@@ -142,16 +172,35 @@ ASSISTANT:",
 
   private static async Task<double[]> ComputeTextEmbedding(HttpClient client, string text)
   {
-    var request = new ComputeTextEmbeddingRequest() { text = text };
-    var requestData = JsonSerializer.Serialize(request);
-    using (var response = await client.PostAsync("http://localhost:5050/api/textembedding",
-      new StringContent(requestData, Encoding.UTF8,
-                                    "application/json")))
+    // var request = new ComputeTextEmbeddingRequest() { text = text };
+    // var requestData = JsonSerializer.Serialize(request);
+    // using (var response = await client.PostAsync("http://localhost:5050/api/textembedding",
+    //   new StringContent(requestData, Encoding.UTF8,
+    //                                 "application/json")))
+    // {
+    //   var responseText = await response.Content.ReadAsStringAsync();
+    //   var responseObj = JsonSerializer.Deserialize<ComputeTextEmbeddingResponse>(responseText);
+    //   return responseObj.numpy_data;
+    //   //Console.WriteLine(responseObj?.numpy_data?.Length);
+    // }
+    var request = new LLamaRequest()
     {
-      var responseText = await response.Content.ReadAsStringAsync();
-      var responseObj = JsonSerializer.Deserialize<ComputeTextEmbeddingResponse>(responseText);
-      return responseObj.numpy_data;
-      //Console.WriteLine(responseObj?.numpy_data?.Length);
+      model = "llama3.2-vision:latest",
+      //       prompt = @"Detailed image analysis dialogue.
+      // USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
+      // ASSISTANT:",
+      prompt = text,
+      images = null,
+      stream = false
+    };
+
+    var requestData = JsonSerializer.Serialize(request);
+    using (var response = await client.PostAsync("http://localhost:11434/api/embeddings", new StringContent(requestData)))
+    {
+      var responseText = LLamaResponse.trimText(await response.Content.ReadAsStringAsync());
+      var responseObj = JsonSerializer.Deserialize<LLamaEmbeddingResponse>(responseText);
+
+      return responseObj.embedding;
     }
   }
 
