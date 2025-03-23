@@ -51,23 +51,6 @@ export async function showBuildPhashDialog(listId: PhotoListId): Promise<void> {
   });
 }
 
-
-export async function showRescanFolderDialog(collId: CollectionId) {
-
-  // job = runRescanFolder(collId);
-
-  // showDialog((props: DialogProps) => {
-  //   return (
-  //     <ProgressDialog
-  //       title='Rescan folder'
-  //       contentText='Compute PHash for'
-  //       statusText=""
-  //       onClose={props.onClose}
-  //       actionButtonText="Run"
-  //       onAction={func} />)
-  // });
-}
-
 export function showAltTextDialog(listId: PhotoListId) {
   let func = async (setStatusText: (val: string) => void): Promise<void> => {
     let job = runJob<ImportJobStatusResponse>("alt_" + listId.id,

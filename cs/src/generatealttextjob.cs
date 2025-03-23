@@ -22,9 +22,37 @@ public class LLamaRequest
 public class LLamaEmbeddingResponse
 {
   public double[] embedding { get; set; }
+
+  public static LLamaRequest BuildRequest(string text)
+  {
+    return new LLamaRequest()
+    {
+      model = "llama3.2-vision:latest",
+      //       prompt = @"Detailed image analysis dialogue.
+      // USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
+      // ASSISTANT:",
+      prompt = text,
+      images = null,
+      stream = false
+    };
+  }
+
+  public static async Task<double[]> SendRequest(HttpClient client, string text)
+  {
+    var request = BuildRequest(text);
+
+    var requestData = JsonSerializer.Serialize(request);
+    using (var response = await client.PostAsync("http://localhost:11434/api/embeddings", new StringContent(requestData)))
+    {
+      var responseText = LLamaGenerateResponse.trimText(await response.Content.ReadAsStringAsync());
+      var responseObj = JsonSerializer.Deserialize<LLamaEmbeddingResponse>(responseText);
+
+      return responseObj.embedding;
+    }
+  }
 }
 
-public class LLamaResponse
+public class LLamaGenerateResponse
 {
   public string response { get; set; }
 
@@ -121,6 +149,32 @@ public class GenerateAltTextJob : IJob
       }
     }
 
+    bool updateAlt = false;
+
+    // if (responseObj.response != null)
+    // {
+    //   PhotoFs.Instance.PhotoDb.UpdatePhotoAltText(imageId, responseObj.response);
+    //   PhotoFs.Instance.PhotoDb.UpdateAltText(imageId, responseObj.response);
+    // }
+    string altText;
+    if (updateAlt)
+    {
+      altText = await UpdateAltText(client, imageId);
+    }
+    else
+    {
+      altText = PhotoFs.Instance.PhotoDb.GetPhotoAltText(imageId);
+    }
+
+    var emb = await LLamaEmbeddingResponse.SendRequest(client, altText);
+    var embBuf = SerializeEmbedding(emb);
+    PhotoFs.Instance.PhotoDb.UpdatePhotoAltTextEmbedding(imageId, embBuf);
+
+    return true;
+  }
+
+  private static async Task<string> UpdateAltText(HttpClient client, Int64 imageId)
+  {
     Console.WriteLine("GenerateAltText item: " + imageId);
     var imageData = GetImageBase64(imageId);
 
@@ -138,24 +192,19 @@ public class GenerateAltTextJob : IJob
     var requestData = JsonSerializer.Serialize(request);
     using (var response = await client.PostAsync("http://localhost:11434/api/generate", new StringContent(requestData)))
     {
-      var responseText = LLamaResponse.trimText(await response.Content.ReadAsStringAsync());
+      var responseText = LLamaGenerateResponse.trimText(await response.Content.ReadAsStringAsync());
 
       //Console.WriteLine(responseText);
-      var responseObj = JsonSerializer.Deserialize<LLamaResponse>(responseText);
+      var responseObj = JsonSerializer.Deserialize<LLamaGenerateResponse>(responseText);
       if (responseObj.response != null)
       {
         PhotoFs.Instance.PhotoDb.UpdatePhotoAltText(imageId, responseObj.response);
         PhotoFs.Instance.PhotoDb.UpdateAltText(imageId, responseObj.response);
       }
 
-      var emb = await ComputeTextEmbedding(client, responseObj.response);
-      var embBuf = SerializeEmbedding(emb);
-      PhotoFs.Instance.PhotoDb.UpdatePhotoAltTextEmbedding(imageId, embBuf);
+      return responseObj.response;
     }
-
-    return true;
   }
-
   private static byte[] SerializeEmbedding(double[] array)
   {
     int bufferSize = sizeof(double) * array.Length;
@@ -168,40 +217,6 @@ public class GenerateAltTextJob : IJob
     }
 
     return buffer;
-  }
-
-  private static async Task<double[]> ComputeTextEmbedding(HttpClient client, string text)
-  {
-    // var request = new ComputeTextEmbeddingRequest() { text = text };
-    // var requestData = JsonSerializer.Serialize(request);
-    // using (var response = await client.PostAsync("http://localhost:5050/api/textembedding",
-    //   new StringContent(requestData, Encoding.UTF8,
-    //                                 "application/json")))
-    // {
-    //   var responseText = await response.Content.ReadAsStringAsync();
-    //   var responseObj = JsonSerializer.Deserialize<ComputeTextEmbeddingResponse>(responseText);
-    //   return responseObj.numpy_data;
-    //   //Console.WriteLine(responseObj?.numpy_data?.Length);
-    // }
-    var request = new LLamaRequest()
-    {
-      model = "llama3.2-vision:latest",
-      //       prompt = @"Detailed image analysis dialogue.
-      // USER:[img-1] Provide a brief, concise description of this image, highlighting only the most essential elements in a few words.
-      // ASSISTANT:",
-      prompt = text,
-      images = null,
-      stream = false
-    };
-
-    var requestData = JsonSerializer.Serialize(request);
-    using (var response = await client.PostAsync("http://localhost:11434/api/embeddings", new StringContent(requestData)))
-    {
-      var responseText = LLamaResponse.trimText(await response.Content.ReadAsStringAsync());
-      var responseObj = JsonSerializer.Deserialize<LLamaEmbeddingResponse>(responseText);
-
-      return responseObj.embedding;
-    }
   }
 
   private static double[] DeserializeTextEmbedding(byte[] buffer)
@@ -299,7 +314,7 @@ public class GenerateAltTextJob : IJob
       var filteredItems = new List<CollectionItem>();
       using (var client = new HttpClient())
       {
-        var searchEmb = await ComputeTextEmbedding(client, request.search);
+        var searchEmb = await LLamaEmbeddingResponse.SendRequest(client, request.search);
 
         foreach (var item in collItems)
         {

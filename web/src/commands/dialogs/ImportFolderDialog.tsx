@@ -6,26 +6,29 @@ import DialogContentText from "@mui/material/DialogContentText/DialogContentText
 import TextField from "@mui/material/TextField/TextField";
 import DialogActions from "@mui/material/DialogActions/DialogActions";
 import Button from "@mui/material/Button/Button";
-import { triggerRefreshFolders } from "../../photo/FolderStore";
+import { getFolder, triggerRefreshFolders } from "../../photo/FolderStore";
 import { catchAllAsync } from "../../lib/error";
-import { wireImportFolder, GetJobStatusResponse, ImportJobStatusResponse } from "../../lib/photoclient";
+import { wireImportFolder, ImportJobStatusResponse } from "../../lib/photoclient";
 import { runJob } from "../BackgroundJobs";
 import { DialogProps, showDialog } from "./DialogManager";
 import { showConfirmationDialog } from "./ConfirmationDialog";
-import { createCollectionOfKind } from "../../photo/CollectionStore";
+import { CollectionId, createCollectionOfKind } from "../../photo/CollectionStore";
 import { ResultResponse } from "../../lib/fetchadapter";
+import { getAppState } from "../AppState";
 
-export function onImportFolder() {
+export function onImportFolder(folderId?: CollectionId) {
+  let folder: string = (folderId) ? getFolder(folderId)!.path : "~/Pictures";
+
   showDialog((props: DialogProps) => {
     return (
-      <ImportFolderDialog onClose={props.onClose} />)
+      <ImportFolderDialog folder={folder} folderId={folderId} onClose={props.onClose} />)
   });
 }
 
-export function ImportFolderDialog(props: { onClose: () => void }) {
-  const [value, setValue] = useState("~/Pictures");
+export function ImportFolderDialog(props: { folder: string, folderId?: CollectionId, onClose: () => void }) {
+  const [value, setValue] = useState(props.folder);
   const [statusText, setStatusText] = useState("");
-  const [processing, setProcessing] = useState(false);
+  const [processing, setProcessing] = useState(!props.folderId);
 
   function handleClose() {
     props.onClose();
@@ -44,6 +47,7 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
         async () => {
           let addResponse = await wireImportFolder({
             folder: value,
+            folderId: props.folderId,
             dryRun: true,
             importCollection: importColl.id.id
           });
@@ -70,6 +74,7 @@ export function ImportFolderDialog(props: { onClose: () => void }) {
         async () => {
           let addResponse = await wireImportFolder({
             folder: value,
+            folderId: props.folderId,
             dryRun: false,
             importCollection: importColl.id.id
           });

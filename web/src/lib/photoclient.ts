@@ -1,4 +1,5 @@
 import { AlbumPhoto } from "../photo/AlbumPhoto";
+import { CollectionId } from "../photo/CollectionStore";
 import { BatchDelayedQueue } from "./DispatchQueue";
 import { ResultResponse, fetchAdapter } from "./fetchadapter";
 
@@ -209,7 +210,8 @@ export function wireUpdatePhoto(wire: WirePhotoUpdate) {
 
 // ------------- add source folder ----------------
 export type ImportFolderRequest = {
-  folder: string;
+  folder?: string;
+  folderId?: CollectionId;
   dryRun: boolean;
   importCollection: number;
 }
